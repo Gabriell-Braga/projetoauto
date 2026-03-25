@@ -1,15 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`webflow cloud init`](https://developers.webflow.com/webflow-cloud/intro).
+# Next.js + Webflow Cloud
 
-## Getting Started
+Example app for [Webflow Cloud](https://webflow.com/cloud): a minimal Next.js + React project with OpenNext for Cloudflare and Webflow deploy tooling.
 
-First, run the development server:
+[![Deploy to Webflow](https://webflow.com/img/deploy-dark.svg)](https://webflow.com/dashboard/cloud/deploy?repo=https://github.com/Webflow-Examples/hello-world-nextjs-minimal)
 
-```bash
-npm run dev
+## Project structure
+
+```text
+.
+├── public/
+│   ├── next.svg
+│   └── webflow.svg
+├── src/
+│   └── app/
+│       ├── favicon.ico
+│       ├── globals.css
+│       ├── layout.tsx
+│       └── page.tsx
+├── nextjs/
+│   ├── public/
+│   │   └── next.svg
+│   ├── src/
+│   │   └── app/
+│   │       ├── favicon.ico
+│   │       ├── globals.css
+│   │       ├── layout.tsx
+│   │       └── page.tsx
+│   ├── cloudflare-env.d.ts
+│   ├── eslint.config.mjs
+│   ├── next.config.ts
+│   ├── open-next.config.ts
+│   ├── package.json
+│   ├── postcss.config.mjs
+│   ├── tsconfig.json
+│   ├── webflow.json
+│   └── wrangler.json
+├── cloudflare-env.d.ts
+├── eslint.config.mjs
+├── next.config.ts
+├── open-next.config.ts
+├── package.json
+├── postcss.config.mjs
+├── tsconfig.json
+├── webflow.json
+└── wrangler.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Commands
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | Action |
+| --- | --- |
+| `npm install` | Install dependencies. |
+| `npm run dev` | Start the Next.js dev server ([http://localhost:3000](http://localhost:3000)). |
+| `npm run build` | Create a production build. |
+| `npm run start` | Run the production server locally (after `npm run build`). |
 
-You can deploy your app by running [`webflow cloud deploy`](https://developers.webflow.com/webflow-cloud/environment).
+
+## Learn more
+
+- [Next.js documentation](https://nextjs.org/docs)
+- [Webflow Cloud](https://webflow.com/cloud)

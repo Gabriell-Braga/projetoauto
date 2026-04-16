@@ -1,8 +1,8 @@
 # Next.js + Webflow Cloud
 
-Example app for [Webflow Cloud](https://webflow.com/cloud): a minimal Next.js + React project with OpenNext for Cloudflare and Webflow deploy tooling.
+Example app for [Webflow Cloud](https://webflow.com/cloud): a Next.js + React project with OpenNext for Cloudflare and Webflow deploy tooling.
 
-[![Deploy to Webflow](https://webflow.com/img/deploy-dark.svg)](https://webflow.com/dashboard/cloud/deploy?repo=https://github.com/Webflow-Examples/hello-world-nextjs-minimal)
+[![Deploy to Webflow](https://webflow.com/img/deploy-dark.svg)](https://webflow.com/dashboard/cloud/deploy?repo=https://github.com/Webflow-Examples/hello-world-nextjs)
 
 ## Project structure
 

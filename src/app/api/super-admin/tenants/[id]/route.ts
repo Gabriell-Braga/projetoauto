@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { tenantSites, tenants, users } from "@/db/schema";
+import { tenants, users } from "@/db/schema";
 import { logAuditFor } from "@/lib/audit";
 import { requireApiSuperAdmin } from "@/lib/auth/guards";
 import { badRequest, conflict, jsonOk, notFound, withApi } from "@/lib/http";
@@ -34,27 +34,23 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
   }
 
   const { gtmCode, ...tenantFields } = input;
-  const updated = await updateTenantRecord(id, tenantFields);
-  if (!updated) throw notFound("Revenda não encontrada");
 
+  // GTM da plataforma fica em tenants.gtm_code; a revenda pode sobrescrever
+  // com o próprio código em tenant_sites.gtm_code.
+  let gtmValue: string | null | undefined;
   if (gtmCode !== undefined) {
     const gtmParsed = gtmSchema.safeParse(gtmCode ?? "");
     if (!gtmParsed.success) throw badRequest("Código GTM inválido", gtmParsed.error.issues);
-    const value = gtmParsed.data ? gtmParsed.data.toUpperCase() : null;
-
-    const existingSite = await db
-      .select({ tenantId: tenantSites.tenantId })
-      .from(tenantSites)
-      .where(eq(tenantSites.tenantId, id))
-      .limit(1);
-
-    if (existingSite.length > 0) {
-      await db.update(tenantSites).set({ gtmCode: value }).where(eq(tenantSites.tenantId, id));
-    } else {
-      await db.insert(tenantSites).values({ tenantId: id, gtmCode: value });
-    }
-    await invalidateTenantCache(updated);
+    gtmValue = gtmParsed.data ? gtmParsed.data.toUpperCase() : null;
   }
+
+  const updated = await updateTenantRecord(id, {
+    ...tenantFields,
+    ...(gtmValue !== undefined ? { gtmCode: gtmValue } : {}),
+  });
+  if (!updated) throw notFound("Revenda não encontrada");
+
+  await invalidateTenantCache(updated);
 
   await logAuditFor(
     context,
@@ -83,7 +79,11 @@ export const DELETE = withApi(async (request: Request, { params }: Params) => {
   // exclusão lógica: preserva histórico, libera o slug e derruba os acessos
   await db
     .update(tenants)
-    .set({ status: "deleted", deletedAt: new Date(), slug: `${tenant.slug}-excluida-${Date.now()}` })
+    .set({
+      status: "deleted",
+      deletedAt: new Date(),
+      slug: `${tenant.slug}-excluida-${Date.now()}`,
+    })
     .where(eq(tenants.id, id));
 
   await db.update(users).set({ status: "disabled" }).where(eq(users.tenantId, id));

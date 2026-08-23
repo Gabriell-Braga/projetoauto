@@ -115,3 +115,37 @@ export function buildPhotoFormData(variants: GeneratedVariants): FormData {
 
   return formData;
 }
+
+/** Redimensiona para uma única variante (logo, banner) e devolve o Blob. */
+export async function resizeSingle(file: File, maxWidth: number, quality = 0.85): Promise<Blob> {
+  if (file.size > MAX_INPUT_BYTES) {
+    throw new Error("Imagem acima de 25 MB. Reduza o arquivo antes de enviar.");
+  }
+
+  const bitmap = await loadBitmap(file);
+  try {
+    const targetWidth = Math.min(maxWidth, bitmap.width);
+    const scale = targetWidth / bitmap.width;
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = Math.round(bitmap.height * scale);
+
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Navegador sem suporte a canvas 2D");
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    // PNG preserva transparência (importante para logo)
+    const type = file.type === "image/png" ? "image/png" : supportsWebp() ? "image/webp" : "image/jpeg";
+    return canvasToBlob(canvas, type, quality);
+  } finally {
+    bitmap.close();
+  }
+}
+
+export function blobFileName(blob: Blob, base: string): string {
+  const extension =
+    blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
+  return `${base}.${extension}`;
+}

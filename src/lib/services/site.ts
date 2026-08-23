@@ -70,7 +70,8 @@ async function loadSiteData(slug: string): Promise<CachedSite | null> {
   return {
     tenantId: row.tenant.id,
     templateId: row.tenant.templateId,
-    gtmCode: site?.gtmCode ?? null,
+    // a revenda sobrescreve o GTM da plataforma quando informa o próprio código
+    gtmCode: site?.gtmCode ?? row.tenant.gtmCode ?? null,
     name: row.tenant.name,
     slug: row.tenant.slug,
     logoUrl: mediaUrl(site?.logoKey),

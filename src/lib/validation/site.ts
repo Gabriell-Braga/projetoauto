@@ -1,0 +1,77 @@
+import { z } from "zod";
+
+const hexColor = z
+  .string()
+  .trim()
+  .regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "Use uma cor no formato #RRGGBB");
+
+const optional = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess(
+    (value) => (value === "" || value === null ? undefined : value),
+    schema.optional(),
+  );
+
+export const businessHoursSchema = z.array(
+  z.object({
+    weekday: z.coerce.number().int().min(0).max(6),
+    open: z.string().regex(/^\d{2}:\d{2}$/).nullable(),
+    close: z.string().regex(/^\d{2}:\d{2}$/).nullable(),
+  }),
+);
+
+export const siteSettingsSchema = z.object({
+  templateId: optional(z.string().trim().min(1)),
+  theme: optional(
+    z.object({
+      primary: optional(hexColor),
+      primaryForeground: optional(hexColor),
+      accent: optional(hexColor),
+      surface: optional(hexColor),
+      fontHeading: optional(z.string().trim().max(120)),
+      fontBody: optional(z.string().trim().max(120)),
+    }),
+  ),
+  phone: optional(z.string().trim().max(20)),
+  whatsapp: optional(z.string().trim().max(20)),
+  email: optional(z.string().trim().toLowerCase().email("E-mail inválido")),
+  addressStreet: optional(z.string().trim().max(160)),
+  addressNumber: optional(z.string().trim().max(20)),
+  addressComplement: optional(z.string().trim().max(80)),
+  addressDistrict: optional(z.string().trim().max(80)),
+  addressCity: optional(z.string().trim().max(80)),
+  addressState: optional(z.string().trim().max(2)),
+  addressZip: optional(z.string().trim().max(12)),
+  mapsUrl: optional(z.string().trim().url("Informe uma URL válida").max(500)),
+  businessHours: optional(businessHoursSchema),
+  social: optional(
+    z.object({
+      instagram: optional(z.string().trim().max(200)),
+      facebook: optional(z.string().trim().max(200)),
+      youtube: optional(z.string().trim().max(200)),
+      tiktok: optional(z.string().trim().max(200)),
+    }),
+  ),
+  aboutTitle: optional(z.string().trim().max(120)),
+  aboutText: optional(z.string().trim().max(5000)),
+  gtmCode: z.preprocess(
+    (value) => (value === "" || value === null ? undefined : value),
+    z
+      .string()
+      .trim()
+      .regex(/^GTM-[A-Z0-9]{4,10}$/i, "Formato esperado: GTM-XXXXXXX")
+      .optional(),
+  ),
+  /** Envie explicitamente para limpar o código herdado do super-admin. */
+  clearGtm: z.boolean().optional(),
+});
+
+export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
+
+export const bannerSchema = z.object({
+  title: optional(z.string().trim().max(120)),
+  subtitle: optional(z.string().trim().max(240)),
+  ctaLabel: optional(z.string().trim().max(40)),
+  ctaHref: optional(z.string().trim().max(300)),
+  active: z.boolean().default(true),
+  position: z.coerce.number().int().min(0).max(50).default(0),
+});

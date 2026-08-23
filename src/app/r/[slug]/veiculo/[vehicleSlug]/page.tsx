@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { loadPublicSite, PUBLIC_VEHICLE_STATUSES } from "@/lib/services/public-site";
 import { toVehicleCard, toVehicleDetail } from "@/lib/services/site";
 import { getVehicleBySlug, listVehicles } from "@/lib/services/vehicles";
+import { JsonLd, breadcrumbJsonLd, vehicleJsonLd } from "@/lib/seo/jsonld";
+import { tenantAbsoluteUrl } from "@/lib/seo/urls";
 import { LeadForm } from "@/templates/shared/lead-form";
 
 export const dynamic = "force-dynamic";
@@ -25,15 +27,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const vehicle = toVehicleDetail(found.vehicle, found.photos);
   const title = `${vehicle.title} ${vehicle.yearLabel}`;
   const description = `${title} com ${vehicle.mileageLabel} por ${vehicle.priceLabel} na ${context.site.name}.`;
+  const url = await tenantAbsoluteUrl(slug, `/veiculo/${vehicle.slug}`);
+  const image = vehicle.photos[0]?.full ?? vehicle.coverUrl;
 
   return {
     title,
     description,
+    alternates: { canonical: url },
     openGraph: {
       title,
       description,
+      url,
       type: "website",
-      images: vehicle.coverUrl ? [{ url: vehicle.coverUrl }] : undefined,
+      locale: "pt_BR",
+      siteName: context.site.name,
+      images: image ? [{ url: image, alt: title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : undefined,
     },
   };
 }
@@ -47,32 +61,47 @@ export default async function VehicleDetailPage({ params }: Props) {
 
   const vehicle = toVehicleDetail(found.vehicle, found.photos);
 
-  const related = await listVehicles(context.tenantId, {
-    statuses: [...PUBLIC_VEHICLE_STATUSES],
-    brand: found.vehicle.brand,
-    pageSize: 5,
-  });
+  const [related, vehicleUrl, homeUrl, stockUrl] = await Promise.all([
+    listVehicles(context.tenantId, {
+      statuses: [...PUBLIC_VEHICLE_STATUSES],
+      brand: found.vehicle.brand,
+      pageSize: 5,
+    }),
+    tenantAbsoluteUrl(slug, `/veiculo/${vehicle.slug}`),
+    tenantAbsoluteUrl(slug),
+    tenantAbsoluteUrl(slug, "/estoque"),
+  ]);
 
   const Detail = context.template.VehicleDetail;
   const tone = context.templateId === "template-2-dark" ? "dark" : "light";
 
   return (
-    <Detail
-      site={context.site}
-      links={context.links}
-      vehicle={vehicle}
-      related={related.items
-        .filter((item) => item.id !== found.vehicle.id)
-        .slice(0, 4)
-        .map(toVehicleCard)}
-      leadForm={
-        <LeadForm
-          tenantSlug={slug}
-          vehicleId={vehicle.id}
-          vehicleLabel={`${vehicle.title} ${vehicle.yearLabel}`}
-          tone={tone}
-        />
-      }
-    />
+    <>
+      <JsonLd data={vehicleJsonLd(vehicle, context.site, vehicleUrl)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Início", url: homeUrl },
+          { name: "Estoque", url: stockUrl },
+          { name: vehicle.title, url: vehicleUrl },
+        ])}
+      />
+      <Detail
+        site={context.site}
+        links={context.links}
+        vehicle={vehicle}
+        related={related.items
+          .filter((item) => item.id !== found.vehicle.id)
+          .slice(0, 4)
+          .map(toVehicleCard)}
+        leadForm={
+          <LeadForm
+            tenantSlug={slug}
+            vehicleId={vehicle.id}
+            vehicleLabel={`${vehicle.title} ${vehicle.yearLabel}`}
+            tone={tone}
+          />
+        }
+      />
+    </>
   );
 }

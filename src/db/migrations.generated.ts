@@ -43,5 +43,11 @@ export const MIGRATIONS: BundledMigration[] = [
       "CREATE INDEX `audit_log_actor_idx` ON `audit_log` (`actor_user_id`,`created_at`);",
       "CREATE INDEX `audit_log_created_idx` ON `audit_log` (`created_at`);"
     ]
+  },
+  {
+    "tag": "0001_tenant_gtm",
+    "statements": [
+      "ALTER TABLE `tenants` ADD `gtm_code` text;"
+    ]
   }
 ];

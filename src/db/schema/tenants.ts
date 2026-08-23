@@ -19,6 +19,8 @@ export const tenants = sqliteTable(
     status: text("status").$type<TenantStatus>().notNull().default("active"),
     templateId: text("template_id").notNull().default("template-1-clean"),
     blockMode: text("block_mode").$type<BlockMode>().notNull().default("readonly"),
+    /** GTM definido pela plataforma; a revenda pode sobrescrever em tenant_sites.gtm_code. */
+    gtmCode: text("gtm_code"),
     notes: text("notes"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

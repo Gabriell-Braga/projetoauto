@@ -110,7 +110,7 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
               templateId: detail.tenant.templateId,
               blockMode: detail.tenant.blockMode,
               notes: detail.tenant.notes,
-              gtmCode: detail.site?.gtmCode ?? null,
+              gtmCode: detail.tenant.gtmCode ?? null,
             }}
           />
           <DangerZone tenantId={detail.tenant.id} tenantName={detail.tenant.name} />

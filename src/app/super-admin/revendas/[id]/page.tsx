@@ -1,0 +1,164 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { PageHeader } from "@/components/layout/shell";
+import { BillingStatusBadge, TenantStatusBadge } from "@/components/admin/status-badges";
+import { StatCard, StatGrid } from "@/components/admin/stat-card";
+import { cn, formatNumber } from "@/lib/utils";
+import { getTenantDetail, listBillingEvents } from "@/lib/services/tenants";
+import { listTenantUsers } from "@/lib/services/users";
+import { getTemplateManifest } from "@/templates/manifests";
+import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
+import { BillingPanel } from "./billing-panel";
+import { DangerZone } from "./danger-zone";
+import { TenantSettingsForm } from "./tenant-settings";
+import { TenantUsersPanel } from "./users-panel";
+
+export const dynamic = "force-dynamic";
+
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ aba?: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const detail = await getTenantDetail(id);
+  return { title: detail ? detail.tenant.name : "Revenda" };
+}
+
+const TABS = [
+  { key: "dados", label: "Dados e template" },
+  { key: "financeiro", label: "Financeiro" },
+  { key: "usuarios", label: "Usuários" },
+] as const;
+
+export default async function TenantDetailPage({ params, searchParams }: Props) {
+  const { id } = await params;
+  const { aba } = await searchParams;
+  const tab = TABS.some((item) => item.key === aba) ? aba! : "dados";
+
+  const detail = await getTenantDetail(id);
+  if (!detail) notFound();
+
+  const [events, users] = await Promise.all([
+    tab === "financeiro" ? listBillingEvents(id) : Promise.resolve([]),
+    tab === "usuarios" ? listTenantUsers(id) : Promise.resolve([]),
+  ]);
+
+  const template = getTemplateManifest(detail.tenant.templateId);
+
+  return (
+    <>
+      <PageHeader
+        title={detail.tenant.name}
+        description={`/r/${detail.tenant.slug} · Template ${template.name}`}
+        actions={
+          <>
+            <Link href={tenantPublicPath(detail.tenant.slug)} target="_blank">
+              <span className="inline-flex h-10 items-center rounded-lg border border-ink-200 bg-white px-4 text-sm font-medium text-ink-900 hover:bg-ink-50">
+                Ver site
+              </span>
+            </Link>
+            <Link href="/super-admin/revendas">
+              <span className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-ink-600 hover:bg-ink-100">
+                Voltar
+              </span>
+            </Link>
+          </>
+        }
+      />
+
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <TenantStatusBadge status={detail.tenant.status} />
+        <BillingStatusBadge status={detail.billing?.status ?? null} />
+      </div>
+
+      <StatGrid>
+        <StatCard label="Veículos" value={formatNumber(detail.counters.vehicles)} />
+        <StatCard label="Leads" value={formatNumber(detail.counters.leads)} />
+        <StatCard label="Usuários" value={formatNumber(detail.counters.users)} />
+      </StatGrid>
+
+      <div className="mb-5 flex gap-1 border-b border-ink-200">
+        {TABS.map((item) => (
+          <Link
+            key={item.key}
+            href={`/super-admin/revendas/${id}?aba=${item.key}`}
+            className={cn(
+              "-mb-px border-b-2 px-4 py-2 text-sm transition-colors",
+              tab === item.key
+                ? "border-brand-600 font-medium text-brand-700"
+                : "border-transparent text-ink-500 hover:text-ink-800",
+            )}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
+      {tab === "dados" ? (
+        <div className="space-y-6">
+          <TenantSettingsForm
+            tenant={{
+              id: detail.tenant.id,
+              name: detail.tenant.name,
+              slug: detail.tenant.slug,
+              legalName: detail.tenant.legalName,
+              cnpj: detail.tenant.cnpj,
+              status: detail.tenant.status === "suspended" ? "suspended" : "active",
+              templateId: detail.tenant.templateId,
+              blockMode: detail.tenant.blockMode,
+              notes: detail.tenant.notes,
+              gtmCode: detail.site?.gtmCode ?? null,
+            }}
+          />
+          <DangerZone tenantId={detail.tenant.id} tenantName={detail.tenant.name} />
+        </div>
+      ) : null}
+
+      {tab === "financeiro" ? (
+        <BillingPanel
+          tenantId={id}
+          billing={
+            detail.billing
+              ? {
+                  status: detail.billing.status,
+                  dueDay: detail.billing.dueDay,
+                  amountCents: detail.billing.amountCents,
+                  currentDueDate: detail.billing.currentDueDate?.toISOString() ?? null,
+                  lastPaymentAt: detail.billing.lastPaymentAt?.toISOString() ?? null,
+                }
+              : null
+          }
+          events={events.map((item) => ({
+            id: item.id,
+            type: item.type,
+            amountCents: item.amountCents,
+            referenceMonth: item.referenceMonth,
+            statusFrom: item.statusFrom,
+            statusTo: item.statusTo,
+            note: item.note,
+            createdByEmail: item.createdByEmail,
+            createdAt: item.createdAt.toISOString(),
+          }))}
+        />
+      ) : null}
+
+      {tab === "usuarios" ? (
+        <TenantUsersPanel
+          tenantId={id}
+          users={users.map((user) => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status,
+            mustChangePassword: user.mustChangePassword,
+            lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+          }))}
+        />
+      ) : null}
+    </>
+  );
+}

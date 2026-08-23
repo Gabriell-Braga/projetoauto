@@ -1,0 +1,249 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { TemplatePicker } from "@/components/admin/template-picker";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/field";
+import { apiPost } from "@/lib/client/api";
+import { DEFAULT_TEMPLATE_ID } from "@/templates/manifests";
+import { slugify } from "@/lib/utils";
+
+export function NewTenantForm() {
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [templateId, setTemplateId] = useState(DEFAULT_TEMPLATE_ID);
+  const [withAdmin, setWithAdmin] = useState(true);
+
+  function handleNameChange(value: string) {
+    setName(value);
+    if (!slugTouched) setSlug(slugify(value));
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    setFieldErrors({});
+
+    const form = new FormData(event.currentTarget);
+    const payload = {
+      name,
+      slug,
+      templateId,
+      legalName: String(form.get("legalName") ?? ""),
+      cnpj: String(form.get("cnpj") ?? ""),
+      blockMode: String(form.get("blockMode") ?? "readonly"),
+      notes: String(form.get("notes") ?? ""),
+      phone: String(form.get("phone") ?? ""),
+      whatsapp: String(form.get("whatsapp") ?? ""),
+      email: String(form.get("email") ?? ""),
+      addressCity: String(form.get("addressCity") ?? ""),
+      addressState: String(form.get("addressState") ?? ""),
+      dueDay: Number(form.get("dueDay") ?? 10),
+      amountCents: Math.round(Number(String(form.get("amount") ?? "0").replace(",", ".")) * 100),
+      ...(withAdmin
+        ? {
+            adminName: String(form.get("adminName") ?? ""),
+            adminEmail: String(form.get("adminEmail") ?? ""),
+            adminPassword: String(form.get("adminPassword") ?? ""),
+          }
+        : {}),
+    };
+
+    const result = await apiPost<{ id: string }>("/api/super-admin/tenants", payload);
+
+    if (!result.ok) {
+      setError(result.error);
+      if (Array.isArray(result.details)) {
+        const errors: Record<string, string> = {};
+        for (const issue of result.details as { path: string[] | string; message: string }[]) {
+          const key = Array.isArray(issue.path) ? issue.path.join(".") : issue.path;
+          errors[key] = issue.message;
+        }
+        setFieldErrors(errors);
+      }
+      setSaving(false);
+      return;
+    }
+
+    router.push(`/super-admin/revendas/${result.data.id}`);
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados da revenda</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-x-4 sm:grid-cols-2">
+            <FormField label="Nome da revenda" htmlFor="name" error={fieldErrors.name}>
+              <Input
+                id="name"
+                required
+                value={name}
+                onChange={(event) => handleNameChange(event.target.value)}
+                placeholder="Auto Center Silva"
+              />
+            </FormField>
+
+            <FormField
+              label="Slug (endereço do site)"
+              htmlFor="slug"
+              hint={slug ? `O site ficará em /r/${slug}` : "Gerado a partir do nome"}
+              error={fieldErrors.slug}
+            >
+              <Input
+                id="slug"
+                required
+                value={slug}
+                onChange={(event) => {
+                  setSlugTouched(true);
+                  setSlug(slugify(event.target.value));
+                }}
+                placeholder="auto-center-silva"
+              />
+            </FormField>
+
+            <FormField label="Razão social" htmlFor="legalName">
+              <Input id="legalName" name="legalName" placeholder="Opcional" />
+            </FormField>
+
+            <FormField label="CNPJ" htmlFor="cnpj">
+              <Input id="cnpj" name="cnpj" placeholder="Opcional" />
+            </FormField>
+
+            <FormField label="Telefone" htmlFor="phone">
+              <Input id="phone" name="phone" placeholder="(11) 3333-4444" />
+            </FormField>
+
+            <FormField label="WhatsApp" htmlFor="whatsapp">
+              <Input id="whatsapp" name="whatsapp" placeholder="(11) 99999-8888" />
+            </FormField>
+
+            <FormField label="E-mail de contato" htmlFor="email">
+              <Input id="email" name="email" type="email" placeholder="contato@revenda.com.br" />
+            </FormField>
+
+            <div className="grid grid-cols-[1fr_5rem] gap-3">
+              <FormField label="Cidade" htmlFor="addressCity">
+                <Input id="addressCity" name="addressCity" placeholder="São Paulo" />
+              </FormField>
+              <FormField label="UF" htmlFor="addressState">
+                <Input id="addressState" name="addressState" maxLength={2} placeholder="SP" />
+              </FormField>
+            </div>
+          </div>
+
+          <FormField label="Observações internas" htmlFor="notes" className="mb-0">
+            <Textarea
+              id="notes"
+              name="notes"
+              placeholder="Anotações visíveis só para a equipe interna"
+            />
+          </FormField>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Template do site</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TemplatePicker value={templateId} onChange={setTemplateId} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Assinatura</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-x-4 sm:grid-cols-3">
+            <FormField label="Mensalidade (R$)" htmlFor="amount">
+              <Input id="amount" name="amount" inputMode="decimal" defaultValue="0" />
+            </FormField>
+            <FormField label="Dia do vencimento" htmlFor="dueDay">
+              <Select id="dueDay" name="dueDay" defaultValue="10">
+                {Array.from({ length: 28 }, (_, index) => index + 1).map((day) => (
+                  <option key={day} value={day}>
+                    Dia {day}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+            <FormField
+              label="Bloqueio na suspensão"
+              htmlFor="blockMode"
+              hint="Como o painel se comporta quando suspensa"
+            >
+              <Select id="blockMode" name="blockMode" defaultValue="readonly">
+                <option value="readonly">Somente leitura</option>
+                <option value="full">Bloqueio total</option>
+              </Select>
+            </FormField>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Acesso inicial</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <label className="mb-4 flex items-center gap-2 text-sm text-ink-700">
+            <Checkbox checked={withAdmin} onChange={(event) => setWithAdmin(event.target.checked)} />
+            Criar o usuário administrador da revenda agora
+          </label>
+
+          {withAdmin ? (
+            <div className="grid gap-x-4 sm:grid-cols-3">
+              <FormField label="Nome do responsável" htmlFor="adminName">
+                <Input id="adminName" name="adminName" required={withAdmin} />
+              </FormField>
+              <FormField
+                label="E-mail de acesso"
+                htmlFor="adminEmail"
+                error={fieldErrors.adminEmail}
+              >
+                <Input id="adminEmail" name="adminEmail" type="email" required={withAdmin} />
+              </FormField>
+              <FormField
+                label="Senha provisória"
+                htmlFor="adminPassword"
+                hint="Mínimo 8 caracteres"
+                error={fieldErrors.adminPassword}
+              >
+                <Input id="adminPassword" name="adminPassword" minLength={8} required={withAdmin} />
+              </FormField>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {error ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="flex gap-3">
+        <Button type="submit" disabled={saving}>
+          {saving ? "Criando..." : "Criar revenda"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={() => router.back()}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/shell";
-import { VehicleForm, emptyVehicle } from "@/components/admin/vehicle-form";
+import { VehicleForm } from "@/components/admin/vehicle-form";
+import { emptyVehicle } from "@/components/admin/vehicle-defaults";
 import { Alert } from "@/components/ui/alert";
 import { requireTenantPage } from "@/lib/auth/guards";
 

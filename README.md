@@ -87,3 +87,58 @@ no banco do ambiente (local ou Webflow Cloud), controlando o que já rodou em `_
 
 Push na `main` dispara o deploy automático no Webflow Cloud. Após o primeiro deploy, rode
 `/api/ops/migrate` apontando para o domínio de produção para criar as tabelas.
+
+## O que já está pronto
+
+**Painel Geral (`/super-admin`)**
+Indicadores da plataforma · CRUD de revendas (slug validado, template, bloqueio) ·
+adimplência manual com histórico de pagamentos · usuários da revenda e da plataforma ·
+"entrar como revenda" (impersonation) · auditoria filtrável.
+
+**Painel da Revenda (`/admin`)**
+Estoque completo com fotos (resize no browser, capa e ordenação) · leads com status,
+responsável e anotações · CMS do site (logo, cores, fontes, template, contato, horários,
+redes, textos, banners, GTM) · equipe com perfis.
+
+**Site público (`/r/[slug]`)**
+Home com destaques e busca · estoque com filtros e ordenação · página do veículo com
+galeria, ficha, opcionais, WhatsApp pré-preenchido e formulário de lead · contato ·
+SEO com Open Graph, schema.org, sitemap e robots por revenda.
+
+### Perfis de acesso
+
+| Perfil | Estoque | Leads | Site | Usuários |
+|---|---|---|---|---|
+| `revenda_admin` | total | total | total | total |
+| `vendedor` | total | total | leitura | — |
+| `visualizador` | leitura | leitura | leitura | — |
+| `super_admin` | plataforma inteira (via impersonation para dados de revenda) |
+
+Revenda suspensa: site público sai do ar e o painel entra em somente leitura ou
+bloqueio total, conforme `block_mode`.
+
+## Como testar localmente
+
+```bash
+npm run preview
+```
+
+1. `POST /api/ops/migrate` e `POST /api/ops/bootstrap` (ver acima) na primeira vez.
+2. Entre em `/login` com o super-admin e crie uma revenda em `/super-admin/revendas/nova`,
+   marcando "criar o usuário administrador agora".
+3. Abra `/r/<slug>` — o site já responde, ainda sem veículos.
+4. Entre com o usuário da revenda, troque a senha provisória, cadastre um veículo em
+   `/admin/estoque/novo`, envie fotos e mude a situação para "Disponível".
+5. Volte em `/r/<slug>/estoque`: o veículo aparece. Envie o formulário da página do
+   veículo e confira o contato em `/admin/leads`.
+6. Em `/super-admin/revendas/<id>?aba=financeiro`, marque a revenda como suspensa:
+   `/r/<slug>` passa a mostrar a página de indisponibilidade e o painel fica restrito.
+   Registre um pagamento para reativar.
+7. Teste o "Entrar como revenda" e confira o registro em `/super-admin/auditoria`.
+
+### O que verificar
+
+- Nenhuma revenda enxerga dado de outra (veículos, leads e usuários são 404 cruzados).
+- Rascunho não aparece no site público.
+- Fotos são servidas por `/api/media/...` (o bucket é privado).
+- `/r/<slug>/sitemap.xml` e `/r/<slug>/robots.txt` respondem com o domínio real.

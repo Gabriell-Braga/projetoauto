@@ -1,5 +1,6 @@
 import { Car, LayoutDashboard, MessagesSquare, Palette, Users } from "lucide-react";
 import { AppShell, type NavItem } from "@/components/layout/shell";
+import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import { Alert } from "@/components/ui/alert";
 import { requireTenantPage } from "@/lib/auth/guards";
 import { ROLE_LABELS, can } from "@/lib/auth/rbac";
@@ -25,7 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       : []),
   ];
 
-  const banner =
+  const readonlyBanner =
     context.access === "readonly" ? (
       <div className="px-4 pt-4 md:px-8">
         <Alert tone="warning">
@@ -35,6 +36,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </Alert>
       </div>
     ) : null;
+
+  const banner = (
+    <>
+      {context.impersonating ? <ImpersonationBanner tenantName={context.tenant.name} /> : null}
+      {readonlyBanner}
+    </>
+  );
 
   return (
     <AppShell

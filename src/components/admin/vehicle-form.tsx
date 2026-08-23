@@ -15,55 +15,11 @@ import {
 } from "@/lib/catalog/labels";
 import { OPTION_GROUPS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
 import { apiGet, apiPatch, apiPost } from "@/lib/client/api";
-
-export type VehicleFormValues = {
-  id?: string;
-  brand: string;
-  model: string;
-  version: string;
-  yearManufacture: number;
-  yearModel: number;
-  mileageKm: number;
-  priceCents: number;
-  priceOnRequest: boolean;
-  transmission: string;
-  fuel: string;
-  bodyType: string;
-  color: string;
-  doors: string;
-  licensePlateEnd: string;
-  options: string[];
-  description: string;
-  status: string;
-  featured: boolean;
-};
+import type { VehicleFormValues } from "./vehicle-form-types";
 
 type BrandCatalog = { brand: string; models: string[] }[];
 
 const CURRENT_YEAR = new Date().getFullYear();
-
-export function emptyVehicle(): VehicleFormValues {
-  return {
-    brand: "",
-    model: "",
-    version: "",
-    yearManufacture: CURRENT_YEAR,
-    yearModel: CURRENT_YEAR,
-    mileageKm: 0,
-    priceCents: 0,
-    priceOnRequest: false,
-    transmission: "",
-    fuel: "",
-    bodyType: "",
-    color: "",
-    doors: "",
-    licensePlateEnd: "",
-    options: [],
-    description: "",
-    status: "draft",
-    featured: false,
-  };
-}
 
 function centsToInput(cents: number): string {
   return (cents / 100).toFixed(2).replace(".", ",");

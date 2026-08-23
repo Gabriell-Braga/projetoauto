@@ -11,6 +11,7 @@ import { getTemplateManifest } from "@/templates/manifests";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { BillingPanel } from "./billing-panel";
 import { DangerZone } from "./danger-zone";
+import { ImpersonateButton } from "./impersonate-button";
 import { TenantSettingsForm } from "./tenant-settings";
 import { TenantUsersPanel } from "./users-panel";
 
@@ -55,6 +56,11 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
         description={`/r/${detail.tenant.slug} · Template ${template.name}`}
         actions={
           <>
+            <ImpersonateButton
+              tenantId={detail.tenant.id}
+              tenantName={detail.tenant.name}
+              disabled={detail.tenant.status === "suspended" && detail.tenant.blockMode === "full"}
+            />
             <Link href={tenantPublicPath(detail.tenant.slug)} target="_blank">
               <span className="inline-flex h-10 items-center rounded-lg border border-ink-200 bg-white px-4 text-sm font-medium text-ink-900 hover:bg-ink-50">
                 Ver site

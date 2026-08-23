@@ -46,6 +46,12 @@ export function AppShell({
             <p className="truncate text-xs text-ink-400">{user.email}</p>
             <p className="mt-1 text-[11px] uppercase tracking-wide text-ink-500">{user.roleLabel}</p>
           </div>
+          <Link
+            href="/trocar-senha"
+            className="mb-1 block rounded-lg px-3 py-2 text-sm text-ink-300 transition-colors hover:bg-ink-800 hover:text-white"
+          >
+            Trocar senha
+          </Link>
           <LogoutButton />
         </div>
       </aside>

@@ -72,12 +72,15 @@ export async function requirePageAuth(): Promise<AuthContext> {
 export async function requireSuperAdminPage(): Promise<AuthContext> {
   const context = await requirePageAuth();
   if (context.role !== "super_admin" || context.impersonating) redirect("/admin");
+  if (context.user.mustChangePassword) redirect("/trocar-senha");
   return context;
 }
 
 export async function requireTenantPage(permission?: Permission): Promise<TenantContext> {
   const context = await requirePageAuth();
   if (!context.claims.tenantId) redirect("/super-admin");
+  // durante impersonation a senha provisória é do super-admin, não da revenda
+  if (context.user.mustChangePassword && !context.impersonating) redirect("/trocar-senha");
 
   const tenant = await getTenantCoreById(context.claims.tenantId);
   if (!tenant) redirect("/login?erro=tenant");

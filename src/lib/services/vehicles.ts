@@ -51,10 +51,13 @@ const LIST_COLUMNS = {
  * TODA consulta de veículo passa por aqui com tenantId obrigatório —
  * é o que garante o isolamento entre revendas.
  */
-function buildConditions(tenantId: string, filters: Partial<VehicleFilters>) {
+export type VehicleQuery = Partial<VehicleFilters> & { statuses?: VehicleStatus[] };
+
+function buildConditions(tenantId: string, filters: VehicleQuery) {
   const conditions = [eq(vehicles.tenantId, tenantId)];
 
   if (filters.status) conditions.push(eq(vehicles.status, filters.status));
+  if (filters.statuses?.length) conditions.push(inArray(vehicles.status, filters.statuses));
   if (filters.brand) conditions.push(eq(vehicles.brand, filters.brand));
   if (filters.model) conditions.push(eq(vehicles.model, filters.model));
   if (filters.transmission) conditions.push(eq(vehicles.transmission, filters.transmission));
@@ -96,7 +99,7 @@ function buildOrder(sort: VehicleFilters["sort"]) {
   }
 }
 
-export async function listVehicles(tenantId: string, filters: Partial<VehicleFilters> = {}) {
+export async function listVehicles(tenantId: string, filters: VehicleQuery = {}) {
   const db = await getDb();
   const pageSize = filters.pageSize ?? 12;
   const page = filters.page ?? 1;

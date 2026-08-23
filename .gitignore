@@ -49,3 +49,4 @@ next-env.d.ts
 
 # webflow cli build artifacts
 .tmp/
+!.dev.vars.example

@@ -1,0 +1,41 @@
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { createdAt, idColumn, updatedAt } from "./_shared";
+import { tenants } from "./tenants";
+
+export const ROLES = ["super_admin", "revenda_admin", "vendedor", "visualizador"] as const;
+export type Role = (typeof ROLES)[number];
+
+export const USER_STATUS = ["active", "disabled"] as const;
+export type UserStatus = (typeof USER_STATUS)[number];
+
+export const users = sqliteTable(
+  "users",
+  {
+    id: idColumn(),
+    /** NULL = usuário da plataforma (super-admin). */
+    tenantId: text("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    name: text("name").notNull(),
+    passwordHash: text("password_hash").notNull(),
+    passwordSalt: text("password_salt").notNull(),
+    role: text("role").$type<Role>().notNull(),
+    status: text("status").$type<UserStatus>().notNull().default("active"),
+    mustChangePassword: integer("must_change_password", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    /** Invalida todas as sessões emitidas antes deste instante. */
+    sessionsValidFrom: integer("sessions_valid_from", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    lastLoginAt: integer("last_login_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    uniqueIndex("users_email_unique").on(table.email),
+    index("users_tenant_idx").on(table.tenantId, table.status),
+  ],
+);
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;

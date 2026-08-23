@@ -1,0 +1,11 @@
+# Copie para .dev.vars (não versionado) antes de rodar `npm run preview`.
+# No Webflow Cloud, cadastre os mesmos nomes em Environment Variables / Secret Variables.
+
+# Segredo usado para assinar os JWT de sessão (gere com: openssl rand -base64 48)
+AUTH_SECRET="troque-por-um-segredo-longo-e-aleatorio"
+
+# Segredo das rotas operacionais /api/ops/* (migrations e bootstrap)
+OPS_SECRET="troque-por-outro-segredo-longo"
+
+# Mount path do app no site Webflow (ex.: /app). Deixe vazio em dev local.
+NEXT_PUBLIC_BASE_PATH=""

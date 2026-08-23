@@ -1,0 +1,403 @@
+import { and, asc, count, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
+import { getDb } from "@/db";
+import {
+  vehiclePhotos,
+  vehicles,
+  type PhotoVariants,
+  type Vehicle,
+  type VehicleStatus,
+} from "@/db/schema";
+import { deleteObjects, photoKeys } from "@/lib/storage/r2";
+import { slugify } from "@/lib/utils";
+import type { VehicleFilters } from "@/lib/validation/vehicles";
+
+export type VehicleListItem = {
+  id: string;
+  slug: string;
+  brand: string;
+  model: string;
+  version: string | null;
+  yearManufacture: number;
+  yearModel: number;
+  mileageKm: number;
+  priceCents: number;
+  priceOnRequest: boolean;
+  status: VehicleStatus;
+  featured: boolean;
+  coverPhotoKey: string | null;
+  photosCount: number;
+  createdAt: Date;
+};
+
+const LIST_COLUMNS = {
+  id: vehicles.id,
+  slug: vehicles.slug,
+  brand: vehicles.brand,
+  model: vehicles.model,
+  version: vehicles.version,
+  yearManufacture: vehicles.yearManufacture,
+  yearModel: vehicles.yearModel,
+  mileageKm: vehicles.mileageKm,
+  priceCents: vehicles.priceCents,
+  priceOnRequest: vehicles.priceOnRequest,
+  status: vehicles.status,
+  featured: vehicles.featured,
+  coverPhotoKey: vehicles.coverPhotoKey,
+  photosCount: vehicles.photosCount,
+  createdAt: vehicles.createdAt,
+};
+
+/**
+ * TODA consulta de veículo passa por aqui com tenantId obrigatório —
+ * é o que garante o isolamento entre revendas.
+ */
+function buildConditions(tenantId: string, filters: Partial<VehicleFilters>) {
+  const conditions = [eq(vehicles.tenantId, tenantId)];
+
+  if (filters.status) conditions.push(eq(vehicles.status, filters.status));
+  if (filters.brand) conditions.push(eq(vehicles.brand, filters.brand));
+  if (filters.model) conditions.push(eq(vehicles.model, filters.model));
+  if (filters.transmission) conditions.push(eq(vehicles.transmission, filters.transmission));
+  if (filters.fuel) conditions.push(eq(vehicles.fuel, filters.fuel));
+  if (filters.bodyType) conditions.push(eq(vehicles.bodyType, filters.bodyType));
+  if (filters.featured !== undefined) conditions.push(eq(vehicles.featured, filters.featured));
+  if (filters.priceMin !== undefined) conditions.push(gte(vehicles.priceCents, filters.priceMin));
+  if (filters.priceMax !== undefined) conditions.push(lte(vehicles.priceCents, filters.priceMax));
+  if (filters.yearMin !== undefined) conditions.push(gte(vehicles.yearModel, filters.yearMin));
+  if (filters.yearMax !== undefined) conditions.push(lte(vehicles.yearModel, filters.yearMax));
+  if (filters.kmMax !== undefined) conditions.push(lte(vehicles.mileageKm, filters.kmMax));
+
+  if (filters.search) {
+    const term = `%${filters.search.toLowerCase()}%`;
+    conditions.push(
+      or(
+        like(sql`lower(${vehicles.brand})`, term),
+        like(sql`lower(${vehicles.model})`, term),
+        like(sql`lower(${vehicles.version})`, term),
+      )!,
+    );
+  }
+
+  return and(...conditions);
+}
+
+function buildOrder(sort: VehicleFilters["sort"]) {
+  switch (sort) {
+    case "preco-asc":
+      return [asc(vehicles.priceCents)];
+    case "preco-desc":
+      return [desc(vehicles.priceCents)];
+    case "km-asc":
+      return [asc(vehicles.mileageKm)];
+    case "ano-desc":
+      return [desc(vehicles.yearModel)];
+    default:
+      return [desc(vehicles.featured), desc(vehicles.createdAt)];
+  }
+}
+
+export async function listVehicles(tenantId: string, filters: Partial<VehicleFilters> = {}) {
+  const db = await getDb();
+  const pageSize = filters.pageSize ?? 12;
+  const page = filters.page ?? 1;
+  const where = buildConditions(tenantId, filters);
+
+  const [items, totalRows] = await Promise.all([
+    db
+      .select(LIST_COLUMNS)
+      .from(vehicles)
+      .where(where)
+      .orderBy(...buildOrder(filters.sort ?? "recentes"))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db.select({ value: count() }).from(vehicles).where(where),
+  ]);
+
+  return {
+    items: items as VehicleListItem[],
+    total: totalRows[0]?.value ?? 0,
+    page,
+    pageSize,
+  };
+}
+
+export async function getVehicle(tenantId: string, id: string) {
+  const db = await getDb();
+  const rows = await db
+    .select()
+    .from(vehicles)
+    .where(and(eq(vehicles.tenantId, tenantId), eq(vehicles.id, id)))
+    .limit(1);
+
+  const vehicle = rows[0];
+  if (!vehicle) return null;
+
+  const photos = await db
+    .select()
+    .from(vehiclePhotos)
+    .where(eq(vehiclePhotos.vehicleId, id))
+    .orderBy(asc(vehiclePhotos.position));
+
+  return { vehicle, photos };
+}
+
+export async function getVehicleBySlug(tenantId: string, slug: string) {
+  const db = await getDb();
+  const rows = await db
+    .select()
+    .from(vehicles)
+    .where(and(eq(vehicles.tenantId, tenantId), eq(vehicles.slug, slug)))
+    .limit(1);
+
+  const vehicle = rows[0];
+  if (!vehicle) return null;
+
+  const photos = await db
+    .select()
+    .from(vehiclePhotos)
+    .where(eq(vehiclePhotos.vehicleId, vehicle.id))
+    .orderBy(asc(vehiclePhotos.position));
+
+  return { vehicle, photos };
+}
+
+/** Slug legível e único dentro da revenda. */
+export async function buildVehicleSlug(
+  tenantId: string,
+  parts: { brand: string; model: string; version?: string | null; yearModel: number },
+  exceptVehicleId?: string,
+): Promise<string> {
+  const db = await getDb();
+  const base =
+    slugify(`${parts.brand} ${parts.model} ${parts.version ?? ""} ${parts.yearModel}`) || "veiculo";
+
+  let candidate = base;
+  for (let attempt = 1; attempt <= 50; attempt++) {
+    const existing = await db
+      .select({ id: vehicles.id })
+      .from(vehicles)
+      .where(and(eq(vehicles.tenantId, tenantId), eq(vehicles.slug, candidate)))
+      .limit(1);
+
+    if (!existing[0] || existing[0].id === exceptVehicleId) return candidate;
+    candidate = `${base}-${attempt + 1}`;
+  }
+
+  return `${base}-${Date.now()}`;
+}
+
+export async function deleteVehicle(tenantId: string, id: string): Promise<Vehicle | null> {
+  const db = await getDb();
+  const found = await db
+    .select()
+    .from(vehicles)
+    .where(and(eq(vehicles.tenantId, tenantId), eq(vehicles.id, id)))
+    .limit(1);
+
+  const vehicle = found[0];
+  if (!vehicle) return null;
+
+  const photos = await db
+    .select({ variants: vehiclePhotos.variants })
+    .from(vehiclePhotos)
+    .where(eq(vehiclePhotos.vehicleId, id));
+
+  await db.delete(vehiclePhotos).where(eq(vehiclePhotos.vehicleId, id));
+  await db.delete(vehicles).where(and(eq(vehicles.tenantId, tenantId), eq(vehicles.id, id)));
+
+  const keys = photos.flatMap((photo) => photoKeys(photo.variants as PhotoVariants));
+  await deleteObjects(keys);
+
+  return vehicle;
+}
+
+/** Recalcula capa e contagem após qualquer mudança nas fotos. */
+export async function syncVehiclePhotoState(tenantId: string, vehicleId: string): Promise<void> {
+  const db = await getDb();
+  const photos = await db
+    .select({
+      id: vehiclePhotos.id,
+      variants: vehiclePhotos.variants,
+      isCover: vehiclePhotos.isCover,
+      position: vehiclePhotos.position,
+    })
+    .from(vehiclePhotos)
+    .where(eq(vehiclePhotos.vehicleId, vehicleId))
+    .orderBy(asc(vehiclePhotos.position));
+
+  const cover = photos.find((photo) => photo.isCover) ?? photos[0];
+
+  await db
+    .update(vehicles)
+    .set({
+      photosCount: photos.length,
+      coverPhotoKey: cover ? (cover.variants as PhotoVariants).card : null,
+    })
+    .where(and(eq(vehicles.tenantId, tenantId), eq(vehicles.id, vehicleId)));
+
+  if (cover && !cover.isCover) {
+    await db.update(vehiclePhotos).set({ isCover: true }).where(eq(vehiclePhotos.id, cover.id));
+  }
+}
+
+export async function reorderPhotos(
+  tenantId: string,
+  vehicleId: string,
+  photoIds: string[],
+): Promise<boolean> {
+  const db = await getDb();
+  const owned = await db
+    .select({ id: vehiclePhotos.id })
+    .from(vehiclePhotos)
+    .where(and(eq(vehiclePhotos.tenantId, tenantId), eq(vehiclePhotos.vehicleId, vehicleId)));
+
+  const ownedIds = new Set(owned.map((photo) => photo.id));
+  if (photoIds.some((id) => !ownedIds.has(id))) return false;
+
+  for (const [index, photoId] of photoIds.entries()) {
+    await db.update(vehiclePhotos).set({ position: index }).where(eq(vehiclePhotos.id, photoId));
+  }
+
+  await syncVehiclePhotoState(tenantId, vehicleId);
+  return true;
+}
+
+export async function setCoverPhoto(
+  tenantId: string,
+  vehicleId: string,
+  photoId: string,
+): Promise<boolean> {
+  const db = await getDb();
+  const found = await db
+    .select({ id: vehiclePhotos.id })
+    .from(vehiclePhotos)
+    .where(
+      and(
+        eq(vehiclePhotos.tenantId, tenantId),
+        eq(vehiclePhotos.vehicleId, vehicleId),
+        eq(vehiclePhotos.id, photoId),
+      ),
+    )
+    .limit(1);
+
+  if (!found[0]) return false;
+
+  await db
+    .update(vehiclePhotos)
+    .set({ isCover: false })
+    .where(eq(vehiclePhotos.vehicleId, vehicleId));
+  await db.update(vehiclePhotos).set({ isCover: true }).where(eq(vehiclePhotos.id, photoId));
+
+  await syncVehiclePhotoState(tenantId, vehicleId);
+  return true;
+}
+
+export async function deletePhoto(
+  tenantId: string,
+  vehicleId: string,
+  photoId: string,
+): Promise<boolean> {
+  const db = await getDb();
+  const found = await db
+    .select()
+    .from(vehiclePhotos)
+    .where(
+      and(
+        eq(vehiclePhotos.tenantId, tenantId),
+        eq(vehiclePhotos.vehicleId, vehicleId),
+        eq(vehiclePhotos.id, photoId),
+      ),
+    )
+    .limit(1);
+
+  const photo = found[0];
+  if (!photo) return false;
+
+  await db.delete(vehiclePhotos).where(eq(vehiclePhotos.id, photoId));
+  await deleteObjects(photoKeys(photo.variants as PhotoVariants));
+  await syncVehiclePhotoState(tenantId, vehicleId);
+  return true;
+}
+
+export type TenantVehicleStats = {
+  total: number;
+  available: number;
+  reserved: number;
+  sold: number;
+  draft: number;
+  featured: number;
+};
+
+export async function getVehicleStats(tenantId: string): Promise<TenantVehicleStats> {
+  const db = await getDb();
+  const rows = await db
+    .select({ status: vehicles.status, value: count() })
+    .from(vehicles)
+    .where(eq(vehicles.tenantId, tenantId))
+    .groupBy(vehicles.status);
+
+  const featuredRows = await db
+    .select({ value: count() })
+    .from(vehicles)
+    .where(and(eq(vehicles.tenantId, tenantId), eq(vehicles.featured, true)));
+
+  const byStatus = Object.fromEntries(rows.map((row) => [row.status, row.value]));
+
+  return {
+    total: rows.reduce((sum, row) => sum + row.value, 0),
+    available: byStatus.available ?? 0,
+    reserved: byStatus.reserved ?? 0,
+    sold: byStatus.sold ?? 0,
+    draft: byStatus.draft ?? 0,
+    featured: featuredRows[0]?.value ?? 0,
+  };
+}
+
+/** Marcas/modelos realmente presentes no estoque — alimenta os filtros do site. */
+export async function listStockFacets(tenantId: string, onlyPublished = true) {
+  const db = await getDb();
+  const conditions = [eq(vehicles.tenantId, tenantId)];
+  if (onlyPublished) {
+    conditions.push(inArray(vehicles.status, ["available", "reserved"] as VehicleStatus[]));
+  }
+
+  const rows = await db
+    .select({
+      brand: vehicles.brand,
+      model: vehicles.model,
+      transmission: vehicles.transmission,
+      fuel: vehicles.fuel,
+      bodyType: vehicles.bodyType,
+      priceCents: vehicles.priceCents,
+      yearModel: vehicles.yearModel,
+    })
+    .from(vehicles)
+    .where(and(...conditions));
+
+  const brands = new Map<string, Set<string>>();
+  for (const row of rows) {
+    if (!brands.has(row.brand)) brands.set(row.brand, new Set());
+    brands.get(row.brand)!.add(row.model);
+  }
+
+  return {
+    brands: Array.from(brands.entries())
+      .map(([brand, models]) => ({ brand, models: Array.from(models).sort() }))
+      .sort((a, b) => a.brand.localeCompare(b.brand)),
+    transmissions: Array.from(new Set(rows.map((row) => row.transmission).filter(Boolean))),
+    fuels: Array.from(new Set(rows.map((row) => row.fuel).filter(Boolean))),
+    bodyTypes: Array.from(new Set(rows.map((row) => row.bodyType).filter(Boolean))),
+    priceRange: rows.length
+      ? {
+          min: Math.min(...rows.map((row) => row.priceCents)),
+          max: Math.max(...rows.map((row) => row.priceCents)),
+        }
+      : { min: 0, max: 0 },
+    yearRange: rows.length
+      ? {
+          min: Math.min(...rows.map((row) => row.yearModel)),
+          max: Math.max(...rows.map((row) => row.yearModel)),
+        }
+      : { min: 0, max: 0 },
+  };
+}

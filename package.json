@@ -14,7 +14,11 @@
     "db:generate": "drizzle-kit generate",
     "db:bundle": "node scripts/bundle-migrations.mjs",
     "db:apply:local": "wrangler d1 migrations apply DB --local",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "db:apply:remote": "echo \"Use: curl -X POST <URL>/api/ops/migrate -H \\\"x-ops-secret: $OPS_SECRET\\\"\""
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -37,6 +41,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.7.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "^15.2.8",
@@ -44,6 +49,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
     "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.11",
     "wrangler": "^4.11.1"
   }
 }

@@ -10,6 +10,7 @@ import { getTenantDetail, listBillingEvents } from "@/lib/services/tenants";
 import { listTenantUsers } from "@/lib/services/users";
 import { getTemplateManifest } from "@/templates/manifests";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
+import { effectiveBillingStatus, getTenantCoreById, graceDaysLeft } from "@/lib/tenant/service";
 import { BillingPanel } from "./billing-panel";
 import { DangerZone } from "./danger-zone";
 import { ImpersonateButton } from "./impersonate-button";
@@ -50,6 +51,7 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
   ]);
 
   const template = getTemplateManifest(detail.tenant.templateId);
+  const core = await getTenantCoreById(id);
 
   return (
     <>
@@ -118,12 +120,15 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
               ? {
                   status: detail.billing.status,
                   dueDay: detail.billing.dueDay,
+                  graceDays: detail.billing.graceDays,
                   amountCents: detail.billing.amountCents,
                   currentDueDate: detail.billing.currentDueDate?.toISOString() ?? null,
                   lastPaymentAt: detail.billing.lastPaymentAt?.toISOString() ?? null,
                 }
               : null
           }
+          effectiveStatus={core ? effectiveBillingStatus(core) : "adimplente"}
+          graceDaysLeft={core ? graceDaysLeft(core) : null}
           events={events.map((item) => ({
             id: item.id,
             type: item.type,

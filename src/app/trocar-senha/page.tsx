@@ -4,7 +4,7 @@ import { requirePageAuth } from "@/lib/auth/guards";
 import { defaultLandingPath } from "@/lib/auth/session";
 import { ChangePasswordForm } from "./change-password-form";
 
-export const metadata: Metadata = { title: "Trocar senha" };
+export const metadata: Metadata = { title: "Trocar senha", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function ChangePasswordPage() {

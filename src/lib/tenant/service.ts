@@ -1,8 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { billingStatus, tenants } from "@/db/schema";
-import type { BillingStatus } from "@/db/schema";
-import type { BlockMode, TenantStatus } from "@/db/schema";
+import type { BillingStatus, BlockMode, TenantStatus } from "@/db/schema";
 import { cacheKeys, cached, invalidate } from "@/lib/cache";
 
 /** Núcleo do tenant usado em toda request autenticada e no site público. JSON-safe (datas em ms). */
@@ -16,6 +15,7 @@ export type TenantCore = {
   billing: {
     status: BillingStatus;
     dueDay: number;
+    graceDays: number;
     currentDueDate: number | null;
   } | null;
 };
@@ -34,6 +34,7 @@ async function loadTenantCore(where: "id" | "slug", value: string): Promise<Tena
       blockMode: tenants.blockMode,
       billingStatus: billingStatus.status,
       dueDay: billingStatus.dueDay,
+      graceDays: billingStatus.graceDays,
       currentDueDate: billingStatus.currentDueDate,
     })
     .from(tenants)
@@ -55,6 +56,7 @@ async function loadTenantCore(where: "id" | "slug", value: string): Promise<Tena
       ? {
           status: row.billingStatus,
           dueDay: row.dueDay ?? 10,
+          graceDays: row.graceDays ?? 5,
           currentDueDate: row.currentDueDate ? row.currentDueDate.getTime() : null,
         }
       : null,
@@ -77,23 +79,14 @@ export async function invalidateTenantCache(tenant: { id: string; slug: string }
   );
 }
 
-/** O site público da revenda está no ar? */
-export function isPublicSiteAvailable(tenant: TenantCore): boolean {
-  if (tenant.status !== "active") return false;
-  return tenant.billing?.status !== "suspenso";
-}
-
-export type PanelAccess = "full" | "readonly" | "blocked";
-
-/** Nível de acesso ao painel da revenda, considerando suspensão e block_mode. */
-export function resolvePanelAccess(tenant: TenantCore): PanelAccess {
-  const suspended = tenant.status === "suspended" || tenant.billing?.status === "suspenso";
-  if (!suspended) return "full";
-  return tenant.blockMode === "full" ? "blocked" : "readonly";
-}
-
-/** Vencimento em atraso (informativo — o bloqueio continua sendo decisão manual). */
-export function isOverdue(tenant: TenantCore, now = Date.now()): boolean {
-  if (!tenant.billing?.currentDueDate) return false;
-  return tenant.billing.currentDueDate < now && tenant.billing.status !== "adimplente";
-}
+/* A régua de cobrança/acesso vive em billing-rules.ts (pura e testável);
+   reexportamos aqui para os chamadores não precisarem saber disso. */
+export {
+  DAY_MS,
+  effectiveBillingStatus,
+  graceDaysLeft,
+  isOverdue,
+  isPublicSiteAvailable,
+  resolvePanelAccess,
+  type PanelAccess,
+} from "./billing-rules";

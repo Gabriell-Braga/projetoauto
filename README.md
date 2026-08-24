@@ -77,16 +77,68 @@ no banco do ambiente (local ou Webflow Cloud), controlando o que já rodou em `_
 
 ## Variáveis de ambiente (Webflow Cloud)
 
-| Nome | Tipo | Descrição |
-|---|---|---|
-| `AUTH_SECRET` | Secret | Chave HS256 que assina os JWT de sessão |
-| `OPS_SECRET` | Secret | Protege `/api/ops/*` |
-| `NEXT_PUBLIC_BASE_PATH` | Variable | Mount path do app (ex.: `/app`) |
+| Nome | Tipo | Obrigatória | Descrição |
+|---|---|---|---|
+| `AUTH_SECRET` | Secret | sim | Chave HS256 que assina os JWT de sessão |
+| `OPS_SECRET` | Secret | sim | Protege `/api/ops/*` |
+| `RESEND_API_KEY` | Secret | não | Ativa o envio de e-mail (redefinição de senha) |
+| `EMAIL_FROM` | Variable | não | Remetente verificado, ex.: `ProjetoAuto <nao-responda@seudominio.com.br>` |
+
+`NEXT_PUBLIC_BASE_PATH` **não precisa ser cadastrada**: o [next.config.ts](next.config.ts)
+deriva o valor do `BASE_URL` que o Webflow Cloud injeta no build. Como é inlinada no bundle
+do cliente, mudar o mount path exige um novo deploy — não basta trocar a variável.
+
+## Rotas operacionais
+
+Todas exigem o header `x-ops-secret`.
+
+| Rota | O que faz |
+|---|---|
+| `POST /api/ops/migrate` | Aplica as migrations pendentes no banco do ambiente |
+| `POST /api/ops/bootstrap` | Cria o primeiro super-admin e popula o catálogo de marcas |
+| `POST /api/ops/billing` | Roda a régua de inadimplência (aceita `?dryRun=1`) |
+
+### Régua de cobrança
+
+O bloqueio **não depende do job**: [billing-rules.ts](src/lib/tenant/billing-rules.ts) calcula a
+situação real a cada request, então uma revenda vencida além da tolerância já cai antes de
+qualquer agendador rodar. O `POST /api/ops/billing` existe para o banco refletir isso e para o
+histórico registrar quando cada virada aconteceu — agende uma vez por dia em qualquer cron
+(Cloudflare, GitHub Actions, cron-job.org):
+
+```bash
+curl -X POST https://SEU-DOMINIO/app/api/ops/billing -H "x-ops-secret: $OPS_SECRET"
+```
+
+Vencido → `inadimplente` (site continua no ar). Passada a tolerância em dias configurada por
+revenda → `suspenso` (site fora do ar e painel restrito conforme `block_mode`).
+
+### Recuperação de senha
+
+`/esqueci-senha` gera um token de uso único válido por 1 hora; o banco guarda apenas o SHA-256
+dele. Com `RESEND_API_KEY` + `EMAIL_FROM` configurados o link sai por e-mail. Sem provedor, o
+pedido aparece em `/super-admin/usuarios` e o super-admin destrava pelo botão "Redefinir senha"
+— o link em si é irrecuperável por design.
+
+## Qualidade
+
+```bash
+npm run check    # typecheck + lint + testes
+npm run test     # só os testes (Vitest)
+```
+
+Os testes cobrem lógica pura: régua de cobrança e acesso, matriz de permissões, hash de senha,
+tokens de redefinição, slugs reservados e formatação pt-BR. Nada que dependa de binding do
+Cloudflare entra na suíte.
+
+O CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) roda typecheck, lint, testes,
+confere se `src/db/migrations.generated.ts` está em dia e faz o build com `BASE_URL=/app`,
+igual ao Webflow Cloud.
 
 ## Deploy
 
-Push na `main` dispara o deploy automático no Webflow Cloud. Após o primeiro deploy, rode
-`/api/ops/migrate` apontando para o domínio de produção para criar as tabelas.
+Push na `main` dispara o deploy automático no Webflow Cloud. Depois de um deploy que traga
+migration nova, rode `/api/ops/migrate` apontando para o domínio de produção.
 
 ## O que já está pronto
 

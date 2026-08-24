@@ -5,6 +5,10 @@ import { Alert } from "@/components/ui/alert";
 import { requireTenantPage } from "@/lib/auth/guards";
 import { ROLE_LABELS, can } from "@/lib/auth/rbac";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
+
 export const dynamic = "force-dynamic";
 
 const ICON = "h-3.5 w-3.5";

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/field";
@@ -17,10 +18,14 @@ export type BillingPanelProps = {
   billing: {
     status: BillingStatus;
     dueDay: number;
+    graceDays: number;
     amountCents: number;
     currentDueDate: string | null;
     lastPaymentAt: string | null;
   } | null;
+  /** Situação calculada considerando o vencimento (pode diferir da gravada). */
+  effectiveStatus: BillingStatus;
+  graceDaysLeft: number | null;
   events: {
     id: string;
     type: string;
@@ -45,7 +50,13 @@ function currentMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
+export function BillingPanel({
+  tenantId,
+  billing,
+  events,
+  effectiveStatus,
+  graceDaysLeft,
+}: BillingPanelProps) {
   const router = useRouter();
   const toast = useToast();
   const [savingSettings, setSavingSettings] = useState(false);
@@ -61,6 +72,7 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
     const result = await apiPatch(`/api/super-admin/tenants/${tenantId}/billing`, {
       status: String(form.get("status") ?? ""),
       dueDay: Number(form.get("dueDay") ?? 10),
+      graceDays: Number(form.get("graceDays") ?? 5),
       amountCents: Math.round(Number(String(form.get("amount") ?? "0").replace(",", ".")) * 100),
       currentDueDate: dueDateValue ? new Date(`${dueDateValue}T12:00:00Z`).toISOString() : null,
       note: String(form.get("note") ?? ""),
@@ -104,8 +116,26 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
     ? new Date(billing.currentDueDate).toISOString().slice(0, 10)
     : "";
 
+  const drifted = billing !== null && effectiveStatus !== billing.status;
+
   return (
     <div className="flex flex-col gap-4">
+      {drifted ? (
+        <Alert tone={effectiveStatus === "suspenso" ? "danger" : "warning"}>
+          Pelo vencimento, esta revenda já conta como{" "}
+          <strong className="font-medium">{BILLING_STATUS_LABELS[effectiveStatus]}</strong> — e o
+          bloqueio já está valendo. O registro só será atualizado no próximo giro da régua de
+          cobrança.
+        </Alert>
+      ) : null}
+
+      {graceDaysLeft !== null && !drifted ? (
+        <Alert tone="warning">
+          Vencimento em atraso. Suspensão automática em{" "}
+          <strong className="font-medium">{graceDaysLeft} dia(s)</strong>.
+        </Alert>
+      ) : null}
+
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -144,6 +174,21 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
                       </option>
                     ))}
                   </Select>
+                </FormField>
+
+                <FormField
+                  label="Tolerância (dias)"
+                  htmlFor="graceDays"
+                  hint="Dias após o vencimento até a suspensão automática"
+                >
+                  <Input
+                    id="graceDays"
+                    name="graceDays"
+                    type="number"
+                    min={0}
+                    max={60}
+                    defaultValue={billing?.graceDays ?? 5}
+                  />
                 </FormField>
 
                 <FormField label="Próximo vencimento" htmlFor="currentDueDate">

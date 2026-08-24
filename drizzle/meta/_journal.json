@@ -15,6 +15,13 @@
       "when": 1787463414017,
       "tag": "0001_tenant_gtm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787542826093,
+      "tag": "0002_grace_and_password_resets",
+      "breakpoints": true
     }
   ]
 }

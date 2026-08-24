@@ -65,6 +65,7 @@ export const updateTenantSchema = z.object({
 export const billingUpdateSchema = z.object({
   status: z.enum(BILLING_STATUS).optional(),
   dueDay: z.coerce.number().int().min(1).max(28).optional(),
+  graceDays: z.coerce.number().int().min(0).max(60).optional(),
   amountCents: z.coerce.number().int().min(0).optional(),
   currentDueDate: z.coerce.date().optional().nullable(),
   note: optionalText(500),

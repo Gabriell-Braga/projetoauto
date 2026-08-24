@@ -1,11 +1,17 @@
 # Copie para .dev.vars (não versionado) antes de rodar `npm run preview`.
 # No Webflow Cloud, cadastre os mesmos nomes em Environment Variables / Secret Variables.
 
-# Segredo usado para assinar os JWT de sessão (gere com: openssl rand -base64 48)
+# Assina os JWT de sessão. Gere com: openssl rand -base64 48
 AUTH_SECRET="troque-por-um-segredo-longo-e-aleatorio"
 
-# Segredo das rotas operacionais /api/ops/* (migrations e bootstrap)
+# Protege as rotas operacionais /api/ops/* (migrations, bootstrap e cobrança)
 OPS_SECRET="troque-por-outro-segredo-longo"
 
-# Mount path do app no site Webflow (ex.: /app). Deixe vazio em dev local.
-NEXT_PUBLIC_BASE_PATH=""
+# Opcional: ativa o envio de e-mail da redefinição de senha.
+# Sem isso o fluxo continua funcionando — o pedido aparece em /super-admin/usuarios
+# para o super-admin destravar a pessoa manualmente.
+# RESEND_API_KEY="re_..."
+# EMAIL_FROM="ProjetoAuto <nao-responda@seudominio.com.br>"
+
+# O mount path NÃO precisa ser cadastrado: o next.config.ts deriva
+# NEXT_PUBLIC_BASE_PATH do BASE_URL que o Webflow Cloud injeta no build.

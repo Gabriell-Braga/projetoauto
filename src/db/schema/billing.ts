@@ -14,6 +14,8 @@ export const billingStatus = sqliteTable(
     status: text("status").$type<BillingStatus>().notNull().default("adimplente"),
     /** Dia do mês do vencimento (1-28). */
     dueDay: integer("due_day").notNull().default(10),
+    /** Dias de tolerância entre o vencimento e a suspensão automática. */
+    graceDays: integer("grace_days").notNull().default(5),
     amountCents: integer("amount_cents").notNull().default(0),
     currentDueDate: integer("current_due_date", { mode: "timestamp_ms" }),
     lastPaymentAt: integer("last_payment_at", { mode: "timestamp_ms" }),

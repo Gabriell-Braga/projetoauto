@@ -49,5 +49,15 @@ export const MIGRATIONS: BundledMigration[] = [
     "statements": [
       "ALTER TABLE `tenants` ADD `gtm_code` text;"
     ]
+  },
+  {
+    "tag": "0002_grace_and_password_resets",
+    "statements": [
+      "CREATE TABLE `password_resets` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`user_id` text NOT NULL,\n\t`token_hash` text NOT NULL,\n\t`expires_at` integer NOT NULL,\n\t`used_at` integer,\n\t`delivered` integer DEFAULT false NOT NULL,\n\t`requested_ip` text,\n\t`created_at` integer NOT NULL,\n\tFOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      "CREATE UNIQUE INDEX `password_resets_token_unique` ON `password_resets` (`token_hash`);",
+      "CREATE INDEX `password_resets_user_idx` ON `password_resets` (`user_id`,`created_at`);",
+      "CREATE INDEX `password_resets_expires_idx` ON `password_resets` (`expires_at`);",
+      "ALTER TABLE `billing_status` ADD `grace_days` integer DEFAULT 5 NOT NULL;"
+    ]
   }
 ];

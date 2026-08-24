@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
@@ -11,7 +12,7 @@ import {
 import { InstrumentPanel } from "./instrument-panel";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Entrar" };
+export const metadata: Metadata = { title: "Entrar", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -69,9 +70,17 @@ export default async function LoginPage({
               <LoginForm next={params.next} />
             </div>
 
-            <p className="mt-8 border-t border-border pt-4 text-xs text-faint">
-              Sem acesso? Fale com o administrador da sua revenda.
-            </p>
+            <div className="mt-8 border-t border-border pt-4">
+              <Link
+                href="/esqueci-senha"
+                className="text-[13px] text-accent-text hover:underline"
+              >
+                Esqueci minha senha
+              </Link>
+              <p className="mt-2 text-xs text-faint">
+                Sem acesso? Fale com o administrador da sua revenda.
+              </p>
+            </div>
           </div>
         </div>
 

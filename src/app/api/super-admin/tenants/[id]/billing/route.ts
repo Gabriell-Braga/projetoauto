@@ -41,6 +41,7 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
   const values = {
     ...(input.status ? { status: input.status } : {}),
     ...(input.dueDay !== undefined ? { dueDay: input.dueDay } : {}),
+    ...(input.graceDays !== undefined ? { graceDays: input.graceDays } : {}),
     ...(input.amountCents !== undefined ? { amountCents: input.amountCents } : {}),
     ...(input.currentDueDate !== undefined ? { currentDueDate: input.currentDueDate } : {}),
   };
@@ -52,6 +53,7 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
       tenantId: id,
       status: input.status ?? "adimplente",
       dueDay: input.dueDay ?? 10,
+      graceDays: input.graceDays ?? 5,
       amountCents: input.amountCents ?? 0,
       currentDueDate: input.currentDueDate ?? nextDueDate(input.dueDay ?? 10),
     });

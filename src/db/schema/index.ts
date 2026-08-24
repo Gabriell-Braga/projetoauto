@@ -5,3 +5,4 @@ export * from "./billing";
 export * from "./vehicles";
 export * from "./leads";
 export * from "./audit";
+export * from "./password-resets";

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LogoutButton } from "@/components/layout/logout-button";
 
-export const metadata: Metadata = { title: "Acesso suspenso" };
+export const metadata: Metadata = { title: "Acesso suspenso", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default function BlockedPage() {

@@ -7,6 +7,7 @@ import { TemplatePicker } from "@/components/admin/template-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, Input, Select } from "@/components/ui/field";
+import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPatch, apiUpload } from "@/lib/client/api";
 import { ACCEPTED_INPUT, blobFileName, resizeSingle } from "@/lib/client/images";
 import { mediaUrl } from "@/lib/paths";
@@ -40,24 +41,21 @@ export function IdentityPanel({
   readOnly?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [templateId, setTemplateId] = useState(initial.templateId);
   const [theme, setTheme] = useState(initial.theme);
   const [logoKey, setLogoKey] = useState(initial.logoKey);
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function updateTheme(key: keyof IdentityValues["theme"], value: string) {
     setTheme((current) => ({ ...current, [key]: value }));
-    setSaved(false);
   }
 
   async function handleLogo(file: File | undefined) {
     if (!file) return;
     setBusy(true);
-    setError(null);
 
     try {
       const blob = await resizeSingle(file, 480);
@@ -65,13 +63,13 @@ export function IdentityPanel({
       formData.append("file", blob, blobFileName(blob, "logo"));
       const result = await apiUpload<{ key: string }>("/api/admin/site/logo", formData);
       if (!result.ok) {
-        setError(result.error);
+        toast.error(result.error);
       } else {
         setLogoKey(result.data.key);
         router.refresh();
       }
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Falha no upload");
+      toast.error(uploadError instanceof Error ? uploadError.message : "Falha no upload");
     }
 
     setBusy(false);
@@ -83,7 +81,7 @@ export function IdentityPanel({
     const result = await apiDelete("/api/admin/site/logo");
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
     setLogoKey(null);
@@ -92,23 +90,21 @@ export function IdentityPanel({
 
   async function handleSave() {
     setBusy(true);
-    setError(null);
-    setSaved(false);
 
     const result = await apiPatch("/api/admin/site", { templateId, theme });
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
-    setSaved(true);
+    toast.success("Identidade salva.");
     router.refresh();
   }
 
   const logoUrl = mediaUrl(logoKey);
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Logo</CardTitle>
@@ -118,12 +114,12 @@ export function IdentityPanel({
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center gap-5">
-            <div className="flex h-20 w-40 items-center justify-center rounded-lg border border-ink-200 bg-ink-50">
+            <div className="flex h-20 w-40 items-center justify-center rounded border border-border bg-surface-2">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt="Logo" className="max-h-16 max-w-36 object-contain" />
               ) : (
-                <span className="text-xs text-ink-400">Sem logo</span>
+                <span className="text-xs text-faint">Sem logo</span>
               )}
             </div>
 
@@ -142,7 +138,7 @@ export function IdentityPanel({
                 disabled={readOnly || busy}
                 onClick={() => inputRef.current?.click()}
               >
-                <Upload className="h-4 w-4" />
+                <Upload className="h-3.5 w-3.5" />
                 Enviar logo
               </Button>
               {logoKey ? (
@@ -152,7 +148,7 @@ export function IdentityPanel({
                   disabled={readOnly || busy}
                   onClick={handleRemoveLogo}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                   Remover
                 </Button>
               ) : null}
@@ -186,7 +182,7 @@ export function IdentityPanel({
                     value={theme[key]}
                     disabled={readOnly}
                     onChange={(event) => updateTheme(key, event.target.value)}
-                    className="h-10 w-12 cursor-pointer rounded-lg border border-ink-200 bg-white p-1"
+                    className="h-10 w-12 cursor-pointer rounded border border-border bg-surface p-1"
                   />
                   <Input
                     id={`theme-${key}`}
@@ -231,7 +227,7 @@ export function IdentityPanel({
           </div>
 
           <div
-            className="rounded-lg border border-ink-200 p-4"
+            className="rounded border border-border p-4"
             style={{ backgroundColor: theme.surface }}
           >
             <p
@@ -240,11 +236,11 @@ export function IdentityPanel({
             >
               Prévia do título
             </p>
-            <p className="mt-1 text-xs text-ink-500" style={{ fontFamily: theme.fontBody }}>
+            <p className="mt-1 text-xs text-muted" style={{ fontFamily: theme.fontBody }}>
               Assim ficam os textos do seu site.
             </p>
             <span
-              className="mt-3 inline-block rounded-lg px-4 py-2 text-xs font-medium"
+              className="mt-3 inline-block rounded px-4 py-2 text-xs font-medium"
               style={{ backgroundColor: theme.primary, color: theme.primaryForeground }}
             >
               Botão de ação
@@ -266,26 +262,15 @@ export function IdentityPanel({
             disabled={readOnly}
             onChange={(value) => {
               setTemplateId(value);
-              setSaved(false);
             }}
           />
         </CardContent>
       </Card>
 
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-      {saved ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Alterações salvas.
-        </p>
-      ) : null}
 
       {!readOnly ? (
-        <Button type="button" disabled={busy} onClick={handleSave}>
-          {busy ? "Salvando..." : "Salvar identidade"}
+        <Button type="button" loading={busy} onClick={handleSave}>
+          Salvar identidade
         </Button>
       ) : null}
     </div>

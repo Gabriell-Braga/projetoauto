@@ -6,6 +6,7 @@ import { TemplatePicker } from "@/components/admin/template-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, Input, Select, Textarea } from "@/components/ui/field";
+import { useToast } from "@/components/ui/toast";
 import { apiPatch } from "@/lib/client/api";
 import { slugify } from "@/lib/utils";
 
@@ -24,18 +25,14 @@ export type TenantSettingsValues = {
 
 export function TenantSettingsForm({ tenant }: { tenant: TenantSettingsValues }) {
   const router = useRouter();
+  const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-
   const [slug, setSlug] = useState(tenant.slug);
   const [templateId, setTemplateId] = useState(tenant.templateId);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    setError(null);
-    setSaved(false);
 
     const form = new FormData(event.currentTarget);
     const result = await apiPatch(`/api/super-admin/tenants/${tenant.id}`, {
@@ -50,19 +47,17 @@ export function TenantSettingsForm({ tenant }: { tenant: TenantSettingsValues })
       gtmCode: String(form.get("gtmCode") ?? ""),
     });
 
+    setSaving(false);
     if (!result.ok) {
-      setError(result.error);
-      setSaving(false);
+      toast.error(result.error);
       return;
     }
-
-    setSaved(true);
-    setSaving(false);
+    toast.success("Revenda atualizada.");
     router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Dados cadastrais</CardTitle>
@@ -93,7 +88,7 @@ export function TenantSettingsForm({ tenant }: { tenant: TenantSettingsValues })
             <FormField
               label="Situação"
               htmlFor="status"
-              hint="Suspender derruba o site público imediatamente"
+              hint="Suspender tira o site público do ar na hora"
             >
               <Select id="status" name="status" defaultValue={tenant.status}>
                 <option value="active">Ativa</option>
@@ -101,7 +96,11 @@ export function TenantSettingsForm({ tenant }: { tenant: TenantSettingsValues })
               </Select>
             </FormField>
 
-            <FormField label="Bloqueio na suspensão" htmlFor="blockMode">
+            <FormField
+              label="Bloqueio na suspensão"
+              htmlFor="blockMode"
+              hint="Como o painel da revenda se comporta"
+            >
               <Select id="blockMode" name="blockMode" defaultValue={tenant.blockMode}>
                 <option value="readonly">Somente leitura</option>
                 <option value="full">Bloqueio total</option>
@@ -110,11 +109,16 @@ export function TenantSettingsForm({ tenant }: { tenant: TenantSettingsValues })
           </div>
 
           <FormField
-            label="Código GTM"
+            label="Código GTM da plataforma"
             htmlFor="gtmCode"
-            hint="Formato GTM-XXXXXXX. A revenda pode sobrescrever pelo painel dela."
+            hint="Formato GTM-XXXXXXX. A revenda pode sobrescrever com o código dela."
           >
-            <Input id="gtmCode" name="gtmCode" defaultValue={tenant.gtmCode ?? ""} placeholder="GTM-ABC1234" />
+            <Input
+              id="gtmCode"
+              name="gtmCode"
+              defaultValue={tenant.gtmCode ?? ""}
+              placeholder="GTM-ABC1234"
+            />
           </FormField>
 
           <FormField label="Observações internas" htmlFor="notes" className="mb-0">
@@ -127,7 +131,7 @@ export function TenantSettingsForm({ tenant }: { tenant: TenantSettingsValues })
         <CardHeader>
           <CardTitle>Template do site</CardTitle>
           <CardDescription>
-            Trocar o template não apaga nenhum dado — só muda a apresentação do site público.
+            Trocar o template muda só a apresentação — estoque, fotos e leads seguem intactos.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -135,20 +139,11 @@ export function TenantSettingsForm({ tenant }: { tenant: TenantSettingsValues })
         </CardContent>
       </Card>
 
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-      {saved ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Alterações salvas.
-        </p>
-      ) : null}
-
-      <Button type="submit" disabled={saving}>
-        {saving ? "Salvando..." : "Salvar alterações"}
-      </Button>
+      <div>
+        <Button type="submit" loading={saving}>
+          Salvar alterações
+        </Button>
+      </div>
     </form>
   );
 }

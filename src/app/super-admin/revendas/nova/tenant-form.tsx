@@ -4,16 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TemplatePicker } from "@/components/admin/template-picker";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/field";
+import { useToast } from "@/components/ui/toast";
 import { apiPost } from "@/lib/client/api";
 import { DEFAULT_TEMPLATE_ID } from "@/templates/manifests";
 import { slugify } from "@/lib/utils";
 
 export function NewTenantForm() {
   const router = useRouter();
+  const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [name, setName] = useState("");
@@ -30,7 +31,6 @@ export function NewTenantForm() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    setError(null);
     setFieldErrors({});
 
     const form = new FormData(event.currentTarget);
@@ -61,7 +61,7 @@ export function NewTenantForm() {
     const result = await apiPost<{ id: string }>("/api/super-admin/tenants", payload);
 
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       if (Array.isArray(result.details)) {
         const errors: Record<string, string> = {};
         for (const issue of result.details as { path: string[] | string; message: string }[]) {
@@ -74,12 +74,13 @@ export function NewTenantForm() {
       return;
     }
 
+    toast.success("Revenda criada.");
     router.push(`/super-admin/revendas/${result.data.id}`);
     router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Dados da revenda</CardTitle>
@@ -97,7 +98,7 @@ export function NewTenantForm() {
             </FormField>
 
             <FormField
-              label="Slug (endereço do site)"
+              label="Slug"
               htmlFor="slug"
               hint={slug ? `O site ficará em /r/${slug}` : "Gerado a partir do nome"}
               error={fieldErrors.slug}
@@ -198,9 +199,12 @@ export function NewTenantForm() {
       <Card>
         <CardHeader>
           <CardTitle>Acesso inicial</CardTitle>
+          <CardDescription>
+            O responsável recebe uma senha provisória e troca no primeiro acesso.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <label className="mb-4 flex items-center gap-2 text-sm text-ink-700">
+          <label className="mb-4 flex items-center gap-2 text-[13px] text-muted">
             <Checkbox checked={withAdmin} onChange={(event) => setWithAdmin(event.target.checked)} />
             Criar o usuário administrador da revenda agora
           </label>
@@ -230,17 +234,11 @@ export function NewTenantForm() {
         </CardContent>
       </Card>
 
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-
-      <div className="flex gap-3">
-        <Button type="submit" disabled={saving}>
-          {saving ? "Criando..." : "Criar revenda"}
+      <div className="flex gap-2">
+        <Button type="submit" loading={saving}>
+          Criar revenda
         </Button>
-        <Button type="button" variant="secondary" onClick={() => router.back()}>
+        <Button type="button" variant="ghost" onClick={() => router.back()}>
           Cancelar
         </Button>
       </div>

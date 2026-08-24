@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/shell";
 import { BillingStatusBadge, TenantStatusBadge } from "@/components/admin/status-badges";
+import { Pagination } from "@/components/admin/pagination";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Select } from "@/components/ui/field";
+import { Input, Label, Select } from "@/components/ui/field";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { BILLING_STATUS, TENANT_STATUS, type BillingStatus, type TenantStatus } from "@/db/schema";
 import { BILLING_STATUS_LABELS } from "@/lib/catalog/labels";
@@ -41,13 +42,11 @@ export default async function TenantsPage({
     page: Number(params.page ?? 1) || 1,
   });
 
-  const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
-
   return (
     <>
       <PageHeader
         title="Revendas"
-        description={`${result.total} revenda(s) cadastrada(s).`}
+        description={`${result.total} cadastrada(s) na plataforma.`}
         actions={
           <Link href="/super-admin/revendas/nova">
             <Button>Nova revenda</Button>
@@ -55,19 +54,15 @@ export default async function TenantsPage({
         }
       />
 
-      <Card className="mb-4">
-        <form className="flex flex-wrap items-end gap-3 px-5 py-4" action="/super-admin/revendas">
+      <Card className="mb-3">
+        <form className="flex flex-wrap items-end gap-3 px-4 py-3.5" action="/super-admin/revendas">
           <div className="min-w-56 flex-1">
-            <label className="mb-1.5 block text-xs font-medium text-ink-600" htmlFor="q">
-              Buscar
-            </label>
+            <Label htmlFor="q">Buscar</Label>
             <Input id="q" name="q" defaultValue={params.q ?? ""} placeholder="Nome ou slug" />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink-600" htmlFor="status">
-              Situação
-            </label>
-            <Select id="status" name="status" defaultValue={status ?? ""}>
+            <Label htmlFor="status">Situação</Label>
+            <Select id="status" name="status" defaultValue={status ?? ""} className="w-36">
               <option value="">Todas</option>
               {TENANT_STATUS.filter((value) => value !== "deleted").map((value) => (
                 <option key={value} value={value}>
@@ -77,10 +72,8 @@ export default async function TenantsPage({
             </Select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink-600" htmlFor="billing">
-              Financeiro
-            </label>
-            <Select id="billing" name="billing" defaultValue={billing ?? ""}>
+            <Label htmlFor="billing">Financeiro</Label>
+            <Select id="billing" name="billing" defaultValue={billing ?? ""} className="w-40">
               <option value="">Todos</option>
               {BILLING_STATUS.map((value) => (
                 <option key={value} value={value}>
@@ -100,6 +93,11 @@ export default async function TenantsPage({
           <EmptyState
             title="Nenhuma revenda encontrada"
             description="Ajuste os filtros ou cadastre uma nova revenda."
+            action={
+              <Link href="/super-admin/revendas/nova">
+                <Button size="sm">Cadastrar revenda</Button>
+              </Link>
+            }
           />
         ) : (
           <Table>
@@ -109,8 +107,8 @@ export default async function TenantsPage({
                 <Th>Template</Th>
                 <Th>Situação</Th>
                 <Th>Financeiro</Th>
-                <Th>Mensalidade</Th>
-                <Th>Vencimento</Th>
+                <Th numeric>Mensalidade</Th>
+                <Th numeric>Vencimento</Th>
                 <Th />
               </Tr>
             </Thead>
@@ -120,19 +118,23 @@ export default async function TenantsPage({
                   <Td>
                     <Link
                       href={`/super-admin/revendas/${tenant.id}`}
-                      className="font-medium text-ink-900 hover:text-brand-600"
+                      className="font-medium text-text transition-colors hover:text-accent-text"
                     >
                       {tenant.name}
                     </Link>
-                    <p className="text-xs text-ink-500">/r/{tenant.slug}</p>
+                    <p className="text-xs text-faint">/r/{tenant.slug}</p>
                   </Td>
-                  <Td className="text-xs">{getTemplateManifest(tenant.templateId).name}</Td>
-                  <Td><TenantStatusBadge status={tenant.status} /></Td>
-                  <Td><BillingStatusBadge status={tenant.billingStatus} /></Td>
-                  <Td className="tabular-nums">
+                  <Td className="text-muted">{getTemplateManifest(tenant.templateId).name}</Td>
+                  <Td>
+                    <TenantStatusBadge status={tenant.status} />
+                  </Td>
+                  <Td>
+                    <BillingStatusBadge status={tenant.billingStatus} />
+                  </Td>
+                  <Td numeric>
                     {tenant.amountCents ? formatCurrency(tenant.amountCents) : "—"}
                   </Td>
-                  <Td className="tabular-nums">{formatDate(tenant.currentDueDate)}</Td>
+                  <Td numeric>{formatDate(tenant.currentDueDate)}</Td>
                   <Td className="text-right">
                     <Link href={`/super-admin/revendas/${tenant.id}`}>
                       <Button size="sm" variant="secondary">
@@ -147,30 +149,13 @@ export default async function TenantsPage({
         )}
       </Card>
 
-      {totalPages > 1 ? (
-        <div className="mt-4 flex items-center justify-center gap-2 text-sm">
-          {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => {
-            const query = new URLSearchParams();
-            if (params.q) query.set("q", params.q);
-            if (status) query.set("status", status);
-            if (billing) query.set("billing", billing);
-            query.set("page", String(pageNumber));
-            return (
-              <Link
-                key={pageNumber}
-                href={`/super-admin/revendas?${query.toString()}`}
-                className={
-                  pageNumber === result.page
-                    ? "rounded-md bg-brand-600 px-3 py-1.5 text-white"
-                    : "rounded-md border border-ink-200 bg-white px-3 py-1.5 text-ink-600 hover:bg-ink-50"
-                }
-              >
-                {pageNumber}
-              </Link>
-            );
-          })}
-        </div>
-      ) : null}
+      <Pagination
+        basePath="/super-admin/revendas"
+        page={result.page}
+        total={result.total}
+        pageSize={result.pageSize}
+        params={{ q: params.q, status, billing }}
+      />
     </>
   );
 }

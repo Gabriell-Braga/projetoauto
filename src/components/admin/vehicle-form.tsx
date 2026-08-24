@@ -14,6 +14,7 @@ import {
   VEHICLE_STATUS_LABELS,
 } from "@/lib/catalog/labels";
 import { OPTION_GROUPS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
+import { useToast } from "@/components/ui/toast";
 import { apiGet, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
 
@@ -38,14 +39,13 @@ export function VehicleForm({
   readOnly?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const isEditing = Boolean(initial.id);
 
   const [values, setValues] = useState<VehicleFormValues>(initial);
   const [priceText, setPriceText] = useState(centsToInput(initial.priceCents));
   const [catalog, setCatalog] = useState<BrandCatalog>([]);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -66,7 +66,6 @@ export function VehicleForm({
 
   function update<K extends keyof VehicleFormValues>(key: K, value: VehicleFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
-    setSaved(false);
   }
 
   function toggleOption(optionKey: string) {
@@ -76,7 +75,6 @@ export function VehicleForm({
         ? current.options.filter((item) => item !== optionKey)
         : [...current.options, optionKey],
     }));
-    setSaved(false);
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -84,8 +82,6 @@ export function VehicleForm({
     if (readOnly) return;
 
     setSaving(true);
-    setError(null);
-    setSaved(false);
 
     const payload = {
       brand: values.brand.trim(),
@@ -114,22 +110,23 @@ export function VehicleForm({
 
     setSaving(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
 
     if (isEditing) {
-      setSaved(true);
+      toast.success("Veículo atualizado.");
       router.refresh();
       return;
     }
 
+    toast.success("Veículo cadastrado. Agora envie as fotos.");
     router.push(`/admin/estoque/${result.data.id}`);
     router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Identificação</CardTitle>
@@ -234,7 +231,6 @@ export function VehicleForm({
                 value={priceText}
                 onChange={(event) => {
                   setPriceText(event.target.value);
-                  setSaved(false);
                 }}
               />
             </FormField>
@@ -255,7 +251,7 @@ export function VehicleForm({
             </FormField>
 
             <div className="flex flex-col justify-center gap-3 pb-4">
-              <label className="flex items-center gap-2 text-sm text-ink-700">
+              <label className="flex items-center gap-2 text-[13px] text-muted">
                 <Checkbox
                   disabled={readOnly}
                   checked={values.priceOnRequest}
@@ -263,7 +259,7 @@ export function VehicleForm({
                 />
                 Preço sob consulta
               </label>
-              <label className="flex items-center gap-2 text-sm text-ink-700">
+              <label className="flex items-center gap-2 text-[13px] text-muted">
                 <Checkbox
                   disabled={readOnly}
                   checked={values.featured}
@@ -273,7 +269,7 @@ export function VehicleForm({
               </label>
             </div>
           </div>
-          <p className="text-xs text-ink-500">
+          <p className="text-xs text-muted">
             Somente anúncios <strong>disponíveis</strong> e <strong>reservados</strong> aparecem no
             site público. Rascunhos ficam visíveis apenas aqui.
           </p>
@@ -392,14 +388,14 @@ export function VehicleForm({
           <div className="space-y-4">
             {OPTION_GROUPS.map((group) => (
               <div key={group}>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
+                <p className="label-instrument mb-2 text-faint">
                   {group}
                 </p>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {VEHICLE_OPTIONS.filter((option) => option.group === group).map((option) => (
                     <label
                       key={option.key}
-                      className="flex items-center gap-2 text-sm text-ink-700"
+                      className="flex items-center gap-2 text-[13px] text-muted"
                     >
                       <Checkbox
                         disabled={readOnly}
@@ -434,23 +430,13 @@ export function VehicleForm({
         </CardContent>
       </Card>
 
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-      {saved ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Alterações salvas.
-        </p>
-      ) : null}
 
       {!readOnly ? (
-        <div className="flex gap-3">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Salvando..." : isEditing ? "Salvar alterações" : "Cadastrar veículo"}
+        <div className="flex gap-2">
+          <Button type="submit" loading={saving}>
+            {isEditing ? "Salvar alterações" : "Cadastrar veículo"}
           </Button>
-          <Button type="button" variant="secondary" onClick={() => router.push("/admin/estoque")}>
+          <Button type="button" variant="ghost" onClick={() => router.push("/admin/estoque")}>
             Cancelar
           </Button>
         </div>

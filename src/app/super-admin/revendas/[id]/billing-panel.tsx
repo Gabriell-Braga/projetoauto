@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormField, Input, Select, Textarea } from "@/components/ui/field";
+import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/field";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
+import { useToast } from "@/components/ui/toast";
 import { BILLING_STATUS_LABELS } from "@/lib/catalog/labels";
 import { apiPatch, apiPost } from "@/lib/client/api";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -46,14 +47,13 @@ function currentMonth(): string {
 
 export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
   const [savingSettings, setSavingSettings] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
 
   async function handleSettings(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSavingSettings(true);
-    setError(null);
 
     const form = new FormData(event.currentTarget);
     const dueDateValue = String(form.get("currentDueDate") ?? "");
@@ -68,18 +68,19 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
 
     setSavingSettings(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
+    toast.success("Situação da assinatura atualizada.");
     router.refresh();
   }
 
   async function handlePayment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSavingPayment(true);
-    setError(null);
 
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const result = await apiPost(`/api/super-admin/tenants/${tenantId}/billing`, {
       amountCents: Math.round(
         Number(String(form.get("paymentAmount") ?? "0").replace(",", ".")) * 100,
@@ -91,10 +92,11 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
 
     setSavingPayment(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
-    (event.target as HTMLFormElement).reset();
+    formElement.reset();
+    toast.success("Pagamento registrado.");
     router.refresh();
   }
 
@@ -103,19 +105,13 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
     : "";
 
   return (
-    <div className="space-y-4">
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-
+    <div className="flex flex-col gap-4">
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Situação da assinatura</CardTitle>
             <CardDescription>
-              Marcar como suspensa derruba o site público e restringe o painel da revenda.
+              Marcar como suspensa tira o site do ar e restringe o painel da revenda.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -160,12 +156,12 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
                 </FormField>
               </div>
 
-              <FormField label="Observação (vai para o histórico)" htmlFor="note">
+              <FormField label="Observação para o histórico" htmlFor="note">
                 <Textarea id="note" name="note" rows={2} />
               </FormField>
 
-              <Button type="submit" disabled={savingSettings}>
-                {savingSettings ? "Salvando..." : "Salvar situação"}
+              <Button type="submit" loading={savingSettings}>
+                Salvar situação
               </Button>
             </form>
           </CardContent>
@@ -205,21 +201,16 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
               </div>
 
               <FormField label="Observação" htmlFor="paymentNote">
-                <Input id="paymentNote" name="paymentNote" placeholder="PIX, boleto, etc." />
+                <Input id="paymentNote" name="paymentNote" placeholder="PIX, boleto…" />
               </FormField>
 
-              <label className="mb-4 flex items-center gap-2 text-sm text-ink-700">
-                <input
-                  type="checkbox"
-                  name="markAsPaid"
-                  defaultChecked
-                  className="h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500"
-                />
+              <label className="mb-4 flex items-center gap-2 text-[13px] text-muted">
+                <Checkbox name="markAsPaid" defaultChecked />
                 Marcar como adimplente e reativar o site
               </label>
 
-              <Button type="submit" disabled={savingPayment}>
-                {savingPayment ? "Registrando..." : "Registrar pagamento"}
+              <Button type="submit" loading={savingPayment}>
+                Registrar pagamento
               </Button>
             </form>
           </CardContent>
@@ -231,15 +222,18 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
           <CardTitle>Histórico financeiro</CardTitle>
         </CardHeader>
         {events.length === 0 ? (
-          <EmptyState title="Sem movimentações" description="Pagamentos e mudanças de situação aparecem aqui." />
+          <EmptyState
+            title="Sem movimentações"
+            description="Pagamentos e mudanças de situação aparecem aqui."
+          />
         ) : (
           <Table>
             <Thead>
               <Tr>
-                <Th>Data</Th>
+                <Th numeric>Data</Th>
                 <Th>Tipo</Th>
-                <Th>Valor</Th>
-                <Th>Competência</Th>
+                <Th numeric>Valor</Th>
+                <Th numeric>Competência</Th>
                 <Th>Detalhe</Th>
                 <Th>Responsável</Th>
               </Tr>
@@ -247,21 +241,25 @@ export function BillingPanel({ tenantId, billing, events }: BillingPanelProps) {
             <tbody>
               {events.map((item) => (
                 <Tr key={item.id}>
-                  <Td className="whitespace-nowrap">{formatDateTime(new Date(item.createdAt))}</Td>
+                  <Td numeric className="whitespace-nowrap text-muted">
+                    {formatDateTime(new Date(item.createdAt))}
+                  </Td>
                   <Td>{EVENT_LABELS[item.type] ?? item.type}</Td>
-                  <Td className="tabular-nums">
+                  <Td numeric>
                     {item.amountCents !== null ? formatCurrency(item.amountCents) : "—"}
                   </Td>
-                  <Td>{item.referenceMonth ?? "—"}</Td>
-                  <Td className="max-w-64 text-xs">
+                  <Td numeric className="text-muted">
+                    {item.referenceMonth ?? "—"}
+                  </Td>
+                  <Td className="max-w-64 text-xs text-muted">
                     {item.statusFrom || item.statusTo ? (
-                      <span className="mr-2">
+                      <span className="mr-2 text-faint">
                         {item.statusFrom ?? "—"} → {item.statusTo ?? "—"}
                       </span>
                     ) : null}
                     {item.note}
                   </Td>
-                  <Td className="text-xs">{item.createdByEmail ?? "—"}</Td>
+                  <Td className="text-xs text-faint">{item.createdByEmail ?? "—"}</Td>
                 </Tr>
               ))}
             </tbody>

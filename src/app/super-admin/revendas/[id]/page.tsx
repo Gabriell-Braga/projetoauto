@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/shell";
+import { Button } from "@/components/ui/button";
 import { BillingStatusBadge, TenantStatusBadge } from "@/components/admin/status-badges";
 import { StatCard, StatGrid } from "@/components/admin/stat-card";
-import { cn, formatNumber } from "@/lib/utils";
+import { formatNumber } from "@/lib/utils";
 import { getTenantDetail, listBillingEvents } from "@/lib/services/tenants";
 import { listTenantUsers } from "@/lib/services/users";
 import { getTemplateManifest } from "@/templates/manifests";
@@ -12,6 +13,7 @@ import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { BillingPanel } from "./billing-panel";
 import { DangerZone } from "./danger-zone";
 import { ImpersonateButton } from "./impersonate-button";
+import { Tabs } from "@/components/ui/tabs";
 import { TenantSettingsForm } from "./tenant-settings";
 import { TenantUsersPanel } from "./users-panel";
 
@@ -62,14 +64,7 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
               disabled={detail.tenant.status === "suspended" && detail.tenant.blockMode === "full"}
             />
             <Link href={tenantPublicPath(detail.tenant.slug)} target="_blank">
-              <span className="inline-flex h-10 items-center rounded-lg border border-ink-200 bg-white px-4 text-sm font-medium text-ink-900 hover:bg-ink-50">
-                Ver site
-              </span>
-            </Link>
-            <Link href="/super-admin/revendas">
-              <span className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-ink-600 hover:bg-ink-100">
-                Voltar
-              </span>
+              <Button variant="secondary">Ver site</Button>
             </Link>
           </>
         }
@@ -80,28 +75,20 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
         <BillingStatusBadge status={detail.billing?.status ?? null} />
       </div>
 
-      <StatGrid>
+      <StatGrid className="xl:grid-cols-3">
         <StatCard label="Veículos" value={formatNumber(detail.counters.vehicles)} />
         <StatCard label="Leads" value={formatNumber(detail.counters.leads)} />
         <StatCard label="Usuários" value={formatNumber(detail.counters.users)} />
       </StatGrid>
 
-      <div className="mb-5 flex gap-1 border-b border-ink-200">
-        {TABS.map((item) => (
-          <Link
-            key={item.key}
-            href={`/super-admin/revendas/${id}?aba=${item.key}`}
-            className={cn(
-              "-mb-px border-b-2 px-4 py-2 text-sm transition-colors",
-              tab === item.key
-                ? "border-brand-600 font-medium text-brand-700"
-                : "border-transparent text-ink-500 hover:text-ink-800",
-            )}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </div>
+      <Tabs
+        active={tab}
+        items={TABS.map((item) => ({
+          key: item.key,
+          label: item.label,
+          href: `/super-admin/revendas/${id}?aba=${item.key}`,
+        }))}
+      />
 
       {tab === "dados" ? (
         <div className="space-y-6">

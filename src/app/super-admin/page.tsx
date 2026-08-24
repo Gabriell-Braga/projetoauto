@@ -13,16 +13,13 @@ export const metadata: Metadata = { title: "Painel Geral" };
 export const dynamic = "force-dynamic";
 
 export default async function SuperAdminHome() {
-  const [stats, recent] = await Promise.all([
-    getPlatformStats(),
-    listTenants({ pageSize: 8 }),
-  ]);
+  const [stats, recent] = await Promise.all([getPlatformStats(), listTenants({ pageSize: 8 })]);
 
   return (
     <>
       <PageHeader
         title="Visão geral"
-        description="Acompanhe as revendas, a adimplência e o volume da plataforma."
+        description="Revendas, adimplência e volume da plataforma."
         actions={
           <Link href="/super-admin/revendas/nova">
             <Button>Nova revenda</Button>
@@ -31,22 +28,39 @@ export default async function SuperAdminHome() {
       />
 
       <StatGrid>
-        <StatCard label="Revendas ativas" value={formatNumber(stats.tenantsActive)} hint={`${formatNumber(stats.tenantsTotal)} no total`} />
         <StatCard
-          label="Com pendência financeira"
+          label="Revendas ativas"
+          value={formatNumber(stats.tenantsActive)}
+          hint={`${formatNumber(stats.tenantsTotal)} no total`}
+        />
+        <StatCard
+          label="Com pendência"
           value={formatNumber(stats.overdue)}
           tone={stats.overdue > 0 ? "warning" : "default"}
           hint="Inadimplentes ou suspensas"
         />
-        <StatCard label="Revendas suspensas" value={formatNumber(stats.tenantsSuspended)} tone={stats.tenantsSuspended > 0 ? "danger" : "default"} />
-        <StatCard label="Veículos cadastrados" value={formatNumber(stats.vehicles)} />
-        <StatCard label="Leads não atendidos" value={formatNumber(stats.leadsNew)} tone={stats.leadsNew > 0 ? "warning" : "default"} />
+        <StatCard
+          label="Suspensas"
+          value={formatNumber(stats.tenantsSuspended)}
+          tone={stats.tenantsSuspended > 0 ? "danger" : "default"}
+          hint="Site público fora do ar"
+        />
+        <StatCard label="Veículos" value={formatNumber(stats.vehicles)} hint="Em toda a base" />
+        <StatCard
+          label="Leads não atendidos"
+          value={formatNumber(stats.leadsNew)}
+          tone={stats.leadsNew > 0 ? "warning" : "default"}
+          hint="Somando todas as revendas"
+        />
       </StatGrid>
 
       <Card>
-        <CardHeader className="flex items-center justify-between">
+        <CardHeader className="flex items-center justify-between gap-3">
           <CardTitle>Revendas recentes</CardTitle>
-          <Link href="/super-admin/revendas" className="text-sm text-brand-600 hover:underline">
+          <Link
+            href="/super-admin/revendas"
+            className="label-instrument text-muted transition-colors hover:text-text"
+          >
             Ver todas
           </Link>
         </CardHeader>
@@ -68,23 +82,30 @@ export default async function SuperAdminHome() {
                 <Th>Revenda</Th>
                 <Th>Situação</Th>
                 <Th>Financeiro</Th>
-                <Th>Vencimento</Th>
-                <Th>Criada em</Th>
+                <Th numeric>Vencimento</Th>
+                <Th numeric>Criada em</Th>
               </Tr>
             </Thead>
             <tbody>
               {recent.items.map((tenant) => (
                 <Tr key={tenant.id}>
                   <Td>
-                    <Link href={`/super-admin/revendas/${tenant.id}`} className="font-medium text-ink-900 hover:text-brand-600">
+                    <Link
+                      href={`/super-admin/revendas/${tenant.id}`}
+                      className="font-medium text-text transition-colors hover:text-accent-text"
+                    >
                       {tenant.name}
                     </Link>
-                    <p className="text-xs text-ink-500">/r/{tenant.slug}</p>
+                    <p className="text-xs text-faint">/r/{tenant.slug}</p>
                   </Td>
-                  <Td><TenantStatusBadge status={tenant.status} /></Td>
-                  <Td><BillingStatusBadge status={tenant.billingStatus} /></Td>
-                  <Td>{formatDate(tenant.currentDueDate)}</Td>
-                  <Td>{formatDate(tenant.createdAt)}</Td>
+                  <Td>
+                    <TenantStatusBadge status={tenant.status} />
+                  </Td>
+                  <Td>
+                    <BillingStatusBadge status={tenant.billingStatus} />
+                  </Td>
+                  <Td numeric>{formatDate(tenant.currentDueDate)}</Td>
+                  <Td numeric>{formatDate(tenant.createdAt)}</Td>
                 </Tr>
               ))}
             </tbody>

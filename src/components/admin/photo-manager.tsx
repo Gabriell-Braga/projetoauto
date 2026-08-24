@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Star, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPatch, apiUpload } from "@/lib/client/api";
 import { ACCEPTED_INPUT, buildPhotoFormData, generateVariants } from "@/lib/client/images";
 import { mediaUrl } from "@/lib/paths";
@@ -17,6 +18,8 @@ export type PhotoItem = {
   position: number;
 };
 
+const MAX_PHOTOS = 40;
+
 export function PhotoManager({
   vehicleId,
   photos,
@@ -27,20 +30,20 @@ export function PhotoManager({
   disabled?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<PhotoItem[]>(photos);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
     const files = Array.from(fileList);
 
     setBusy(true);
-    setError(null);
     setProgress({ done: 0, total: files.length });
 
+    let uploaded = 0;
     for (const [index, file] of files.entries()) {
       try {
         const variants = await generateVariants(file);
@@ -50,12 +53,13 @@ export function PhotoManager({
         );
 
         if (!result.ok) {
-          setError(`${file.name}: ${result.error}`);
+          toast.error(`${file.name}: ${result.error}`);
           break;
         }
         setItems(result.data.photos);
+        uploaded += 1;
       } catch (uploadError) {
-        setError(
+        toast.error(
           uploadError instanceof Error
             ? `${file.name}: ${uploadError.message}`
             : `Falha ao processar ${file.name}`,
@@ -68,18 +72,25 @@ export function PhotoManager({
     setBusy(false);
     setProgress(null);
     if (inputRef.current) inputRef.current.value = "";
-    router.refresh();
+    if (uploaded > 0) {
+      toast.success(uploaded === 1 ? "Foto enviada." : `${uploaded} fotos enviadas.`);
+      router.refresh();
+    }
   }
 
   async function persistOrder(next: PhotoItem[]) {
+    const previous = items;
     setItems(next);
     setBusy(true);
+
     const result = await apiPatch(`/api/admin/vehicles/${vehicleId}/photos`, {
       photoIds: next.map((photo) => photo.id),
     });
+
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      setItems(previous);
+      toast.error(result.error);
       return;
     }
     router.refresh();
@@ -94,41 +105,48 @@ export function PhotoManager({
   }
 
   async function handleCover(photoId: string) {
+    const previous = items;
+    setItems((current) => current.map((photo) => ({ ...photo, isCover: photo.id === photoId })));
     setBusy(true);
-    setError(null);
+
     const result = await apiPatch(`/api/admin/vehicles/${vehicleId}/photos`, { photoId });
     setBusy(false);
+
     if (!result.ok) {
-      setError(result.error);
+      setItems(previous);
+      toast.error(result.error);
       return;
     }
-    setItems((current) =>
-      current.map((photo) => ({ ...photo, isCover: photo.id === photoId })),
-    );
+    toast.success("Capa definida.");
     router.refresh();
   }
 
   async function handleDelete(photoId: string) {
     if (!window.confirm("Remover esta foto?")) return;
+
     setBusy(true);
-    setError(null);
     const result = await apiDelete(`/api/admin/vehicles/${vehicleId}/photos/${photoId}`);
     setBusy(false);
+
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
     setItems((current) => current.filter((photo) => photo.id !== photoId));
+    toast.success("Foto removida.");
     router.refresh();
   }
+
+  const iconButton =
+    "grid h-6 w-6 place-items-center rounded-sm text-muted transition-colors hover:bg-surface-3 hover:text-text disabled:opacity-30 disabled:hover:bg-transparent";
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Fotos</CardTitle>
         <CardDescription>
-          A primeira foto é a capa. As imagens são redimensionadas no seu navegador antes do envio
-          (miniatura, listagem e ampliada).
+          A primeira foto é a capa. As imagens são reduzidas no seu navegador antes do envio, em
+          três tamanhos.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -146,60 +164,59 @@ export function PhotoManager({
           <Button
             type="button"
             variant="secondary"
-            disabled={disabled || busy}
+            disabled={disabled || items.length >= MAX_PHOTOS}
+            loading={busy && progress !== null}
             onClick={() => inputRef.current?.click()}
           >
-            <Upload className="h-4 w-4" />
+            <Upload className="h-3.5 w-3.5" />
             Adicionar fotos
           </Button>
           {progress ? (
-            <span className="text-sm text-ink-500">
-              Enviando {progress.done + 1} de {progress.total}...
+            <span aria-live="polite" className="text-[13px] text-muted">
+              Enviando {Math.min(progress.done + 1, progress.total)} de {progress.total}…
             </span>
           ) : null}
-          <span className="text-xs text-ink-500">{items.length} de 40 fotos</span>
+          <span className="label-instrument tnum text-faint">
+            {items.length} / {MAX_PHOTOS}
+          </span>
         </div>
 
-        {error ? (
-          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        ) : null}
-
         {items.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-ink-200 px-4 py-10 text-center text-sm text-ink-500">
-            Nenhuma foto ainda. Anúncios com fotos recebem muito mais contatos.
+          <p className="rounded border border-dashed border-border px-4 py-10 text-center text-[13px] text-muted">
+            Nenhuma foto ainda. Anúncio com foto recebe muito mais contato.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
             {items.map((photo, index) => (
               <div
                 key={photo.id}
                 className={cn(
-                  "group relative overflow-hidden rounded-lg border bg-ink-100",
-                  photo.isCover ? "border-brand-500 ring-2 ring-brand-100" : "border-ink-200",
+                  "overflow-hidden rounded border bg-surface-2",
+                  photo.isCover ? "border-accent" : "border-border",
                 )}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={mediaUrl(photo.variants.thumb) ?? ""}
-                  alt={`Foto ${index + 1}`}
-                  className="aspect-4/3 w-full object-cover"
-                  loading="lazy"
-                />
+                <div className="relative aspect-4/3 w-full bg-surface-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={mediaUrl(photo.variants.thumb) ?? ""}
+                    alt={`Foto ${index + 1}`}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
+                  {photo.isCover ? (
+                    <span className="label-instrument absolute left-1.5 top-1.5 rounded-sm bg-accent px-1.5 py-0.5 text-accent-contrast">
+                      Capa
+                    </span>
+                  ) : null}
+                </div>
 
-                {photo.isCover ? (
-                  <span className="absolute left-1.5 top-1.5 rounded bg-brand-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                    Capa
-                  </span>
-                ) : null}
-
-                <div className="flex items-center justify-between gap-1 border-t border-ink-200 bg-white px-1.5 py-1">
+                <div className="flex items-center justify-between gap-1 border-t border-border bg-surface px-1.5 py-1">
                   <div className="flex gap-0.5">
                     <button
                       type="button"
                       title="Mover para a esquerda"
-                      className="rounded p-1 text-ink-500 hover:bg-ink-100 disabled:opacity-30"
+                      className={iconButton}
                       disabled={disabled || busy || index === 0}
                       onClick={() => move(index, -1)}
                     >
@@ -208,7 +225,7 @@ export function PhotoManager({
                     <button
                       type="button"
                       title="Mover para a direita"
-                      className="rounded p-1 text-ink-500 hover:bg-ink-100 disabled:opacity-30"
+                      className={iconButton}
                       disabled={disabled || busy || index === items.length - 1}
                       onClick={() => move(index, 1)}
                     >
@@ -219,10 +236,7 @@ export function PhotoManager({
                     <button
                       type="button"
                       title="Definir como capa"
-                      className={cn(
-                        "rounded p-1 hover:bg-ink-100 disabled:opacity-30",
-                        photo.isCover ? "text-brand-600" : "text-ink-500",
-                      )}
+                      className={cn(iconButton, photo.isCover && "text-accent")}
                       disabled={disabled || busy || photo.isCover}
                       onClick={() => handleCover(photo.id)}
                     >
@@ -231,7 +245,7 @@ export function PhotoManager({
                     <button
                       type="button"
                       title="Remover foto"
-                      className="rounded p-1 text-ink-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
+                      className={cn(iconButton, "hover:text-danger")}
                       disabled={disabled || busy}
                       onClick={() => handleDelete(photo.id)}
                     >

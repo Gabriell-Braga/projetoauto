@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/shell";
+import { Pagination } from "@/components/admin/pagination";
 import { StatCard, StatGrid } from "@/components/admin/stat-card";
 import { VehicleStatusBadge } from "@/components/admin/status-badges";
+import { VehicleThumb } from "@/components/admin/vehicle-thumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Select } from "@/components/ui/field";
+import { Input, Label, Select } from "@/components/ui/field";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { VEHICLE_STATUS, type VehicleStatus } from "@/db/schema";
 import { requireTenantPage } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/rbac";
 import { VEHICLE_STATUS_LABELS } from "@/lib/catalog/labels";
-import { mediaUrl } from "@/lib/paths";
 import { getVehicleStats, listVehicles } from "@/lib/services/vehicles";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 
@@ -43,22 +44,12 @@ export default async function StockPage({
   ]);
 
   const canWrite = can(context.role, "vehicles:write") && context.access === "full";
-  const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
-
-  function pageHref(page: number) {
-    const query = new URLSearchParams();
-    if (params.q) query.set("q", params.q);
-    if (status) query.set("status", status);
-    if (params.sort) query.set("sort", params.sort);
-    query.set("page", String(page));
-    return `/admin/estoque?${query.toString()}`;
-  }
 
   return (
     <>
       <PageHeader
         title="Estoque"
-        description={`${formatNumber(result.total)} veículo(s) encontrados.`}
+        description={`${formatNumber(result.total)} veículo(s) no filtro atual.`}
         actions={
           canWrite ? (
             <Link href="/admin/estoque/novo">
@@ -72,23 +63,24 @@ export default async function StockPage({
         <StatCard label="Disponíveis" value={formatNumber(stats.available)} tone="success" />
         <StatCard label="Reservados" value={formatNumber(stats.reserved)} tone="warning" />
         <StatCard label="Vendidos" value={formatNumber(stats.sold)} />
-        <StatCard label="Rascunhos" value={formatNumber(stats.draft)} hint="Não aparecem no site" />
-        <StatCard label="Em destaque" value={formatNumber(stats.featured)} />
+        <StatCard label="Rascunhos" value={formatNumber(stats.draft)} hint="Fora do site" />
+        <StatCard label="Em destaque" value={formatNumber(stats.featured)} hint="Na home" />
       </StatGrid>
 
-      <Card className="mb-4">
-        <form className="flex flex-wrap items-end gap-3 px-5 py-4" action="/admin/estoque">
+      <Card className="mb-3">
+        <form className="flex flex-wrap items-end gap-3 px-4 py-3.5" action="/admin/estoque">
           <div className="min-w-56 flex-1">
-            <label className="mb-1.5 block text-xs font-medium text-ink-600" htmlFor="q">
-              Buscar
-            </label>
-            <Input id="q" name="q" defaultValue={params.q ?? ""} placeholder="Marca, modelo ou versão" />
+            <Label htmlFor="q">Buscar</Label>
+            <Input
+              id="q"
+              name="q"
+              defaultValue={params.q ?? ""}
+              placeholder="Marca, modelo ou versão"
+            />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink-600" htmlFor="status">
-              Situação
-            </label>
-            <Select id="status" name="status" defaultValue={status ?? ""}>
+            <Label htmlFor="status">Situação</Label>
+            <Select id="status" name="status" defaultValue={status ?? ""} className="w-40">
               <option value="">Todas</option>
               {VEHICLE_STATUS.map((value) => (
                 <option key={value} value={value}>
@@ -98,10 +90,8 @@ export default async function StockPage({
             </Select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink-600" htmlFor="sort">
-              Ordenar por
-            </label>
-            <Select id="sort" name="sort" defaultValue={params.sort ?? "recentes"}>
+            <Label htmlFor="sort">Ordenar por</Label>
+            <Select id="sort" name="sort" defaultValue={params.sort ?? "recentes"} className="w-44">
               <option value="recentes">Mais recentes</option>
               <option value="preco-asc">Menor preço</option>
               <option value="preco-desc">Maior preço</option>
@@ -119,7 +109,7 @@ export default async function StockPage({
         {result.items.length === 0 ? (
           <EmptyState
             title="Nenhum veículo encontrado"
-            description="Cadastre veículos para que apareçam no site da sua revenda."
+            description="Ajuste os filtros ou cadastre um veículo para ele aparecer no site."
             action={
               canWrite ? (
                 <Link href="/admin/estoque/novo">
@@ -133,11 +123,11 @@ export default async function StockPage({
             <Thead>
               <Tr>
                 <Th>Veículo</Th>
-                <Th>Ano</Th>
-                <Th>KM</Th>
-                <Th>Preço</Th>
+                <Th numeric>Ano</Th>
+                <Th numeric>KM</Th>
+                <Th numeric>Preço</Th>
                 <Th>Situação</Th>
-                <Th>Fotos</Th>
+                <Th numeric>Fotos</Th>
                 <Th />
               </Tr>
             </Thead>
@@ -145,47 +135,46 @@ export default async function StockPage({
               {result.items.map((vehicle) => (
                 <Tr key={vehicle.id}>
                   <Td>
-                    <div className="flex items-center gap-3">
-                      <div className="h-12 w-16 shrink-0 overflow-hidden rounded bg-ink-100">
-                        {vehicle.coverPhotoKey ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={mediaUrl(vehicle.coverPhotoKey) ?? ""}
-                            alt=""
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : null}
-                      </div>
+                    <div className="flex items-center gap-2.5">
+                      <VehicleThumb
+                        photoKey={vehicle.coverPhotoKey}
+                        alt={`${vehicle.brand} ${vehicle.model}`}
+                      />
                       <div className="min-w-0">
                         <Link
                           href={`/admin/estoque/${vehicle.id}`}
-                          className="font-medium text-ink-900 hover:text-brand-600"
+                          className="font-medium text-text transition-colors hover:text-accent-text"
                         >
                           {vehicle.brand} {vehicle.model}
                         </Link>
-                        {vehicle.version ? (
-                          <p className="truncate text-xs text-ink-500">{vehicle.version}</p>
-                        ) : null}
-                        {vehicle.featured ? (
-                          <Badge tone="info" className="mt-1">
-                            destaque
-                          </Badge>
-                        ) : null}
+                        <div className="flex items-center gap-2">
+                          {vehicle.version ? (
+                            <p className="truncate text-xs text-faint">{vehicle.version}</p>
+                          ) : null}
+                          {vehicle.featured ? <Badge tone="info">Destaque</Badge> : null}
+                        </div>
                       </div>
                     </div>
                   </Td>
-                  <Td className="whitespace-nowrap tabular-nums">
+                  <Td numeric className="whitespace-nowrap text-muted">
                     {vehicle.yearManufacture}/{vehicle.yearModel}
                   </Td>
-                  <Td className="tabular-nums">{formatNumber(vehicle.mileageKm)}</Td>
-                  <Td className="whitespace-nowrap tabular-nums">
-                    {vehicle.priceOnRequest ? "Sob consulta" : formatCurrency(vehicle.priceCents)}
+                  <Td numeric className="text-muted">
+                    {formatNumber(vehicle.mileageKm)}
+                  </Td>
+                  <Td numeric className="whitespace-nowrap font-medium">
+                    {vehicle.priceOnRequest ? (
+                      <span className="text-muted">Sob consulta</span>
+                    ) : (
+                      formatCurrency(vehicle.priceCents)
+                    )}
                   </Td>
                   <Td>
                     <VehicleStatusBadge status={vehicle.status} />
                   </Td>
-                  <Td className="tabular-nums">{vehicle.photosCount}</Td>
+                  <Td numeric className={vehicle.photosCount === 0 ? "text-danger" : "text-muted"}>
+                    {vehicle.photosCount}
+                  </Td>
                   <Td className="text-right">
                     <Link href={`/admin/estoque/${vehicle.id}`}>
                       <Button size="sm" variant="secondary">
@@ -200,23 +189,13 @@ export default async function StockPage({
         )}
       </Card>
 
-      {totalPages > 1 ? (
-        <div className="mt-4 flex items-center justify-center gap-3 text-sm">
-          {result.page > 1 ? (
-            <Link href={pageHref(result.page - 1)} className="text-brand-600 hover:underline">
-              Anterior
-            </Link>
-          ) : null}
-          <span className="text-ink-500">
-            Página {result.page} de {totalPages}
-          </span>
-          {result.page < totalPages ? (
-            <Link href={pageHref(result.page + 1)} className="text-brand-600 hover:underline">
-              Próxima
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
+      <Pagination
+        basePath="/admin/estoque"
+        page={result.page}
+        total={result.total}
+        pageSize={result.pageSize}
+        params={{ q: params.q, status, sort: params.sort }}
+      />
     </>
   );
 }

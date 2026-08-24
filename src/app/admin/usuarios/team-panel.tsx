@@ -9,6 +9,7 @@ import { FormField, Input, Select } from "@/components/ui/field";
 import { Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import type { Role } from "@/db/schema";
 import { ROLE_LABELS } from "@/lib/auth/rbac";
+import { useToast } from "@/components/ui/toast";
 import { apiPatch, apiPost, apiPut } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/utils";
 
@@ -40,15 +41,12 @@ export function TeamPanel({
   canWrite: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
-    setError(null);
-    setMessage(null);
 
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
@@ -62,24 +60,23 @@ export function TeamPanel({
 
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
     formElement.reset();
-    setMessage("Usuário criado. Passe a senha provisória para a pessoa.");
+    toast.success("Usuário criado. Passe a senha provisória para a pessoa.");
     router.refresh();
   }
 
   async function patchUser(id: string, payload: Record<string, unknown>) {
     setBusy(true);
-    setError(null);
-    setMessage(null);
     const result = await apiPatch(`/api/admin/users/${id}`, payload);
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
+    toast.success("Acesso atualizado.");
     router.refresh();
   }
 
@@ -90,33 +87,21 @@ export function TeamPanel({
     if (!password) return;
 
     setBusy(true);
-    setError(null);
     const result = await apiPut(`/api/admin/users/${member.id}`, {
       password,
       mustChangePassword: true,
     });
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
-    setMessage(`Senha redefinida. As sessões de ${member.email} foram encerradas.`);
+    toast.success(`Senha redefinida. As sessões de ${member.email} foram encerradas.`);
     router.refresh();
   }
 
   return (
-    <div className="space-y-4">
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-      {message ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          {message}
-        </p>
-      ) : null}
-
+    <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Equipe</CardTitle>
@@ -128,7 +113,7 @@ export function TeamPanel({
               <Th>Pessoa</Th>
               <Th>Perfil</Th>
               <Th>Situação</Th>
-              <Th>Último acesso</Th>
+              <Th numeric>Último acesso</Th>
               <Th />
             </Tr>
           </Thead>
@@ -138,13 +123,13 @@ export function TeamPanel({
               return (
                 <Tr key={member.id}>
                   <Td>
-                    <p className="font-medium text-ink-900">
+                    <p className="font-medium text-text">
                       {member.name}
                       {isSelf ? (
-                        <span className="ml-2 text-xs font-normal text-ink-500">(você)</span>
+                        <span className="ml-2 text-xs font-normal text-faint">(você)</span>
                       ) : null}
                     </p>
-                    <p className="text-xs text-ink-500">{member.email}</p>
+                    <p className="text-xs text-muted">{member.email}</p>
                   </Td>
                   <Td>
                     {canWrite && !isSelf ? (
@@ -161,7 +146,7 @@ export function TeamPanel({
                         ))}
                       </Select>
                     ) : (
-                      <span className="text-sm">{ROLE_LABELS[member.role]}</span>
+                      <span className="text-muted">{ROLE_LABELS[member.role]}</span>
                     )}
                   </Td>
                   <Td>
@@ -169,12 +154,10 @@ export function TeamPanel({
                       {member.status === "active" ? "Ativo" : "Desativado"}
                     </Badge>
                     {member.mustChangePassword ? (
-                      <Badge tone="warning" className="ml-1">
-                        senha provisória
-                      </Badge>
+                      <Badge tone="warning" className="ml-2">Senha provisória</Badge>
                     ) : null}
                   </Td>
-                  <Td className="text-xs">
+                  <Td numeric className="text-muted">
                     {member.lastLoginAt
                       ? formatDateTime(new Date(member.lastLoginAt))
                       : "Nunca acessou"}
@@ -186,7 +169,7 @@ export function TeamPanel({
                           type="button"
                           size="sm"
                           variant="secondary"
-                          disabled={busy}
+                          loading={busy}
                           onClick={() => resetPassword(member)}
                         >
                           Redefinir senha
@@ -196,7 +179,7 @@ export function TeamPanel({
                             type="button"
                             size="sm"
                             variant={member.status === "active" ? "outlineDanger" : "secondary"}
-                            disabled={busy}
+                            loading={busy}
                             onClick={() =>
                               patchUser(member.id, {
                                 status: member.status === "active" ? "disabled" : "active",
@@ -251,8 +234,8 @@ export function TeamPanel({
                 </FormField>
               </div>
 
-              <Button type="submit" disabled={busy}>
-                {busy ? "Criando..." : "Criar acesso"}
+              <Button type="submit" loading={busy}>
+                Criar acesso
               </Button>
             </form>
           </CardContent>
@@ -264,10 +247,10 @@ export function TeamPanel({
           <CardTitle>O que cada perfil pode fazer</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-2 text-sm text-ink-600">
+          <ul className="flex flex-col gap-2 text-[13px] text-muted">
             {assignableRoles.map((role) => (
               <li key={role}>
-                <strong className="text-ink-900">{ROLE_LABELS[role]}:</strong> {ROLE_HINTS[role]}
+                <strong className="font-medium text-text">{ROLE_LABELS[role]}:</strong> {ROLE_HINTS[role]}
               </li>
             ))}
           </ul>

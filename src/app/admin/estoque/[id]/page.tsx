@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/shell";
+import { Button } from "@/components/ui/button";
 import { PhotoManager } from "@/components/admin/photo-manager";
 import { VehicleStatusBadge } from "@/components/admin/status-badges";
+import { Badge } from "@/components/ui/badge";
 import { VehicleForm } from "@/components/admin/vehicle-form";
 import { requireTenantPage } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/rbac";
@@ -40,31 +43,26 @@ export default async function EditVehiclePage({ params }: Props) {
         title={`${vehicle.brand} ${vehicle.model}`}
         description={vehicle.version ?? undefined}
         actions={
-          <>
-            {vehicle.status !== "draft" ? (
-              <Link
-                href={tenantPublicPath(context.tenant.slug, `/veiculo/${vehicle.slug}`)}
-                target="_blank"
-              >
-                <span className="inline-flex h-10 items-center rounded-lg border border-ink-200 bg-white px-4 text-sm font-medium text-ink-900 hover:bg-ink-50">
-                  Ver no site
-                </span>
-              </Link>
-            ) : null}
-            <Link href="/admin/estoque">
-              <span className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-ink-600 hover:bg-ink-100">
-                Voltar
-              </span>
+          vehicle.status !== "draft" ? (
+            <Link
+              href={tenantPublicPath(context.tenant.slug, `/veiculo/${vehicle.slug}`)}
+              target="_blank"
+            >
+              <Button variant="secondary">
+                Ver no site
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
             </Link>
-          </>
+          ) : null
         }
       />
 
-      <div className="mb-5">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <VehicleStatusBadge status={vehicle.status} />
+        {vehicle.featured ? <Badge tone="info">Destaque na home</Badge> : null}
       </div>
 
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <PhotoManager
           vehicleId={vehicle.id}
           disabled={!canWrite}

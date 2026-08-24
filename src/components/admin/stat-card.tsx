@@ -1,32 +1,50 @@
 import { cn } from "@/lib/utils";
 
+const TONE: Record<string, string> = {
+  default: "text-text",
+  warning: "text-warning",
+  danger: "text-danger",
+  success: "text-positive",
+};
+
+/** Número de destaque em estilo odômetro: display, tabular, grande. */
 export function StatCard({
   label,
   value,
   hint,
   tone = "default",
+  className,
 }: {
   label: string;
   value: string | number;
   hint?: string;
   tone?: "default" | "warning" | "danger" | "success";
+  className?: string;
 }) {
-  const toneClass = {
-    default: "text-ink-900",
-    warning: "text-amber-600",
-    danger: "text-red-600",
-    success: "text-emerald-600",
-  }[tone];
-
   return (
-    <div className="rounded-xl border border-ink-200 bg-white px-5 py-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-ink-500">{label}</p>
-      <p className={cn("mt-1.5 text-2xl font-semibold tabular-nums", toneClass)}>{value}</p>
-      {hint ? <p className="mt-1 text-xs text-ink-500">{hint}</p> : null}
+    <div
+      data-theme-transition
+      className={cn("rounded border border-border bg-surface px-4 py-3.5", className)}
+    >
+      <p className="label-instrument text-muted">{label}</p>
+      <p className={cn("odometer mt-2 text-[26px] leading-none", TONE[tone])}>{value}</p>
+      {hint ? <p className="mt-2 text-xs text-faint">{hint}</p> : null}
     </div>
   );
 }
 
-export function StatGrid({ children }: { children: React.ReactNode }) {
-  return <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{children}</div>;
+export function StatGrid({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("mb-5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5", className)}
+    >
+      {children}
+    </div>
+  );
 }

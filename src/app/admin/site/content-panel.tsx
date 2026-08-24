@@ -6,6 +6,7 @@ import { Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox, FormField, Input, Textarea } from "@/components/ui/field";
+import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPatch, apiUpload } from "@/lib/client/api";
 import { ACCEPTED_INPUT, blobFileName, resizeSingle } from "@/lib/client/images";
 import { mediaUrl } from "@/lib/paths";
@@ -37,22 +38,18 @@ export function ContentPanel({
   readOnly?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [values, setValues] = useState(initial);
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function update<K extends keyof ContentValues>(key: K, value: ContentValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
-    setSaved(false);
   }
 
   async function handleSave() {
     setBusy(true);
-    setError(null);
-    setSaved(false);
 
     const result = await apiPatch("/api/admin/site", {
       aboutTitle: values.aboutTitle,
@@ -62,27 +59,30 @@ export function ContentPanel({
 
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
-    setSaved(true);
+    toast.success("Conteúdo salvo.");
     router.refresh();
   }
 
   async function handleBannerUpload(file: File | undefined) {
     if (!file) return;
     setBusy(true);
-    setError(null);
 
     try {
       const blob = await resizeSingle(file, 1920, 0.82);
       const formData = new FormData();
       formData.append("file", blob, blobFileName(blob, "banner"));
       const result = await apiUpload("/api/admin/site/banners", formData);
-      if (!result.ok) setError(result.error);
-      else router.refresh();
+      if (!result.ok) {
+        toast.error(result.error);
+      } else {
+        toast.success("Banner adicionado.");
+        router.refresh();
+      }
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Falha no upload");
+      toast.error(uploadError instanceof Error ? uploadError.message : "Falha no upload");
     }
 
     setBusy(false);
@@ -94,7 +94,7 @@ export function ContentPanel({
     const result = await apiPatch(`/api/admin/site/banners/${id}`, payload);
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
     router.refresh();
@@ -106,14 +106,14 @@ export function ContentPanel({
     const result = await apiDelete(`/api/admin/site/banners/${id}`);
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
     router.refresh();
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Sobre a revenda</CardTitle>
@@ -171,20 +171,10 @@ export function ContentPanel({
         </CardContent>
       </Card>
 
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-      {saved ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Alterações salvas.
-        </p>
-      ) : null}
 
       {!readOnly ? (
-        <Button type="button" disabled={busy} onClick={handleSave}>
-          {busy ? "Salvando..." : "Salvar conteúdo"}
+        <Button type="button" loading={busy} onClick={handleSave}>
+          Salvar conteúdo
         </Button>
       ) : null}
 
@@ -210,24 +200,24 @@ export function ContentPanel({
               type="button"
               variant="secondary"
               className="mb-4"
-              disabled={busy}
+              loading={busy}
               onClick={() => inputRef.current?.click()}
             >
-              <Upload className="h-4 w-4" />
+              <Upload className="h-3.5 w-3.5" />
               Adicionar banner
             </Button>
           ) : null}
 
           {banners.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-ink-200 px-4 py-8 text-center text-sm text-ink-500">
+            <p className="rounded border border-dashed border-border px-4 py-8 text-center text-[13px] text-muted">
               Nenhum banner cadastrado. Sem banner, a home usa um destaque padrão com o nome da
               revenda.
             </p>
           ) : (
             <div className="space-y-4">
               {banners.map((banner) => (
-                <div key={banner.id} className="rounded-lg border border-ink-200 p-4">
-                  <div className="mb-3 h-28 w-full overflow-hidden rounded bg-ink-100">
+                <div key={banner.id} className="rounded border border-border p-4">
+                  <div className="mb-3 h-28 w-full overflow-hidden rounded bg-surface-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={mediaUrl(banner.imageKey) ?? ""}
@@ -272,7 +262,7 @@ export function ContentPanel({
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 text-sm text-ink-700">
+                    <label className="flex items-center gap-2 text-[13px] text-muted">
                       <Checkbox
                         checked={banner.active}
                         disabled={readOnly || busy}
@@ -287,7 +277,7 @@ export function ContentPanel({
                         type="button"
                         size="sm"
                         variant="outlineDanger"
-                        disabled={busy}
+                        loading={busy}
                         onClick={() => deleteBanner(banner.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />

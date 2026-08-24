@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { PageHeader } from "@/components/layout/shell";
+import { Pagination } from "@/components/admin/pagination";
 import { StatCard, StatGrid } from "@/components/admin/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Select } from "@/components/ui/field";
+import { Input, Label, Select } from "@/components/ui/field";
 import { EmptyState, Table, Th, Thead, Tr } from "@/components/ui/table";
 import { LEAD_STATUS, type LeadStatus } from "@/db/schema";
 import { requireTenantPage } from "@/lib/auth/guards";
@@ -41,29 +41,17 @@ export default async function LeadsPage({
   ]);
 
   const canWrite = can(context.role, "leads:write") && context.access === "full";
-  const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
-
-  function pageHref(page: number) {
-    const query = new URLSearchParams();
-    if (params.q) query.set("q", params.q);
-    if (status) query.set("status", status);
-    query.set("page", String(page));
-    return `/admin/leads?${query.toString()}`;
-  }
 
   return (
     <>
-      <PageHeader
-        title="Leads"
-        description="Contatos recebidos pelo site da sua revenda."
-      />
+      <PageHeader title="Leads" description="Contatos recebidos pelo site da revenda." />
 
       <StatGrid>
         <StatCard
           label="Novos"
           value={formatNumber(stats.new)}
           tone={stats.new > 0 ? "warning" : "default"}
-          hint="Aguardando primeiro contato"
+          hint="Sem primeiro contato"
         />
         <StatCard label="Em atendimento" value={formatNumber(stats.in_progress)} />
         <StatCard label="Convertidos" value={formatNumber(stats.won)} tone="success" />
@@ -71,12 +59,10 @@ export default async function LeadsPage({
         <StatCard label="Total recebido" value={formatNumber(stats.total)} />
       </StatGrid>
 
-      <Card className="mb-4">
-        <form className="flex flex-wrap items-end gap-3 px-5 py-4" action="/admin/leads">
+      <Card className="mb-3">
+        <form className="flex flex-wrap items-end gap-3 px-4 py-3.5" action="/admin/leads">
           <div className="min-w-56 flex-1">
-            <label className="mb-1.5 block text-xs font-medium text-ink-600" htmlFor="q">
-              Buscar
-            </label>
+            <Label htmlFor="q">Buscar</Label>
             <Input
               id="q"
               name="q"
@@ -85,10 +71,8 @@ export default async function LeadsPage({
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink-600" htmlFor="status">
-              Situação
-            </label>
-            <Select id="status" name="status" defaultValue={status ?? ""}>
+            <Label htmlFor="status">Situação</Label>
+            <Select id="status" name="status" defaultValue={status ?? ""} className="w-44">
               <option value="">Todas</option>
               {LEAD_STATUS.map((value) => (
                 <option key={value} value={value}>
@@ -117,7 +101,7 @@ export default async function LeadsPage({
                 <Th>Interesse</Th>
                 <Th>Situação</Th>
                 <Th>Responsável</Th>
-                <Th>Recebido em</Th>
+                <Th numeric>Recebido</Th>
                 <Th />
               </Tr>
             </Thead>
@@ -150,23 +134,13 @@ export default async function LeadsPage({
         )}
       </Card>
 
-      {totalPages > 1 ? (
-        <div className="mt-4 flex items-center justify-center gap-3 text-sm">
-          {result.page > 1 ? (
-            <Link href={pageHref(result.page - 1)} className="text-brand-600 hover:underline">
-              Anterior
-            </Link>
-          ) : null}
-          <span className="text-ink-500">
-            Página {result.page} de {totalPages}
-          </span>
-          {result.page < totalPages ? (
-            <Link href={pageHref(result.page + 1)} className="text-brand-600 hover:underline">
-              Próxima
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
+      <Pagination
+        basePath="/admin/leads"
+        page={result.page}
+        total={result.total}
+        pageSize={result.pageSize}
+        params={{ q: params.q, status }}
+      />
     </>
   );
 }

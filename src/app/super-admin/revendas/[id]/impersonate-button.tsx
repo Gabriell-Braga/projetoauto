@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { apiPost } from "@/lib/client/api";
 
-/** Abre o painel da revenda como se fosse o admin dela (fica no audit_log). */
+/** Abre o painel da revenda como se fosse o admin dela — registrado na auditoria. */
 export function ImpersonateButton({
   tenantId,
   tenantName,
@@ -17,24 +18,20 @@ export function ImpersonateButton({
   disabled?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleClick() {
-    if (
-      !window.confirm(
-        `Entrar no painel de "${tenantName}"? Todas as ações ficarão registradas na auditoria como suas.`,
-      )
-    ) {
-      return;
-    }
+    const confirmed = window.confirm(
+      `Entrar no painel de "${tenantName}"? Todas as ações ficam registradas na auditoria como suas.`,
+    );
+    if (!confirmed) return;
 
     setBusy(true);
-    setError(null);
-
     const result = await apiPost<{ redirectTo: string }>("/api/auth/impersonate", { tenantId });
+
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       setBusy(false);
       return;
     }
@@ -44,12 +41,9 @@ export function ImpersonateButton({
   }
 
   return (
-    <>
-      <Button type="button" disabled={disabled || busy} onClick={handleClick}>
-        <LogIn className="h-4 w-4" />
-        {busy ? "Entrando..." : "Entrar como revenda"}
-      </Button>
-      {error ? <p className="mt-2 text-sm text-red-700">{error}</p> : null}
-    </>
+    <Button type="button" disabled={disabled} loading={busy} onClick={handleClick}>
+      <LogIn className="h-3.5 w-3.5" />
+      Entrar como revenda
+    </Button>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox, FormField, Input } from "@/components/ui/field";
+import { useToast } from "@/components/ui/toast";
 import { apiPatch } from "@/lib/client/api";
 
 export type ContactValues = {
@@ -41,6 +42,7 @@ export function ContactPanel({
   readOnly?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [values, setValues] = useState(initial);
   const [hours, setHours] = useState(() =>
     WEEKDAYS.map((_, weekday) => {
@@ -54,18 +56,13 @@ export function ContactPanel({
     }),
   );
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function update<K extends keyof ContactValues>(key: K, value: ContactValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
-    setSaved(false);
   }
 
   async function handleSave() {
     setBusy(true);
-    setError(null);
-    setSaved(false);
 
     const result = await apiPatch("/api/admin/site", {
       phone: values.phone,
@@ -87,15 +84,15 @@ export function ContactPanel({
 
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
-    setSaved(true);
+    toast.success("Dados de contato salvos.");
     router.refresh();
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Contato</CardTitle>
@@ -217,11 +214,11 @@ export function ContactPanel({
           <CardTitle>Horário de funcionamento</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {hours.map((hour, index) => (
               <div key={hour.weekday} className="flex flex-wrap items-center gap-3">
-                <span className="w-32 text-sm text-ink-700">{WEEKDAYS[hour.weekday]}</span>
-                <label className="flex items-center gap-2 text-sm text-ink-500">
+                <span className="w-32 text-[13px] text-muted">{WEEKDAYS[hour.weekday]}</span>
+                <label className="flex items-center gap-2 text-[13px] text-muted">
                   <Checkbox
                     checked={hour.closed}
                     disabled={readOnly}
@@ -229,7 +226,6 @@ export function ContactPanel({
                       const next = [...hours];
                       next[index] = { ...hour, closed: event.target.checked };
                       setHours(next);
-                      setSaved(false);
                     }}
                   />
                   Fechado
@@ -243,10 +239,9 @@ export function ContactPanel({
                     const next = [...hours];
                     next[index] = { ...hour, open: event.target.value };
                     setHours(next);
-                    setSaved(false);
                   }}
                 />
-                <span className="text-sm text-ink-400">às</span>
+                <span className="text-[13px] text-faint">às</span>
                 <Input
                   type="time"
                   className="w-32"
@@ -256,7 +251,6 @@ export function ContactPanel({
                     const next = [...hours];
                     next[index] = { ...hour, close: event.target.value };
                     setHours(next);
-                    setSaved(false);
                   }}
                 />
               </div>
@@ -292,20 +286,10 @@ export function ContactPanel({
         </CardContent>
       </Card>
 
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-      {saved ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Alterações salvas.
-        </p>
-      ) : null}
 
       {!readOnly ? (
-        <Button type="button" disabled={busy} onClick={handleSave}>
-          {busy ? "Salvando..." : "Salvar contato"}
+        <Button type="button" loading={busy} onClick={handleSave}>
+          Salvar contato
         </Button>
       ) : null}
     </div>

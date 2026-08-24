@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, Input, Select } from "@/components/ui/field";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
+import { useToast } from "@/components/ui/toast";
 import { ROLE_LABELS } from "@/lib/auth/rbac";
 import { apiPatch, apiPost, apiPut } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/utils";
@@ -32,16 +33,13 @@ export function TenantUsersPanel({
   users: TenantUserRow[];
 }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const toast = useToast();
   const [creating, setCreating] = useState(false);
-  const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setCreating(true);
-    setError(null);
-    setMessage(null);
 
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
@@ -55,28 +53,26 @@ export function TenantUsersPanel({
 
     setCreating(false);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
     formElement.reset();
-    setMessage("Usuário criado. Envie a senha provisória para a revenda.");
+    toast.success("Usuário criado. Envie a senha provisória para a revenda.");
     router.refresh();
   }
 
   async function handleToggleStatus(user: TenantUserRow) {
-    setBusyUserId(user.id);
-    setError(null);
-    setMessage(null);
-
+    setBusyId(user.id);
     const result = await apiPatch(`/api/super-admin/users/${user.id}`, {
       status: user.status === "active" ? "disabled" : "active",
     });
+    setBusyId(null);
 
-    setBusyUserId(null);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
+    toast.success(user.status === "active" ? "Acesso desativado." : "Acesso reativado.");
     router.refresh();
   }
 
@@ -86,37 +82,23 @@ export function TenantUsersPanel({
     );
     if (!password) return;
 
-    setBusyUserId(user.id);
-    setError(null);
-    setMessage(null);
-
+    setBusyId(user.id);
     const result = await apiPut(`/api/super-admin/users/${user.id}`, {
       password,
       mustChangePassword: true,
     });
+    setBusyId(null);
 
-    setBusyUserId(null);
     if (!result.ok) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
-    setMessage(`Senha redefinida. As sessões ativas de ${user.email} foram encerradas.`);
+    toast.success(`Senha redefinida. Sessões de ${user.email} encerradas.`);
     router.refresh();
   }
 
   return (
-    <div className="space-y-4">
-      {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-      {message ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          {message}
-        </p>
-      ) : null}
-
+    <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Usuários da revenda</CardTitle>
@@ -133,7 +115,7 @@ export function TenantUsersPanel({
                 <Th>Usuário</Th>
                 <Th>Perfil</Th>
                 <Th>Situação</Th>
-                <Th>Último acesso</Th>
+                <Th numeric>Último acesso</Th>
                 <Th />
               </Tr>
             </Thead>
@@ -141,22 +123,24 @@ export function TenantUsersPanel({
               {users.map((user) => (
                 <Tr key={user.id}>
                   <Td>
-                    <p className="font-medium text-ink-900">{user.name}</p>
-                    <p className="text-xs text-ink-500">{user.email}</p>
+                    <p className="font-medium text-text">{user.name}</p>
+                    <p className="text-xs text-faint">{user.email}</p>
                   </Td>
-                  <Td>{ROLE_LABELS[user.role]}</Td>
+                  <Td className="text-muted">{ROLE_LABELS[user.role]}</Td>
                   <Td>
-                    <Badge tone={user.status === "active" ? "success" : "neutral"}>
-                      {user.status === "active" ? "Ativo" : "Desativado"}
-                    </Badge>
-                    {user.mustChangePassword ? (
-                      <Badge tone="warning" className="ml-1">
-                        senha provisória
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={user.status === "active" ? "success" : "neutral"}>
+                        {user.status === "active" ? "Ativo" : "Desativado"}
                       </Badge>
-                    ) : null}
+                      {user.mustChangePassword ? (
+                        <Badge tone="warning">Senha provisória</Badge>
+                      ) : null}
+                    </div>
                   </Td>
-                  <Td className="text-xs">
-                    {user.lastLoginAt ? formatDateTime(new Date(user.lastLoginAt)) : "Nunca acessou"}
+                  <Td numeric className="text-muted">
+                    {user.lastLoginAt
+                      ? formatDateTime(new Date(user.lastLoginAt))
+                      : "Nunca acessou"}
                   </Td>
                   <Td className="text-right">
                     <div className="flex justify-end gap-2">
@@ -164,7 +148,7 @@ export function TenantUsersPanel({
                         type="button"
                         size="sm"
                         variant="secondary"
-                        disabled={busyUserId === user.id}
+                        loading={busyId === user.id}
                         onClick={() => handleResetPassword(user)}
                       >
                         Redefinir senha
@@ -173,7 +157,7 @@ export function TenantUsersPanel({
                         type="button"
                         size="sm"
                         variant={user.status === "active" ? "outlineDanger" : "secondary"}
-                        disabled={busyUserId === user.id}
+                        loading={busyId === user.id}
                         onClick={() => handleToggleStatus(user)}
                       >
                         {user.status === "active" ? "Desativar" : "Reativar"}
@@ -191,7 +175,7 @@ export function TenantUsersPanel({
         <CardHeader>
           <CardTitle>Criar acesso</CardTitle>
           <CardDescription>
-            A senha é provisória: o usuário será obrigado a trocá-la no primeiro acesso.
+            A senha é provisória: a pessoa é obrigada a trocar no primeiro acesso.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -217,8 +201,8 @@ export function TenantUsersPanel({
               </FormField>
             </div>
 
-            <Button type="submit" disabled={creating}>
-              {creating ? "Criando..." : "Criar usuário"}
+            <Button type="submit" loading={creating}>
+              Criar usuário
             </Button>
           </form>
         </CardContent>

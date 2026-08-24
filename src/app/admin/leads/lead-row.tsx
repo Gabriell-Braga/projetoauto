@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle } from "lucide-react";
+import { ChevronRight, MessageCircle } from "lucide-react";
+import { LeadStatusBadge } from "@/components/admin/status-badges";
 import { Button } from "@/components/ui/button";
 import { Select, Textarea } from "@/components/ui/field";
 import { Td, Tr } from "@/components/ui/table";
+import { useToast } from "@/components/ui/toast";
 import { LEAD_STATUS, type LeadStatus } from "@/db/schema";
 import { LEAD_STATUS_LABELS } from "@/lib/catalog/labels";
-import { LeadStatusBadge } from "@/components/admin/status-badges";
 import { apiPatch } from "@/lib/client/api";
-import { formatDateTime, formatPhone, onlyDigits } from "@/lib/utils";
+import { cn, formatDateTime, formatPhone, onlyDigits } from "@/lib/utils";
 
 export type LeadRowData = {
   id: string;
@@ -37,25 +38,29 @@ export function LeadRow({
   canWrite: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [savingNotes, setSavingNotes] = useState(false);
   const [notes, setNotes] = useState(lead.internalNotes ?? "");
-  const [error, setError] = useState<string | null>(null);
 
-  async function patch(payload: Record<string, unknown>) {
-    setBusy(true);
-    setError(null);
+  // otimista: a linha reflete a escolha na hora e volta atrás se a API recusar
+  const [status, setStatus] = useState(lead.status);
+  const [assignee, setAssignee] = useState(lead.assignedToUserId ?? "");
+
+  async function patch(payload: Record<string, unknown>, rollback: () => void, message: string) {
     const result = await apiPatch(`/api/admin/leads/${lead.id}`, payload);
-    setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      rollback();
+      toast.error(result.error);
       return;
     }
+    toast.success(message);
     router.refresh();
   }
 
+  const whatsappDigits = onlyDigits(lead.phone);
   const whatsappHref = `https://wa.me/${
-    onlyDigits(lead.phone).length > 11 ? onlyDigits(lead.phone) : `55${onlyDigits(lead.phone)}`
+    whatsappDigits.length > 11 ? whatsappDigits : `55${whatsappDigits}`
   }?text=${encodeURIComponent(
     lead.vehicleLabel
       ? `Olá ${lead.name.split(" ")[0]}! Vi que você tem interesse no ${lead.vehicleLabel}.`
@@ -68,47 +73,73 @@ export function LeadRow({
         <Td>
           <button
             type="button"
+            aria-expanded={open}
             onClick={() => setOpen((value) => !value)}
-            className="text-left font-medium text-ink-900 hover:text-brand-600"
+            className="flex items-center gap-1.5 text-left"
           >
-            {lead.name}
+            <ChevronRight
+              aria-hidden="true"
+              className={cn(
+                "h-3.5 w-3.5 shrink-0 text-faint transition-transform",
+                open && "rotate-90",
+              )}
+            />
+            <span>
+              <span className="block font-medium text-text">{lead.name}</span>
+              <span className="block text-xs text-faint">{formatPhone(lead.phone)}</span>
+            </span>
           </button>
-          <p className="text-xs text-ink-500">{formatPhone(lead.phone)}</p>
-          {lead.email ? <p className="text-xs text-ink-400">{lead.email}</p> : null}
         </Td>
-        <Td className="max-w-56 text-xs">
-          {lead.vehicleLabel ?? <span className="text-ink-400">Contato geral</span>}
+
+        <Td className="max-w-56">
+          <span className="block truncate text-muted">
+            {lead.vehicleLabel ?? <span className="text-faint">Contato geral</span>}
+          </span>
           {lead.utmSource ? (
-            <p className="mt-0.5 text-[11px] text-ink-400">origem: {lead.utmSource}</p>
+            <span className="label-instrument text-faint">via {lead.utmSource}</span>
           ) : null}
         </Td>
+
         <Td>
           {canWrite ? (
             <Select
-              className="h-8 text-xs"
-              value={lead.status}
-              disabled={busy}
-              onChange={(event) => patch({ status: event.target.value })}
+              aria-label={`Situação do lead de ${lead.name}`}
+              className="h-7 w-36 text-xs"
+              value={status}
+              onChange={(event) => {
+                const next = event.target.value as LeadStatus;
+                const previous = status;
+                setStatus(next);
+                void patch({ status: next }, () => setStatus(previous), "Situação atualizada.");
+              }}
             >
-              {LEAD_STATUS.map((status) => (
-                <option key={status} value={status}>
-                  {LEAD_STATUS_LABELS[status]}
+              {LEAD_STATUS.map((value) => (
+                <option key={value} value={value}>
+                  {LEAD_STATUS_LABELS[value]}
                 </option>
               ))}
             </Select>
           ) : (
-            <LeadStatusBadge status={lead.status} />
+            <LeadStatusBadge status={status} />
           )}
         </Td>
+
         <Td>
           {canWrite ? (
             <Select
-              className="h-8 text-xs"
-              value={lead.assignedToUserId ?? ""}
-              disabled={busy}
-              onChange={(event) =>
-                patch({ assignedToUserId: event.target.value || null })
-              }
+              aria-label={`Responsável pelo lead de ${lead.name}`}
+              className="h-7 w-40 text-xs"
+              value={assignee}
+              onChange={(event) => {
+                const next = event.target.value;
+                const previous = assignee;
+                setAssignee(next);
+                void patch(
+                  { assignedToUserId: next || null },
+                  () => setAssignee(previous),
+                  "Responsável atualizado.",
+                );
+              }}
             >
               <option value="">Sem responsável</option>
               {assignees.map((user) => (
@@ -118,10 +149,14 @@ export function LeadRow({
               ))}
             </Select>
           ) : (
-            <span className="text-xs">{lead.assignedToName ?? "—"}</span>
+            <span className="text-muted">{lead.assignedToName ?? "—"}</span>
           )}
         </Td>
-        <Td className="whitespace-nowrap text-xs">{formatDateTime(new Date(lead.createdAt))}</Td>
+
+        <Td numeric className="whitespace-nowrap text-muted">
+          {formatDateTime(new Date(lead.createdAt))}
+        </Td>
+
         <Td className="text-right">
           <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
             <Button type="button" size="sm" variant="secondary">
@@ -133,39 +168,52 @@ export function LeadRow({
       </Tr>
 
       {open ? (
-        <Tr>
-          <Td colSpan={6} className="bg-ink-50">
-            {lead.message ? (
-              <div className="mb-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Mensagem do cliente
-                </p>
-                <p className="mt-1 whitespace-pre-line text-sm text-ink-700">{lead.message}</p>
+        <Tr className="hover:bg-transparent">
+          <Td colSpan={6} className="h-auto bg-surface-2/50 py-4">
+            <div className="grid gap-5 lg:grid-cols-2">
+              <div>
+                <p className="label-instrument mb-1.5 text-muted">Mensagem do cliente</p>
+                {lead.message ? (
+                  <p className="whitespace-pre-line text-[13px] leading-relaxed text-text">
+                    {lead.message}
+                  </p>
+                ) : (
+                  <p className="text-[13px] text-faint">Sem mensagem.</p>
+                )}
+                {lead.email ? (
+                  <p className="mt-3 text-xs text-muted">
+                    E-mail: <span className="text-text">{lead.email}</span>
+                  </p>
+                ) : null}
               </div>
-            ) : null}
 
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-              Anotações internas
-            </p>
-            <Textarea
-              className="mt-1"
-              rows={3}
-              value={notes}
-              disabled={!canWrite || busy}
-              onChange={(event) => setNotes(event.target.value)}
-            />
-            {canWrite ? (
-              <Button
-                type="button"
-                size="sm"
-                className="mt-2"
-                disabled={busy}
-                onClick={() => patch({ internalNotes: notes })}
-              >
-                Salvar anotação
-              </Button>
-            ) : null}
-            {error ? <p className="mt-2 text-sm text-red-700">{error}</p> : null}
+              <div>
+                <p className="label-instrument mb-1.5 text-muted">Anotações internas</p>
+                <Textarea
+                  rows={3}
+                  value={notes}
+                  disabled={!canWrite}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="Combinou test drive, pediu avaliação de troca…"
+                />
+                {canWrite ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="mt-2"
+                    loading={savingNotes}
+                    onClick={async () => {
+                      setSavingNotes(true);
+                      await patch({ internalNotes: notes }, () => {}, "Anotação salva.");
+                      setSavingNotes(false);
+                    }}
+                  >
+                    Salvar anotação
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           </Td>
         </Tr>
       ) : null}

@@ -8,7 +8,7 @@ import { tenantBanners, tenantSites } from "@/db/schema";
 import { requireTenantPage } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/rbac";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
-import { cn } from "@/lib/utils";
+import { Tabs } from "@/components/ui/tabs";
 import { DEFAULT_THEME } from "@/templates/contract";
 import { ContactPanel } from "./contact-panel";
 import { ContentPanel } from "./content-panel";
@@ -63,22 +63,14 @@ export default async function SitePage({
         }
       />
 
-      <div className="mb-5 flex gap-1 border-b border-ink-200">
-        {TABS.map((item) => (
-          <Link
-            key={item.key}
-            href={`/admin/site?aba=${item.key}`}
-            className={cn(
-              "-mb-px border-b-2 px-4 py-2 text-sm transition-colors",
-              tab === item.key
-                ? "border-brand-600 font-medium text-brand-700"
-                : "border-transparent text-ink-500 hover:text-ink-800",
-            )}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </div>
+      <Tabs
+        active={tab}
+        items={TABS.map((item) => ({
+          key: item.key,
+          label: item.label,
+          href: `/admin/site?aba=${item.key}`,
+        }))}
+      />
 
       {tab === "identidade" ? (
         <IdentityPanel

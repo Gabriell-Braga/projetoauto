@@ -39,6 +39,7 @@
   --positive: #1f9d62;
   --positive-soft: rgba(31, 157, 98, 0.14);
   --danger: #d64540;
+  --danger-contrast: #ffffff;
   --danger-soft: rgba(214, 69, 64, 0.12);
   --warning: #d98e12;
   --warning-soft: rgba(217, 142, 18, 0.14);
@@ -76,7 +77,8 @@
     --positive: #3dd68c;
     --positive-soft: rgba(61, 214, 140, 0.14);
     --danger: #f0564a;
-    --danger-soft: rgba(240, 86, 74, 0.14);
+    --danger-contrast: #ffffff;
+  --danger-soft: rgba(240, 86, 74, 0.14);
     --warning: #f5a623;
     --warning-soft: rgba(245, 166, 35, 0.14);
 
@@ -112,6 +114,7 @@
   --positive: #3dd68c;
   --positive-soft: rgba(61, 214, 140, 0.14);
   --danger: #f0564a;
+  --danger-contrast: #ffffff;
   --danger-soft: rgba(240, 86, 74, 0.14);
   --warning: #f5a623;
   --warning-soft: rgba(245, 166, 35, 0.14);

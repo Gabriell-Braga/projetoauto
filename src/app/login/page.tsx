@@ -92,17 +92,31 @@ export default async function LoginPage({
         data-theme-transition
         className="relative hidden overflow-hidden border-l border-border bg-surface lg:block"
       >
-        <InstrumentPanel className="absolute -right-24 top-1/2 h-[820px] w-[820px] -translate-y-1/2" />
+        {/* Posicionado em porcentagem, não em pixel: assim o arco começa depois
+            da coluna de texto em qualquer largura de tela. Antes ele era fixo em
+            -32 e invadia o título em telas menores. */}
+        <InstrumentPanel className="absolute left-[38%] top-1/2 aspect-square w-[115%] -translate-y-1/2 opacity-75" />
+
+        {/* Véu suave só para as marcações que ainda alcançam a área de leitura.
+            Parte de --surface, então vale nos dois temas. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-linear-to-r from-surface via-surface/55 via-40% to-transparent to-72%"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-surface via-surface/60 to-transparent"
+        />
 
         <div className="relative flex h-full flex-col justify-between p-10">
           <Wordmark className="text-lg" />
 
-          <div className="max-w-sm">
+          <div className="max-w-md">
             <p className="label-instrument text-accent-text">Cockpit</p>
-            <p className="mt-3 font-display text-[26px] leading-[1.15] text-text">
+            <p className="mt-3 font-display text-[28px] font-semibold leading-[1.12] tracking-tight text-text">
               O painel de quem vende carro.
             </p>
-            <p className="mt-3 text-[13px] leading-relaxed text-muted">
+            <p className="mt-3.5 max-w-sm text-sm leading-relaxed text-muted">
               Estoque, fotos, leads e o site da revenda no mesmo lugar — feito para uso diário, não
               para demonstração.
             </p>
@@ -115,10 +129,8 @@ export default async function LoginPage({
               { label: "Leads", value: "Centralizados" },
             ].map((item) => (
               <div key={item.label}>
-                <dt className="label-instrument text-faint">{item.label}</dt>
-                <dd className="mt-1 font-display text-[13px] font-medium text-text">
-                  {item.value}
-                </dd>
+                <dt className="label-instrument text-muted">{item.label}</dt>
+                <dd className="mt-1 font-display text-sm font-medium text-text">{item.value}</dd>
               </div>
             ))}
           </dl>

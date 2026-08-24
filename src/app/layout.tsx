@@ -31,10 +31,15 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const preference = (await cookies()).get(THEME_COOKIE)?.value;
   const themeClass = isThemePreference(preference) ? themeClassName(preference) : "";
 
+  // O mount path pode só existir no runtime do Worker; publicamos no <html>
+  // para o cliente montar URLs de fetch e de imagem sem depender do build.
+  const basePath = process.env.BASE_URL ?? process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
   return (
     <html
       lang="pt-BR"
       className={`${themeClass} ${inter.variable} ${spaceGrotesk.variable}`.trim()}
+      data-base-path={basePath || undefined}
       suppressHydrationWarning
     >
       <body>{children}</body>

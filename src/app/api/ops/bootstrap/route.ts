@@ -49,6 +49,9 @@ export const POST = withApi(async (request: Request) => {
       passwordSalt: salt,
       role: "super_admin",
       status: "active",
+      // a senha inicial trafega fora do produto (curl, chat, ticket):
+      // obriga a troca no primeiro acesso
+      mustChangePassword: true,
     })
     .returning({ id: users.id });
 

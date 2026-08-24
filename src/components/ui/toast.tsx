@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ToastTone = "success" | "danger" | "info";
@@ -9,24 +9,32 @@ type ToastTone = "success" | "danger" | "info";
 type Toast = {
   id: number;
   tone: ToastTone;
-  message: string;
+  title: string;
+  description?: string;
 };
 
-type ToastApi = {
-  success: (message: string) => void;
-  error: (message: string) => void;
-  info: (message: string) => void;
+export type ToastApi = {
+  success: (title: string, description?: string) => void;
+  error: (title: string, description?: string) => void;
+  info: (title: string, description?: string) => void;
 };
 
 const ToastContext = createContext<ToastApi | null>(null);
 
-const TONE_RAIL: Record<ToastTone, string> = {
-  success: "border-l-positive",
-  danger: "border-l-danger",
-  info: "border-l-accent",
+const TONE = {
+  success: { rail: "border-l-positive", icon: CheckCircle2, color: "text-positive" },
+  danger: { rail: "border-l-danger", icon: AlertCircle, color: "text-danger" },
+  info: { rail: "border-l-accent", icon: Info, color: "text-accent" },
+} as const;
+
+/** Erro fica mais tempo na tela: quem errou precisa ler o que aconteceu. */
+const DURATION: Record<ToastTone, number> = {
+  success: 4000,
+  info: 5000,
+  danger: 8000,
 };
 
-const DURATION = 4000;
+const MAX_VISIBLE = 3;
 
 let nextId = 0;
 
@@ -37,16 +45,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
 
-  const push = useCallback((tone: ToastTone, message: string) => {
+  const push = useCallback((tone: ToastTone, title: string, description?: string) => {
     const id = nextId++;
-    setToasts((current) => [...current.slice(-2), { id, tone, message }]);
+    setToasts((current) => [...current.slice(-(MAX_VISIBLE - 1)), { id, tone, title, description }]);
   }, []);
 
   const api = useMemo<ToastApi>(
     () => ({
-      success: (message) => push("success", message),
-      error: (message) => push("danger", message),
-      info: (message) => push("info", message),
+      success: (title, description) => push("success", title, description),
+      error: (title, description) => push("danger", title, description),
+      info: (title, description) => push("info", title, description),
     }),
     [push],
   );
@@ -56,7 +64,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2"
+        aria-atomic="false"
+        className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
       >
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onDismiss={dismiss} />
@@ -67,26 +76,34 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number) => void }) {
+  const { rail, icon: Icon, color } = TONE[toast.tone];
+
   useEffect(() => {
-    const timer = setTimeout(() => onDismiss(toast.id), DURATION);
+    const timer = setTimeout(() => onDismiss(toast.id), DURATION[toast.tone]);
     return () => clearTimeout(timer);
-  }, [toast.id, onDismiss]);
+  }, [toast.id, toast.tone, onDismiss]);
 
   return (
     <div
-      role="status"
+      role={toast.tone === "danger" ? "alert" : "status"}
       className={cn(
-        "pointer-events-auto flex items-start gap-3 rounded border border-border border-l-2 bg-surface px-3 py-2.5",
-        TONE_RAIL[toast.tone],
+        "pointer-events-auto flex items-start gap-2.5 rounded border border-border border-l-2 bg-surface px-3 py-2.5",
+        rail,
       )}
       style={{ boxShadow: "var(--shadow-menu)" }}
     >
-      <p className="flex-1 text-[13px] leading-snug text-text">{toast.message}</p>
+      <Icon aria-hidden="true" className={cn("mt-0.5 h-4 w-4 shrink-0", color)} />
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] font-medium leading-snug text-text">{toast.title}</p>
+        {toast.description ? (
+          <p className="mt-0.5 text-xs leading-snug text-muted">{toast.description}</p>
+        ) : null}
+      </div>
       <button
         type="button"
         aria-label="Fechar aviso"
         onClick={() => onDismiss(toast.id)}
-        className="mt-0.5 shrink-0 text-faint transition-colors hover:text-text"
+        className="mt-0.5 shrink-0 rounded-sm text-faint transition-colors hover:text-text"
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -94,14 +111,23 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
   );
 }
 
-/** Fora do provider vira no-op: nenhuma tela quebra por falta de contexto. */
+/**
+ * O provider vive no layout raiz, então em produção o contexto sempre existe.
+ * O fallback só entra em cenários de teste/render isolado — e grita no console
+ * em vez de engolir a mensagem, que foi exatamente como um erro de formulário
+ * sumiu da tela uma vez.
+ */
+function loudFallback(): ToastApi {
+  const warn = (tone: string) => (title: string, description?: string) => {
+    console.error(
+      `[toast:${tone}] sem ToastProvider na árvore — mensagem não exibida:`,
+      title,
+      description ?? "",
+    );
+  };
+  return { success: warn("success"), error: warn("error"), info: warn("info") };
+}
+
 export function useToast(): ToastApi {
-  const context = useContext(ToastContext);
-  return (
-    context ?? {
-      success: () => {},
-      error: () => {},
-      info: () => {},
-    }
-  );
+  return useContext(ToastContext) ?? loudFallback();
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FormField, Input } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
 import { apiPost } from "@/lib/client/api";
 
 export function LoginForm({ next }: { next?: string }) {
@@ -51,9 +52,8 @@ export function LoginForm({ next }: { next?: string }) {
       </FormField>
 
       <FormField label="Senha" htmlFor="password">
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="current-password"
           required
           value={password}

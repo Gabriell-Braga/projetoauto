@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BILLING_STATUS, BLOCK_MODES, TENANT_STATUS } from "@/db/schema";
+import { strongPasswordSchema } from "@/lib/auth/password-policy";
 import { onlyDigits } from "@/lib/utils";
 
 /** Slugs que colidem com rotas do app ou têm significado especial. */
@@ -45,7 +46,7 @@ export const createTenantSchema = z.object({
   // usuário administrador inicial (opcional)
   adminName: optionalText(120),
   adminEmail: z.string().trim().toLowerCase().email("E-mail inválido").optional().or(z.literal("")),
-  adminPassword: z.string().min(8, "Mínimo de 8 caracteres").optional().or(z.literal("")),
+  adminPassword: strongPasswordSchema.optional().or(z.literal("")),
 });
 
 export type CreateTenantInput = z.infer<typeof createTenantSchema>;

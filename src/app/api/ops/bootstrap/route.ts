@@ -5,6 +5,7 @@ import { users, vehicleBrands, vehicleModels } from "@/db/schema";
 import { runMigrations } from "@/db/migrate";
 import { logAudit } from "@/lib/audit";
 import { hashPassword } from "@/lib/auth/password";
+import { strongPasswordSchema } from "@/lib/auth/password-policy";
 import { catalogEntries } from "@/lib/catalog/brands";
 import { badRequest, conflict, jsonOk, withApi } from "@/lib/http";
 import { assertOpsSecret } from "@/lib/ops";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 const bodySchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   name: z.string().trim().min(2),
-  password: z.string().min(8, "A senha precisa ter ao menos 8 caracteres"),
+  password: strongPasswordSchema,
 });
 
 /**

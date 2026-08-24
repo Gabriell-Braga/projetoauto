@@ -75,9 +75,10 @@ export async function verifyPassword(
   }
 }
 
-/** Senha aleatória legível para o super-admin entregar à revenda. */
-export function generateTemporaryPassword(length = 12): string {
-  const alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const bytes = crypto.getRandomValues(new Uint8Array(length));
-  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
-}
+/**
+ * Senha provisória legível para entregar a alguém.
+ * Delega ao gerador da política: o anterior sorteava do alfabeto inteiro e
+ * podia devolver uma senha que a própria plataforma recusaria (sem número,
+ * por exemplo).
+ */
+export { generateCompliantPassword as generateTemporaryPassword } from "./password-policy";

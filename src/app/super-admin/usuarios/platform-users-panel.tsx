@@ -7,8 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, Input } from "@/components/ui/field";
 import { Table, Td, Th, Thead, Tr } from "@/components/ui/table";
+import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
+import { PasswordInput, PasswordRequirements } from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
-import { apiPatch, apiPost, apiPut } from "@/lib/client/api";
+import {
+  apiPatch,
+  apiPost,
+  apiPut,
+  errorMessageFrom,
+  fieldErrorsFrom,
+  type FieldErrors,
+} from "@/lib/client/api";
 import { formatDateTime } from "@/lib/utils";
 
 export type PlatformUserRow = {
@@ -29,6 +38,9 @@ export function PlatformUsersPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const [resetTarget, setResetTarget] = useState<PlatformUserRow | null>(null);
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -46,10 +58,16 @@ export function PlatformUsersPanel({
 
     setCreating(false);
     if (!result.ok) {
-      toast.error(result.error);
+      setErrors(fieldErrorsFrom(result.details));
+      toast.error(
+        result.error === "Dados inválidos" ? "Confira os campos destacados" : result.error,
+        errorMessageFrom(result),
+      );
       return;
     }
     formElement.reset();
+    setPassword("");
+    setErrors({});
     toast.success("Super-admin criado com senha provisória.");
     router.refresh();
   }
@@ -69,23 +87,23 @@ export function PlatformUsersPanel({
     router.refresh();
   }
 
-  async function handleReset(user: PlatformUserRow) {
-    const password = window.prompt(`Nova senha para ${user.email} (mínimo 8 caracteres):`);
-    if (!password) return;
+  async function handleReset(password: string): Promise<boolean> {
+    if (!resetTarget) return false;
 
-    setBusyId(user.id);
-    const result = await apiPut(`/api/super-admin/users/${user.id}`, {
+    setBusyId(resetTarget.id);
+    const result = await apiPut(`/api/super-admin/users/${resetTarget.id}`, {
       password,
       mustChangePassword: true,
     });
     setBusyId(null);
 
     if (!result.ok) {
-      toast.error(result.error);
-      return;
+      toast.error("Não foi possível redefinir", errorMessageFrom(result));
+      return false;
     }
-    toast.success("Senha redefinida e sessões encerradas.");
+    toast.success("Senha redefinida.", `As sessões de ${resetTarget.email} foram encerradas.`);
     router.refresh();
+    return true;
   }
 
   return (
@@ -136,7 +154,7 @@ export function PlatformUsersPanel({
                       size="sm"
                       variant="secondary"
                       loading={busyId === user.id}
-                      onClick={() => handleReset(user)}
+                      onClick={() => setResetTarget(user)}
                     >
                       Redefinir senha
                     </Button>
@@ -175,16 +193,37 @@ export function PlatformUsersPanel({
               <FormField label="E-mail" htmlFor="sa-email">
                 <Input id="sa-email" name="email" type="email" required />
               </FormField>
-              <FormField label="Senha provisória" htmlFor="sa-password" hint="Mínimo 8 caracteres">
-                <Input id="sa-password" name="password" minLength={8} required />
+              <FormField
+                label="Senha provisória"
+                htmlFor="sa-password"
+                error={errors.password}
+                className="mb-0"
+              >
+                <PasswordInput
+                  id="sa-password"
+                  name="password"
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  aria-invalid={errors.password ? true : undefined}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
               </FormField>
             </div>
+            <PasswordRequirements value={password} className="mb-4" />
             <Button type="submit" loading={creating}>
               Criar super-admin
             </Button>
           </form>
         </CardContent>
       </Card>
+
+      <ResetPasswordDialog
+        open={resetTarget !== null}
+        onClose={() => setResetTarget(null)}
+        userLabel={resetTarget?.email ?? ""}
+        onConfirm={handleReset}
+      />
     </div>
   );
 }

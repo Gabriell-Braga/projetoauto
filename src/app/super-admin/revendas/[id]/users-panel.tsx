@@ -7,9 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, Input, Select } from "@/components/ui/field";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
+import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
+import { PasswordInput, PasswordRequirements } from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
 import { ROLE_LABELS } from "@/lib/auth/rbac";
-import { apiPatch, apiPost, apiPut } from "@/lib/client/api";
+import {
+  apiPatch,
+  apiPost,
+  apiPut,
+  errorMessageFrom,
+  fieldErrorsFrom,
+  type FieldErrors,
+} from "@/lib/client/api";
 import { formatDateTime } from "@/lib/utils";
 import type { Role } from "@/db/schema";
 
@@ -34,6 +43,9 @@ export function TenantUsersPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const [resetTarget, setResetTarget] = useState<TenantUserRow | null>(null);
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -53,10 +65,16 @@ export function TenantUsersPanel({
 
     setCreating(false);
     if (!result.ok) {
-      toast.error(result.error);
+      setErrors(fieldErrorsFrom(result.details));
+      toast.error(
+        result.error === "Dados inválidos" ? "Confira os campos destacados" : result.error,
+        errorMessageFrom(result),
+      );
       return;
     }
     formElement.reset();
+    setPassword("");
+    setErrors({});
     toast.success("Usuário criado. Envie a senha provisória para a revenda.");
     router.refresh();
   }
@@ -76,25 +94,23 @@ export function TenantUsersPanel({
     router.refresh();
   }
 
-  async function handleResetPassword(user: TenantUserRow) {
-    const password = window.prompt(
-      `Nova senha provisória para ${user.email} (mínimo 8 caracteres):`,
-    );
-    if (!password) return;
+  async function handleResetPassword(password: string): Promise<boolean> {
+    if (!resetTarget) return false;
 
-    setBusyId(user.id);
-    const result = await apiPut(`/api/super-admin/users/${user.id}`, {
+    setBusyId(resetTarget.id);
+    const result = await apiPut(`/api/super-admin/users/${resetTarget.id}`, {
       password,
       mustChangePassword: true,
     });
     setBusyId(null);
 
     if (!result.ok) {
-      toast.error(result.error);
-      return;
+      toast.error("Não foi possível redefinir", errorMessageFrom(result));
+      return false;
     }
-    toast.success(`Senha redefinida. Sessões de ${user.email} encerradas.`);
+    toast.success("Senha redefinida.", `As sessões de ${resetTarget.email} foram encerradas.`);
     router.refresh();
+    return true;
   }
 
   return (
@@ -149,7 +165,7 @@ export function TenantUsersPanel({
                         size="sm"
                         variant="secondary"
                         loading={busyId === user.id}
-                        onClick={() => handleResetPassword(user)}
+                        onClick={() => setResetTarget(user)}
                       >
                         Redefinir senha
                       </Button>
@@ -196,10 +212,25 @@ export function TenantUsersPanel({
                   ))}
                 </Select>
               </FormField>
-              <FormField label="Senha provisória" htmlFor="user-password" hint="Mínimo 8 caracteres">
-                <Input id="user-password" name="password" minLength={8} required />
+              <FormField
+                label="Senha provisória"
+                htmlFor="user-password"
+                error={errors.password}
+                className="mb-0"
+              >
+                <PasswordInput
+                  id="user-password"
+                  name="password"
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  aria-invalid={errors.password ? true : undefined}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
               </FormField>
             </div>
+
+            <PasswordRequirements value={password} className="mb-4" />
 
             <Button type="submit" loading={creating}>
               Criar usuário
@@ -207,6 +238,13 @@ export function TenantUsersPanel({
           </form>
         </CardContent>
       </Card>
+
+      <ResetPasswordDialog
+        open={resetTarget !== null}
+        onClose={() => setResetTarget(null)}
+        userLabel={resetTarget?.email ?? ""}
+        onConfirm={handleResetPassword}
+      />
     </div>
   );
 }

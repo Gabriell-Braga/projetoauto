@@ -6,8 +6,9 @@ import { TemplatePicker } from "@/components/admin/template-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/field";
+import { PasswordInput, PasswordRequirements } from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
-import { apiPost } from "@/lib/client/api";
+import { apiPost, errorMessageFrom, fieldErrorsFrom } from "@/lib/client/api";
 import { DEFAULT_TEMPLATE_ID } from "@/templates/manifests";
 import { slugify } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ export function NewTenantForm() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [templateId, setTemplateId] = useState(DEFAULT_TEMPLATE_ID);
   const [withAdmin, setWithAdmin] = useState(true);
+  const [adminPassword, setAdminPassword] = useState("");
 
   function handleNameChange(value: string) {
     setName(value);
@@ -53,7 +55,7 @@ export function NewTenantForm() {
         ? {
             adminName: String(form.get("adminName") ?? ""),
             adminEmail: String(form.get("adminEmail") ?? ""),
-            adminPassword: String(form.get("adminPassword") ?? ""),
+            adminPassword,
           }
         : {}),
     };
@@ -61,15 +63,11 @@ export function NewTenantForm() {
     const result = await apiPost<{ id: string }>("/api/super-admin/tenants", payload);
 
     if (!result.ok) {
-      toast.error(result.error);
-      if (Array.isArray(result.details)) {
-        const errors: Record<string, string> = {};
-        for (const issue of result.details as { path: string[] | string; message: string }[]) {
-          const key = Array.isArray(issue.path) ? issue.path.join(".") : issue.path;
-          errors[key] = issue.message;
-        }
-        setFieldErrors(errors);
-      }
+      setFieldErrors(fieldErrorsFrom(result.details));
+      toast.error(
+        result.error === "Dados inválidos" ? "Confira os campos destacados" : result.error,
+        errorMessageFrom(result),
+      );
       setSaving(false);
       return;
     }
@@ -224,13 +222,21 @@ export function NewTenantForm() {
               <FormField
                 label="Senha provisória"
                 htmlFor="adminPassword"
-                hint="Mínimo 8 caracteres"
                 error={fieldErrors.adminPassword}
               >
-                <Input id="adminPassword" name="adminPassword" minLength={8} required={withAdmin} />
+                <PasswordInput
+                  id="adminPassword"
+                  name="adminPassword"
+                  autoComplete="new-password"
+                  required={withAdmin}
+                  value={adminPassword}
+                  aria-invalid={fieldErrors.adminPassword ? true : undefined}
+                  onChange={(event) => setAdminPassword(event.target.value)}
+                />
               </FormField>
             </div>
           ) : null}
+          {withAdmin ? <PasswordRequirements value={adminPassword} /> : null}
         </CardContent>
       </Card>
 

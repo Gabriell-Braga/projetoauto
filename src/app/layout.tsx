@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/components/ui/toast";
 import { THEME_COOKIE, isThemePreference, themeClassName } from "@/lib/theme";
 
 const inter = Inter({
@@ -42,7 +43,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       data-base-path={basePath || undefined}
       suppressHydrationWarning
     >
-      <body>{children}</body>
+      <body>
+        {/* Avisos vivem no layout raiz: login, recuperação de senha e site
+            público também precisam falar com quem está na tela. */}
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

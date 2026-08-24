@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { passwordResets, users } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
 import { hashPassword } from "@/lib/auth/password";
+import { strongPasswordSchema } from "@/lib/auth/password-policy";
 import { hashResetToken } from "@/lib/auth/reset";
 import { badRequest, clientIp, jsonOk, tooManyRequests, withApi } from "@/lib/http";
 import { rateLimit } from "@/lib/ratelimit";
@@ -13,10 +14,7 @@ export const dynamic = "force-dynamic";
 const bodySchema = z
   .object({
     token: z.string().trim().min(20).max(200),
-    password: z
-      .string()
-      .min(8, "A senha precisa ter ao menos 8 caracteres")
-      .max(128, "Senha muito longa"),
+    password: strongPasswordSchema,
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {

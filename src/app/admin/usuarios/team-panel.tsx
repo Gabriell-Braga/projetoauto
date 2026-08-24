@@ -9,8 +9,17 @@ import { FormField, Input, Select } from "@/components/ui/field";
 import { Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import type { Role } from "@/db/schema";
 import { ROLE_LABELS } from "@/lib/auth/rbac";
+import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
+import { PasswordInput, PasswordRequirements } from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
-import { apiPatch, apiPost, apiPut } from "@/lib/client/api";
+import {
+  apiPatch,
+  apiPost,
+  apiPut,
+  errorMessageFrom,
+  fieldErrorsFrom,
+  type FieldErrors,
+} from "@/lib/client/api";
 import { formatDateTime } from "@/lib/utils";
 
 export type TeamMember = {
@@ -42,6 +51,9 @@ export function TeamPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const [resetTarget, setResetTarget] = useState<TeamMember | null>(null);
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
@@ -60,10 +72,16 @@ export function TeamPanel({
 
     setBusy(false);
     if (!result.ok) {
-      toast.error(result.error);
+      setErrors(fieldErrorsFrom(result.details));
+      toast.error(
+        result.error === "Dados inválidos" ? "Confira os campos destacados" : result.error,
+        errorMessageFrom(result),
+      );
       return;
     }
     formElement.reset();
+    setPassword("");
+    setErrors({});
     toast.success("Usuário criado. Passe a senha provisória para a pessoa.");
     router.refresh();
   }
@@ -80,24 +98,23 @@ export function TeamPanel({
     router.refresh();
   }
 
-  async function resetPassword(member: TeamMember) {
-    const password = window.prompt(
-      `Nova senha provisória para ${member.email} (mínimo 8 caracteres):`,
-    );
-    if (!password) return;
+  async function resetPassword(password: string): Promise<boolean> {
+    if (!resetTarget) return false;
 
     setBusy(true);
-    const result = await apiPut(`/api/admin/users/${member.id}`, {
+    const result = await apiPut(`/api/admin/users/${resetTarget.id}`, {
       password,
       mustChangePassword: true,
     });
     setBusy(false);
+
     if (!result.ok) {
-      toast.error(result.error);
-      return;
+      toast.error("Não foi possível redefinir", errorMessageFrom(result));
+      return false;
     }
-    toast.success(`Senha redefinida. As sessões de ${member.email} foram encerradas.`);
+    toast.success("Senha redefinida.", `As sessões de ${resetTarget.email} foram encerradas.`);
     router.refresh();
+    return true;
   }
 
   return (
@@ -154,7 +171,9 @@ export function TeamPanel({
                       {member.status === "active" ? "Ativo" : "Desativado"}
                     </Badge>
                     {member.mustChangePassword ? (
-                      <Badge tone="warning" className="ml-2">Senha provisória</Badge>
+                      <Badge tone="warning" className="ml-2">
+                        Senha provisória
+                      </Badge>
                     ) : null}
                   </Td>
                   <Td numeric className="text-muted">
@@ -170,7 +189,7 @@ export function TeamPanel({
                           size="sm"
                           variant="secondary"
                           loading={busy}
-                          onClick={() => resetPassword(member)}
+                          onClick={() => setResetTarget(member)}
                         >
                           Redefinir senha
                         </Button>
@@ -230,9 +249,19 @@ export function TeamPanel({
                   htmlFor="member-password"
                   hint="Mínimo 8 caracteres"
                 >
-                  <Input id="member-password" name="password" minLength={8} required />
+                  <PasswordInput
+                    id="member-password"
+                    name="password"
+                    autoComplete="new-password"
+                    required
+                    value={password}
+                    aria-invalid={errors.password ? true : undefined}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
                 </FormField>
               </div>
+
+              <PasswordRequirements value={password} className="mb-4" />
 
               <Button type="submit" loading={busy}>
                 Criar acesso
@@ -250,12 +279,20 @@ export function TeamPanel({
           <ul className="flex flex-col gap-2 text-[13px] text-muted">
             {assignableRoles.map((role) => (
               <li key={role}>
-                <strong className="font-medium text-text">{ROLE_LABELS[role]}:</strong> {ROLE_HINTS[role]}
+                <strong className="font-medium text-text">{ROLE_LABELS[role]}:</strong>{" "}
+                {ROLE_HINTS[role]}
               </li>
             ))}
           </ul>
         </CardContent>
       </Card>
+
+      <ResetPasswordDialog
+        open={resetTarget !== null}
+        onClose={() => setResetTarget(null)}
+        userLabel={resetTarget?.email ?? ""}
+        onConfirm={resetPassword}
+      />
     </div>
   );
 }

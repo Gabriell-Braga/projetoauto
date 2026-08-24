@@ -3,7 +3,6 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { ToastProvider } from "@/components/ui/toast";
 import { Breadcrumb } from "./breadcrumb";
 import { NavLink } from "./nav-link";
 import { RouteProgress } from "./route-progress";
@@ -58,16 +57,10 @@ export function ShellFrame({
       {sections.map((section, index) => (
         <div key={section.label ?? index} className="flex flex-col gap-0.5">
           {section.label ? (
-            <p className="label-instrument px-3 pb-1.5 text-faint">
-              {section.label}
-            </p>
+            <p className="label-instrument px-3 pb-1.5 text-faint">{section.label}</p>
           ) : null}
           {section.items.map((item) => (
-            <NavLink
-              key={item.href}
-              {...item}
-              onNavigate={() => setDrawerOpen(false)}
-            />
+            <NavLink key={item.href} {...item} onNavigate={() => setDrawerOpen(false)} />
           ))}
         </div>
       ))}
@@ -87,91 +80,82 @@ export function ShellFrame({
   );
 
   return (
-    <ToastProvider>
-      <div className="flex min-h-screen bg-bg">
-        <Suspense fallback={null}>
-          <RouteProgress />
-        </Suspense>
+    <div className="flex min-h-screen bg-bg">
+      <Suspense fallback={null}>
+        <RouteProgress />
+      </Suspense>
 
-        {/* -------------------------------------------------- sidebar fixa */}
-        <aside
-          data-theme-transition
-          className="hidden w-[var(--sidebar-w)] shrink-0 flex-col border-r border-border bg-surface md:flex"
-        >
-          {brand}
-          {nav}
-          <div className="shrink-0 border-t border-border px-4 py-2.5">
-            <p className="label-instrument text-faint">{contextLabel}</p>
-          </div>
-        </aside>
-
-        {/* -------------------------------------------------- gaveta mobile */}
-        {drawerOpen ? (
-          <div className="fixed inset-0 z-40 md:hidden">
-            <button
-              type="button"
-              aria-label="Fechar navegação"
-              onClick={() => setDrawerOpen(false)}
-              className="absolute inset-0"
-              style={{ backgroundColor: "var(--overlay)" }}
-            />
-            <aside className="relative flex h-full w-[var(--sidebar-w)] flex-col border-r border-border bg-surface">
-              {brand}
-              {nav}
-            </aside>
-          </div>
-        ) : null}
-
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* ------------------------------------------------ topbar */}
-          <header
-            data-theme-transition
-            className="sticky top-0 z-30 flex h-[var(--topbar-h)] shrink-0 items-center gap-3 border-b border-border bg-surface px-3 sm:px-4"
-          >
-            <button
-              type="button"
-              aria-label="Abrir navegação"
-              onClick={() => setDrawerOpen(true)}
-              className={cn(
-                "grid h-8 w-8 shrink-0 place-items-center rounded text-muted",
-                "transition-colors hover:bg-surface-2 hover:text-text md:hidden",
-              )}
-            >
-              {drawerOpen ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Menu className="h-4 w-4" />
-              )}
-            </button>
-
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate font-display text-[13px] font-medium text-text">
-                {contextLabel}
-              </span>
-              <Suspense fallback={null}>
-                <Breadcrumb />
-              </Suspense>
-            </div>
-
-            <div className="ml-auto flex items-center gap-2">
-              <ShellSearch
-                action={search.action}
-                placeholder={search.placeholder}
-              />
-              <UserMenu
-                name={user.name}
-                email={user.email}
-                roleLabel={user.roleLabel}
-                themePreference={themePreference}
-              />
-            </div>
-          </header>
-
-          {banner}
-
-          <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6">{children}</main>
+      {/* -------------------------------------------------- sidebar fixa */}
+      <aside
+        data-theme-transition
+        className="hidden w-[var(--sidebar-w)] shrink-0 flex-col border-r border-border bg-surface md:flex"
+      >
+        {brand}
+        {nav}
+        <div className="shrink-0 border-t border-border px-4 py-2.5">
+          <p className="label-instrument text-faint">{contextLabel}</p>
         </div>
+      </aside>
+
+      {/* -------------------------------------------------- gaveta mobile */}
+      {drawerOpen ? (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <button
+            type="button"
+            aria-label="Fechar navegação"
+            onClick={() => setDrawerOpen(false)}
+            className="absolute inset-0"
+            style={{ backgroundColor: "var(--overlay)" }}
+          />
+          <aside className="relative flex h-full w-[var(--sidebar-w)] flex-col border-r border-border bg-surface">
+            {brand}
+            {nav}
+          </aside>
+        </div>
+      ) : null}
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* ------------------------------------------------ topbar */}
+        <header
+          data-theme-transition
+          className="sticky top-0 z-30 flex h-[var(--topbar-h)] shrink-0 items-center gap-3 border-b border-border bg-surface px-3 sm:px-4"
+        >
+          <button
+            type="button"
+            aria-label="Abrir navegação"
+            onClick={() => setDrawerOpen(true)}
+            className={cn(
+              "grid h-8 w-8 shrink-0 place-items-center rounded text-muted",
+              "transition-colors hover:bg-surface-2 hover:text-text md:hidden",
+            )}
+          >
+            {drawerOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
+
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate font-display text-[13px] font-medium text-text">
+              {contextLabel}
+            </span>
+            <Suspense fallback={null}>
+              <Breadcrumb />
+            </Suspense>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            <ShellSearch action={search.action} placeholder={search.placeholder} />
+            <UserMenu
+              name={user.name}
+              email={user.email}
+              roleLabel={user.roleLabel}
+              themePreference={themePreference}
+            />
+          </div>
+        </header>
+
+        {banner}
+
+        <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6">{children}</main>
       </div>
-    </ToastProvider>
+    </div>
   );
 }

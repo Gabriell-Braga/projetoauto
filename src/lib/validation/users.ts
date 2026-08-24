@@ -1,18 +1,19 @@
 import { z } from "zod";
 import { ROLES, USER_STATUS } from "@/db/schema";
+import { strongPasswordSchema } from "@/lib/auth/password-policy";
 
 export const createUserSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome").max(120),
   email: z.string().trim().toLowerCase().email("E-mail inválido"),
   role: z.enum(ROLES).exclude(["super_admin"]),
-  password: z.string().min(8, "Mínimo de 8 caracteres").max(128),
+  password: strongPasswordSchema,
   mustChangePassword: z.boolean().default(true),
 });
 
 export const createSuperAdminSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().toLowerCase().email("E-mail inválido"),
-  password: z.string().min(8, "Mínimo de 8 caracteres").max(128),
+  password: strongPasswordSchema,
 });
 
 export const updateUserSchema = z.object({
@@ -22,6 +23,6 @@ export const updateUserSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  password: z.string().min(8, "Mínimo de 8 caracteres").max(128),
+  password: strongPasswordSchema,
   mustChangePassword: z.boolean().default(true),
 });

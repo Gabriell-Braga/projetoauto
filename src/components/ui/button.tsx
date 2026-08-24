@@ -1,23 +1,30 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Spinner } from "./spinner";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap",
+  [
+    "relative inline-flex items-center justify-center gap-2 rounded font-medium",
+    "whitespace-nowrap transition-colors",
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+    "disabled:pointer-events-none disabled:opacity-50",
+  ].join(" "),
   {
     variants: {
       variant: {
-        primary: "bg-brand-600 text-white hover:bg-brand-700",
-        secondary: "bg-white text-ink-900 border border-ink-200 hover:bg-ink-50",
-        ghost: "text-ink-600 hover:bg-ink-100 hover:text-ink-900",
-        danger: "bg-red-600 text-white hover:bg-red-700",
-        outlineDanger: "border border-red-200 text-red-700 hover:bg-red-50",
+        // o âmbar é a única ação primária da tela — usar com parcimônia
+        primary: "bg-accent text-accent-contrast hover:bg-accent-hover",
+        secondary: "border border-border bg-surface text-text hover:bg-surface-2",
+        ghost: "text-muted hover:bg-surface-2 hover:text-text",
+        danger: "bg-danger text-white hover:opacity-90",
+        outlineDanger: "border border-danger/40 text-danger hover:bg-danger-soft",
       },
       size: {
-        sm: "h-8 px-3 text-xs",
-        md: "h-10 px-4",
-        lg: "h-11 px-6",
-        icon: "h-9 w-9",
+        sm: "h-7 px-2.5 text-xs",
+        md: "h-9 px-3.5 text-[13px]",
+        lg: "h-10 px-4 text-sm",
+        icon: "h-8 w-8",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },
@@ -26,11 +33,29 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+    VariantProps<typeof buttonVariants> {
+  /** Mostra o spinner sem alterar a largura do botão. */
+  loading?: boolean;
+}
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => (
-    <button ref={ref} className={cn(buttonVariants({ variant, size }), className)} {...props} />
+  ({ className, variant, size, loading, disabled, children, ...props }, ref) => (
+    <button
+      ref={ref}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={cn(buttonVariants({ variant, size }), className)}
+      {...props}
+    >
+      {loading ? (
+        <span className="absolute inset-0 grid place-items-center">
+          <Spinner />
+        </span>
+      ) : null}
+      <span className={cn("inline-flex items-center gap-2", loading && "invisible")}>
+        {children}
+      </span>
+    </button>
   ),
 );
 Button.displayName = "Button";

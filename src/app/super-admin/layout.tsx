@@ -1,15 +1,31 @@
 import { Building2, LayoutDashboard, ScrollText, Users } from "lucide-react";
-import { AppShell, type NavItem } from "@/components/layout/shell";
+import { AppShell, type NavSection } from "@/components/layout/shell";
 import { requireSuperAdminPage } from "@/lib/auth/guards";
 import { ROLE_LABELS } from "@/lib/auth/rbac";
 
 export const dynamic = "force-dynamic";
 
-const NAV: NavItem[] = [
-  { href: "/super-admin", label: "Visão geral", icon: <LayoutDashboard className="h-4 w-4" />, exact: true },
-  { href: "/super-admin/revendas", label: "Revendas", icon: <Building2 className="h-4 w-4" /> },
-  { href: "/super-admin/usuarios", label: "Usuários", icon: <Users className="h-4 w-4" /> },
-  { href: "/super-admin/auditoria", label: "Auditoria", icon: <ScrollText className="h-4 w-4" /> },
+const ICON = "h-3.5 w-3.5";
+
+const SECTIONS: NavSection[] = [
+  {
+    items: [
+      {
+        href: "/super-admin",
+        label: "Visão geral",
+        icon: <LayoutDashboard className={ICON} />,
+        exact: true,
+      },
+      { href: "/super-admin/revendas", label: "Revendas", icon: <Building2 className={ICON} /> },
+    ],
+  },
+  {
+    label: "Plataforma",
+    items: [
+      { href: "/super-admin/usuarios", label: "Usuários", icon: <Users className={ICON} /> },
+      { href: "/super-admin/auditoria", label: "Auditoria", icon: <ScrollText className={ICON} /> },
+    ],
+  },
 ];
 
 export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {
@@ -17,10 +33,10 @@ export default async function SuperAdminLayout({ children }: { children: React.R
 
   return (
     <AppShell
-      brandLabel="Painel Geral"
-      brandHref="/super-admin"
-      subtitle="Administração da plataforma"
-      nav={NAV}
+      contextLabel="Painel Geral"
+      homeHref="/super-admin"
+      sections={SECTIONS}
+      search={{ action: "/super-admin/revendas", placeholder: "Buscar revenda" }}
       user={{
         name: context.user.name,
         email: context.user.email,

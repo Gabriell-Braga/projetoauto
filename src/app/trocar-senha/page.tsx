@@ -10,26 +10,30 @@ export const dynamic = "force-dynamic";
 export default async function ChangePasswordPage() {
   const context = await requirePageAuth();
   const redirectTo = defaultLandingPath(context.role);
+  const provisional = context.user.mustChangePassword;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ink-100 px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <h1 className="text-xl font-semibold text-ink-900">
-            {context.user.mustChangePassword ? "Defina sua senha" : "Trocar senha"}
-          </h1>
-          <p className="mt-1 text-sm text-ink-500">
-            {context.user.mustChangePassword
-              ? "Sua senha é provisória. Escolha uma nova para continuar."
-              : "Ao trocar, as outras sessões abertas são encerradas."}
+    <main className="flex min-h-screen items-center justify-center bg-bg px-4 py-12">
+      <div className="w-full max-w-[380px]">
+        <div className="rounded border border-border bg-surface p-6">
+          <p className="label-instrument text-accent-text">
+            {provisional ? "Primeiro acesso" : "Segurança"}
           </p>
+          <h1 className="mt-2 text-[20px] leading-tight text-text">
+            {provisional ? "Defina sua senha" : "Trocar senha"}
+          </h1>
+          <p className="mt-1.5 text-[13px] text-muted">
+            {provisional
+              ? "Sua senha atual é provisória. Escolha uma nova para continuar."
+              : "As outras sessões abertas serão encerradas."}
+          </p>
+
+          <div className="mt-6">
+            <ChangePasswordForm redirectTo={redirectTo} />
+          </div>
         </div>
 
-        <div className="rounded-xl border border-ink-200 bg-white p-6 shadow-sm">
-          <ChangePasswordForm redirectTo={redirectTo} />
-        </div>
-
-        <div className="mx-auto mt-6 w-40 rounded-lg bg-ink-950 px-2 py-1">
+        <div className="mt-4 flex justify-center">
           <LogoutButton />
         </div>
       </div>

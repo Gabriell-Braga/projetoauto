@@ -42,9 +42,11 @@ export function LoginForm({ next }: { next?: string }) {
           type="email"
           autoComplete="email"
           required
+          autoFocus
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="voce@revenda.com.br"
+          aria-invalid={error ? true : undefined}
         />
       </FormField>
 
@@ -57,17 +59,21 @@ export function LoginForm({ next }: { next?: string }) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="••••••••"
+          aria-invalid={error ? true : undefined}
         />
       </FormField>
 
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p
+          role="alert"
+          className="mb-4 rounded border border-border border-l-2 border-l-danger bg-danger-soft px-3 py-2 text-[13px] text-text"
+        >
           {error}
         </p>
       ) : null}
 
-      <Button type="submit" className="w-full" size="lg" disabled={loading}>
-        {loading ? "Entrando..." : "Entrar"}
+      <Button type="submit" size="lg" className="w-full" loading={loading}>
+        Entrar
       </Button>
     </form>
   );

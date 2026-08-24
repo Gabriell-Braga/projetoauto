@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { apiPost } from "@/lib/client/api";
 
-export function LogoutButton() {
+/** Usado nas telas fora do shell (bloqueado, trocar senha). */
+export function LogoutButton({ className }: { className?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -17,14 +19,15 @@ export function LogoutButton() {
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
+      className={className}
+      loading={loading}
       onClick={handleLogout}
-      disabled={loading}
-      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-300 transition-colors hover:bg-ink-800 hover:text-white disabled:opacity-50"
     >
-      <LogOut className="h-4 w-4" />
-      {loading ? "Saindo..." : "Sair"}
-    </button>
+      <LogOut className="h-3.5 w-3.5" />
+      Sair
+    </Button>
   );
 }

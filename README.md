@@ -14,7 +14,7 @@ Deploy 100% em **Webflow Cloud** (Next.js + adapter OpenNext → Cloudflare Work
 | Site público | `/r/[slug]` | Clientes finais da revenda |
 | Rotas operacionais | `/api/ops/*` | Migrations e bootstrap (protegidas por segredo) |
 
-O app é montado num **mount path** do site Webflow (ex.: `autofodase.com/app`). O `basePath`
+O app é montado num **mount path** do site Webflow (ex.: `projetoauto.com.br/app`). O `basePath`
 vem de `BASE_URL`/`NEXT_PUBLIC_BASE_PATH` — nunca hardcode caminho absoluto.
 
 ### Restrições do runtime respeitadas

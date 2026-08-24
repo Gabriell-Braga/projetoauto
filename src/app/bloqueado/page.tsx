@@ -6,17 +6,17 @@ export const dynamic = "force-dynamic";
 
 export default function BlockedPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ink-100 px-4">
-      <div className="w-full max-w-md rounded-xl border border-ink-200 bg-white p-8 text-center shadow-sm">
-        <h1 className="text-lg font-semibold text-ink-900">Acesso temporariamente suspenso</h1>
-        <p className="mt-2 text-sm text-ink-500">
-          O acesso ao painel desta revenda está suspenso. Entre em contato com o suporte para
-          regularizar a situação e reativar o serviço.
+    <main className="flex min-h-screen items-center justify-center bg-bg px-4">
+      <div className="w-full max-w-md rounded border border-border bg-surface p-8">
+        <p className="label-instrument text-accent-text">Acesso suspenso</p>
+        <h1 className="mt-2 text-[20px] leading-tight text-text">
+          O painel desta revenda está bloqueado
+        </h1>
+        <p className="mt-3 text-[13px] leading-relaxed text-muted">
+          Fale com o suporte para regularizar a situação e reativar o acesso.
         </p>
-        <div className="mx-auto mt-6 w-40 text-ink-900">
-          <div className="rounded-lg bg-ink-950 px-2 py-1">
-            <LogoutButton />
-          </div>
+        <div className="mt-6 border-t border-border pt-5">
+          <LogoutButton />
         </div>
       </div>
     </main>

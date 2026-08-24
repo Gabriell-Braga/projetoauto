@@ -1,90 +1,87 @@
-import Link from "next/link";
-import { LogoutButton } from "./logout-button";
-import { NavLink } from "./nav-link";
+import { cookies } from "next/headers";
+import {
+  DEFAULT_THEME_PREFERENCE,
+  THEME_COOKIE,
+  isThemePreference,
+  type ThemePreference,
+} from "@/lib/theme";
+import { cn } from "@/lib/utils";
+import { ShellFrame, type NavItem, type NavSection, type ShellUser } from "./shell-frame";
 
-export type NavItem = {
-  href: string;
-  label: string;
-  icon?: React.ReactNode;
-  exact?: boolean;
-};
+export type { NavItem, NavSection, ShellUser };
 
-export function AppShell({
-  brandLabel,
-  brandHref,
-  subtitle,
-  nav,
+/** Marca provisória dos painéis. */
+export const WORDMARK = "ProjetoAuto";
+
+export async function readThemePreference(): Promise<ThemePreference> {
+  const value = (await cookies()).get(THEME_COOKIE)?.value;
+  return isThemePreference(value) ? value : DEFAULT_THEME_PREFERENCE;
+}
+
+export async function AppShell({
+  contextLabel,
+  homeHref,
+  sections,
   user,
+  search,
   banner,
   children,
 }: {
-  brandLabel: string;
-  brandHref: string;
-  subtitle?: string;
-  nav: NavItem[];
-  user: { name: string; email: string; roleLabel: string };
+  contextLabel: string;
+  homeHref: string;
+  sections: NavSection[];
+  user: ShellUser;
+  search: { action: string; placeholder: string };
   banner?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const themePreference = await readThemePreference();
+
   return (
-    <div className="flex min-h-screen bg-ink-100">
-      <aside className="hidden w-60 shrink-0 flex-col bg-ink-950 px-3 py-5 md:flex">
-        <Link href={brandHref} className="mb-6 block px-3">
-          <span className="block text-sm font-semibold text-white">{brandLabel}</span>
-          {subtitle ? <span className="mt-0.5 block text-xs text-ink-400">{subtitle}</span> : null}
-        </Link>
+    <ShellFrame
+      wordmark={WORDMARK}
+      contextLabel={contextLabel}
+      homeHref={homeHref}
+      sections={sections}
+      user={user}
+      themePreference={themePreference}
+      search={search}
+      banner={banner}
+    >
+      {children}
+    </ShellFrame>
+  );
+}
 
-        <nav className="flex flex-1 flex-col gap-1">
-          {nav.map((item) => (
-            <NavLink key={item.href} {...item} />
-          ))}
-        </nav>
-
-        <div className="mt-4 border-t border-ink-800 pt-4">
-          <div className="mb-2 px-3">
-            <p className="truncate text-sm font-medium text-white">{user.name}</p>
-            <p className="truncate text-xs text-ink-400">{user.email}</p>
-            <p className="mt-1 text-[11px] uppercase tracking-wide text-ink-500">{user.roleLabel}</p>
-          </div>
-          <Link
-            href="/trocar-senha"
-            className="mb-1 block rounded-lg px-3 py-2 text-sm text-ink-300 transition-colors hover:bg-ink-800 hover:text-white"
-          >
-            Trocar senha
-          </Link>
-          <LogoutButton />
-        </div>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        {banner}
-        <nav className="flex gap-1 overflow-x-auto bg-ink-950 px-3 py-2 md:hidden">
-          {nav.map((item) => (
-            <NavLink key={item.href} {...item} />
-          ))}
-        </nav>
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
+/**
+ * Cabeçalho de página. Título em 20px — o painel não tem hero.
+ */
+export function PageHeader({
+  eyebrow,
+  title,
+  description,
+  actions,
+  className,
+}: {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  actions?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("mb-5 flex flex-wrap items-start justify-between gap-3", className)}>
+      <div className="min-w-0">
+        {eyebrow ? <p className="label-instrument mb-1 text-accent-text">{eyebrow}</p> : null}
+        <h1 className="text-[20px] leading-tight text-text">{title}</h1>
+        {description ? <p className="mt-1 text-[13px] text-muted">{description}</p> : null}
       </div>
+      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
     </div>
   );
 }
 
-export function PageHeader({
-  title,
-  description,
-  actions,
-}: {
-  title: string;
-  description?: string;
-  actions?: React.ReactNode;
-}) {
-  return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h1 className="text-xl font-semibold text-ink-900">{title}</h1>
-        {description ? <p className="mt-1 text-sm text-ink-500">{description}</p> : null}
-      </div>
-      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
-    </div>
-  );
+/** Faixa de seção dentro da página, para separar blocos sem virar card. */
+export function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <p className="label-instrument mb-2.5 text-faint">{children}</p>;
 }

@@ -4,16 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+/** Item ativo = trilho âmbar de 2px à esquerda. Sem fundo pintado. */
 export function NavLink({
   href,
   label,
   icon,
   exact = false,
+  onNavigate,
 }: {
   href: string;
   label: string;
   icon?: React.ReactNode;
   exact?: boolean;
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
@@ -21,13 +24,17 @@ export function NavLink({
   return (
     <Link
       href={href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
-        active ? "bg-brand-600 font-medium text-white" : "text-ink-300 hover:bg-ink-800 hover:text-white",
+        "flex h-8 items-center gap-2.5 border-l-2 pl-3 pr-2 text-[13px] transition-colors",
+        active
+          ? "border-l-accent font-medium text-text"
+          : "border-l-transparent text-muted hover:bg-surface-2 hover:text-text",
       )}
     >
-      {icon}
-      {label}
+      <span className={cn("shrink-0", active ? "text-accent" : "text-faint")}>{icon}</span>
+      <span className="truncate">{label}</span>
     </Link>
   );
 }

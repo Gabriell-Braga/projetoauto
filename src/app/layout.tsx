@@ -1,5 +1,22 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { THEME_COOKIE, isThemePreference, themeClassName } from "@/lib/theme";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -9,9 +26,17 @@ export const metadata: Metadata = {
   description: "Painel de gestão de estoque e sites para revendas de veículos.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // lido no servidor: a página já chega pintada no tema certo, sem FOUC
+  const preference = (await cookies()).get(THEME_COOKIE)?.value;
+  const themeClass = isThemePreference(preference) ? themeClassName(preference) : "";
+
   return (
-    <html lang="pt-BR">
+    <html
+      lang="pt-BR"
+      className={`${themeClass} ${inter.variable} ${spaceGrotesk.variable}`.trim()}
+      suppressHydrationWarning
+    >
       <body>{children}</body>
     </html>
   );

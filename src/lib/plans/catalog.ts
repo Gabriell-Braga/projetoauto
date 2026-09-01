@@ -53,7 +53,7 @@ export const FEATURES: FeatureDefinition[] = [
     label: "Integração com classificados",
     group: "Estoque",
     status: "depende_de_fornecedor",
-    note: "Precisa de contrato e credencial de cada portal.",
+    note: "O feed de estoque já existe; falta o contrato com cada portal.",
     kind: "boolean",
   },
 

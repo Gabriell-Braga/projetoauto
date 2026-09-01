@@ -24,9 +24,10 @@ export default async function IntegrationsPage() {
     );
   }
 
-  const [keys, webhooks] = await Promise.all([
+  const [keys, webhooks, hasClassifieds] = await Promise.all([
     listApiKeys(context.tenant.id),
     listTenantWebhooks(context.tenant.id),
+    tenantHasFeature(context.tenant.id, "integracao_classificados"),
   ]);
 
   return (
@@ -36,6 +37,8 @@ export default async function IntegrationsPage() {
         description="Chaves para ler seus dados e avisos automáticos quando algo muda."
       />
       <IntegrationsPanel
+        tenantSlug={context.tenant.slug}
+        showFeed={hasClassifieds}
         keys={keys.map((key) => ({
           id: key.id,
           name: key.name,

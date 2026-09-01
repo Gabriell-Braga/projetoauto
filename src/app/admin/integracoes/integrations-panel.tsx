@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
@@ -47,9 +47,13 @@ const EVENT_LABELS: Record<string, string> = {
 export function IntegrationsPanel({
   keys,
   webhooks,
+  tenantSlug,
+  showFeed,
 }: {
   keys: KeyRow[];
   webhooks: WebhookRow[];
+  tenantSlug: string;
+  showFeed: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -334,6 +338,8 @@ export function IntegrationsPanel({
         )}
       </Card>
 
+      {showFeed ? <StockFeedCard tenantSlug={tenantSlug} onCopy={copy} /> : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Como usar</CardTitle>
@@ -513,5 +519,79 @@ function WebhookEditor({
         </label>
       </form>
     </Dialog>
+  );
+}
+
+/**
+ * Endereços do feed de estoque.
+ *
+ * É o que a revenda entrega ao portal quando fecha contrato — a maioria deles
+ * importa por URL, buscando sozinha de tempos em tempos. Deixar pronto antes
+ * do contrato tira o código do caminho crítico da negociação.
+ */
+function StockFeedCard({
+  tenantSlug,
+  onCopy,
+}: {
+  tenantSlug: string;
+  onCopy: (value: string, what: string) => void;
+}) {
+  const [origin, setOrigin] = useState("");
+
+  // montado no cliente porque depende do endereço em que a pessoa está
+  useEffect(() => {
+    setOrigin(window.location.origin + (document.documentElement.dataset.basePath ?? ""));
+  }, []);
+
+  const xml = `${origin}/r/${tenantSlug}/estoque.xml`;
+  const json = `${origin}/r/${tenantSlug}/estoque.json`;
+
+  return (
+    <Card className="mb-4">
+      <CardHeader>
+        <CardTitle>Feed de estoque</CardTitle>
+        <CardDescription>
+          Entregue um destes endereços ao portal de classificados. Ele busca sozinho e mantém os
+          anúncios em dia. Só entram veículos disponíveis e reservados — rascunho e vendido ficam
+          de fora.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <FeedLine label="XML" url={xml} onCopy={onCopy} />
+        <FeedLine label="JSON" url={json} onCopy={onCopy} />
+        <p className="text-xs text-faint">
+          O feed é público, como o site. Se a revenda for suspensa, ele sai do ar junto.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FeedLine({
+  label,
+  url,
+  onCopy,
+}: {
+  label: string;
+  url: string;
+  onCopy: (value: string, what: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Badge tone="info">{label}</Badge>
+      <code className="min-w-0 flex-1 break-all text-xs text-text">{url}</code>
+      <Button type="button" size="sm" variant="secondary" onClick={() => onCopy(url, label)}>
+        <Copy className="h-3.5 w-3.5" />
+        Copiar
+      </Button>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="text-xs text-muted underline-offset-2 hover:text-text hover:underline"
+      >
+        abrir
+      </a>
+    </div>
   );
 }

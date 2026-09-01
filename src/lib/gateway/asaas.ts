@@ -10,6 +10,7 @@
  */
 
 import { ApiError } from "@/lib/http";
+import { brazilIsoDate } from "./brazil-date";
 
 const SANDBOX_URL = "https://api-sandbox.asaas.com/v3";
 const PRODUCTION_URL = "https://api.asaas.com/v3";
@@ -123,7 +124,8 @@ export function toCents(reais: number | string | null | undefined): number {
 
 /** AAAA-MM-DD, formato que o Asaas espera nas datas. */
 export function toAsaasDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  // no fuso de Brasília, não em UTC: ver brazil-date.ts
+  return brazilIsoDate(date);
 }
 
 /* ------------------------------------------------------------------------ */

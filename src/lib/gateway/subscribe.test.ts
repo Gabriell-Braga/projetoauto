@@ -44,3 +44,32 @@ describe("primeiro vencimento", () => {
     }
   });
 });
+
+/**
+ * O vencimento errava por fuso, não só por horário: das 21h à meia-noite o UTC
+ * já está no dia seguinte, então "o dia já passou" disparava sozinho e a
+ * primeira cobrança pulava um mês inteiro.
+ */
+describe("firstDueDate na virada do dia em Brasília", () => {
+  it("contratar às 23h do dia 10, com vencimento dia 10, cobra neste mês", () => {
+    // 02:00 UTC de 11/09 = 23:00 de 10/09 em Brasília
+    const lateNight = new Date("2026-09-11T02:00:00.000Z");
+    expect(firstDueDate(10, 0, lateNight).toISOString()).toBe("2026-09-10T12:00:00.000Z");
+  });
+
+  it("manhã e noite do mesmo dia dão o mesmo vencimento", () => {
+    const morning = new Date("2026-09-10T12:00:00.000Z");
+    const night = new Date("2026-09-11T02:00:00.000Z");
+    expect(firstDueDate(10, 0, morning).getTime()).toBe(firstDueDate(10, 0, night).getTime());
+  });
+
+  it("empurra para o mês seguinte só quando o dia realmente passou", () => {
+    const eleventh = new Date("2026-09-11T12:00:00.000Z");
+    expect(firstDueDate(10, 0, eleventh).toISOString()).toBe("2026-10-10T12:00:00.000Z");
+  });
+
+  it("na virada do ano, dezembro empurra para janeiro do ano seguinte", () => {
+    const lateDecember = new Date("2026-12-21T12:00:00.000Z");
+    expect(firstDueDate(20, 0, lateDecember).toISOString()).toBe("2027-01-20T12:00:00.000Z");
+  });
+});

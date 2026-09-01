@@ -11,6 +11,7 @@ import {
   type Plan,
 } from "@/db/schema";
 import { ApiError, badRequest, conflict } from "@/lib/http";
+import { billingDate, brazilDateParts } from "./brazil-date";
 import { getPlatformSettings, invalidateEntitlements } from "@/lib/plans/service";
 import { invalidateTenantCache } from "@/lib/tenant/service";
 import { onlyDigits } from "@/lib/utils";
@@ -262,18 +263,20 @@ async function applyPlanToTenant(
 /**
  * Primeiro vencimento: respeita o trial e o dia escolhido.
  *
- * A comparação é por DATA, nunca por horário. Comparando timestamp, contratar
- * às 9h cobrava no mesmo dia e contratar às 21h empurrava um mês inteiro —
- * o mesmo dia dava resultados diferentes conforme a hora.
+ * A comparação é por DATA e no fuso de Brasília. Por timestamp, contratar às 9h
+ * cobrava no mesmo dia e às 21h empurrava um mês. Em UTC, o mesmo erro voltava
+ * das 21h à meia-noite, quando o UTC já está no dia seguinte — e cada
+ * ocorrência é um mês de mensalidade que ninguém cobra.
  */
 export function firstDueDate(dueDay: number, trialDays: number, now = new Date()): Date {
   if (trialDays > 0) {
     return new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
   }
 
-  const due = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), dueDay, 12));
+  const today = brazilDateParts(now);
+  const due = billingDate({ year: today.year, month: today.month, day: dueDay });
   // dia já passou neste mês? só então empurra
-  if (dueDay < now.getUTCDate()) due.setUTCMonth(due.getUTCMonth() + 1);
+  if (dueDay < today.day) due.setUTCMonth(due.getUTCMonth() + 1);
   return due;
 }
 

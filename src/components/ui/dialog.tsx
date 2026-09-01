@@ -45,7 +45,8 @@ export function Dialog({
   onClose: () => void;
   title: string;
   description?: string;
-  children: React.ReactNode;
+  /** Opcional: uma confirmação diz tudo no título e na descrição. */
+  children?: React.ReactNode;
   footer?: React.ReactNode;
   size?: DialogSize;
 }) {
@@ -159,7 +160,9 @@ export function Dialog({
           </button>
         </div>
 
-        <div className={cn("px-4 py-4", DIALOG_LAYOUT.body)}>{children}</div>
+        {children ? (
+          <div className={cn("px-4 py-4", DIALOG_LAYOUT.body)}>{children}</div>
+        ) : null}
 
         {footer ? (
           <div

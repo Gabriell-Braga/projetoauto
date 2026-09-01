@@ -70,11 +70,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               </Button>
             </div>
           }
-        >
-          {/* O texto mora na descrição do diálogo; o corpo existe só para o
-              espaçamento não colar cabeçalho e rodapé. */}
-          <div className="h-1" />
-        </Dialog>
+        />
       ) : null}
     </ConfirmContext.Provider>
   );

@@ -200,3 +200,21 @@ export const POST = withApi(async (request: Request) => {
 
   return jsonOk(result);
 });
+
+/**
+ * Diz se o cofre está utilizável sem revelar a chave.
+ *
+ * Confere o tamanho porque chave truncada ao colar passa como "configurada" e
+ * só falha quando alguém tenta conectar um portal — o pior momento possível
+ * para descobrir.
+ */
+function describeVaultKey(): string {
+  const value = process.env.VAULT_KEY;
+  if (!value) return "AUSENTE";
+  try {
+    const bytes = atob(value).length;
+    return bytes === 32 ? "configurado" : `INVÁLIDO: ${bytes} bytes, precisa de 32`;
+  } catch {
+    return "INVÁLIDO: não é base64";
+  }
+}

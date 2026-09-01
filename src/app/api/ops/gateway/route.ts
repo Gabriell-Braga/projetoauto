@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, or } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db";
 import { billingStatus, plans, subscriptions, tenants, webhookEvents } from "@/db/schema";
@@ -38,8 +38,9 @@ export const GET = withApi(async (request: Request) => {
     },
   };
 
-  const tenantId = new URL(request.url).searchParams.get("tenantId");
-  if (tenantId) report.revenda = await tenantReport(tenantId);
+  const query = new URL(request.url).searchParams;
+  const tenantRef = query.get("tenantId") ?? query.get("slug");
+  if (tenantRef) report.revenda = await tenantReport(tenantRef);
 
   if (!apiKeyPresent) {
     report.proximoPasso = "Cadastrar ASAAS_API_KEY nas Secret Variables e refazer o deploy.";
@@ -76,7 +77,8 @@ export const GET = withApi(async (request: Request) => {
   return jsonOk(report);
 });
 
-async function tenantReport(tenantId: string) {
+/** Aceita id ou slug — o slug é o que se enxerga no painel. */
+async function tenantReport(ref: string) {
   const db = await getDb();
 
   const rows = await db
@@ -84,11 +86,12 @@ async function tenantReport(tenantId: string) {
     .from(tenants)
     .leftJoin(billingStatus, eq(billingStatus.tenantId, tenants.id))
     .leftJoin(plans, eq(plans.id, tenants.planId))
-    .where(eq(tenants.id, tenantId))
+    .where(or(eq(tenants.id, ref), eq(tenants.slug, ref)))
     .limit(1);
 
   const row = rows[0];
   if (!row) return { erro: "revenda não encontrada" };
+  const tenantId = row.tenant.id;
 
   const subscriptionRows = await db
     .select()
@@ -111,6 +114,7 @@ async function tenantReport(tenantId: string) {
   const core = await getTenantCoreById(tenantId);
 
   return {
+    id: tenantId,
     nome: row.tenant.name,
     slug: row.tenant.slug,
     plano: row.plan?.name ?? null,
@@ -135,6 +139,7 @@ async function tenantReport(tenantId: string) {
 /* ------------------------------------------------------------------------ */
 
 const contractSchema = z.object({
+  /** id ou slug da revenda. */
   tenantId: z.string().min(1),
   planSlug: z.string().min(1),
   billingType: z.enum(["BOLETO", "CREDIT_CARD", "PIX", "UNDEFINED"]).optional(),
@@ -163,8 +168,16 @@ export const POST = withApi(async (request: Request) => {
     .limit(1);
   if (!planRows[0]) throw badRequest(`Plano "${parsed.data.planSlug}" não encontrado`);
 
+  const tenantRows = await db
+    .select({ id: tenants.id })
+    .from(tenants)
+    .where(or(eq(tenants.id, parsed.data.tenantId), eq(tenants.slug, parsed.data.tenantId)))
+    .limit(1);
+  if (!tenantRows[0]) throw badRequest("Revenda não encontrada");
+  const tenantId = tenantRows[0].id;
+
   const result = await contractSubscription({
-    tenantId: parsed.data.tenantId,
+    tenantId,
     planId: planRows[0].id,
     billingType: parsed.data.billingType,
     couponCode: parsed.data.couponCode || null,
@@ -172,12 +185,12 @@ export const POST = withApi(async (request: Request) => {
   });
 
   await logAudit(
-    { userId: null, email: "ops", role: null, tenantId: parsed.data.tenantId, impersonated: false },
+    { userId: null, email: "ops", role: null, tenantId, impersonated: false },
     {
       action: "billing.subscription.create",
       entity: "subscription",
-      entityId: parsed.data.tenantId,
-      tenantId: parsed.data.tenantId,
+      entityId: tenantId,
+      tenantId,
       metadata: { planSlug: parsed.data.planSlug, mode: result.mode, via: "ops" },
     },
     request,

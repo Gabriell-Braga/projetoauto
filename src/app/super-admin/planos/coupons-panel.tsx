@@ -257,6 +257,7 @@ function CouponEditor({
   return (
     <Dialog
       open
+      size="md"
       onClose={onClose}
       title={isNew ? "Novo cupom" : `Editar ${coupon.code}`}
       footer={

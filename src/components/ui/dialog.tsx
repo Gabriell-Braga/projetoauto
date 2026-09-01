@@ -10,6 +10,28 @@ import { cn } from "@/lib/utils";
  * fora fecha, foco entra ao abrir e volta para quem abriu ao fechar, e o Tab
  * fica preso dentro do diálogo.
  */
+const WIDTHS = {
+  sm: "max-w-md",
+  md: "max-w-xl",
+  lg: "max-w-3xl",
+} as const;
+
+export type DialogSize = keyof typeof WIDTHS;
+
+/**
+ * Contrato de layout do diálogo, exportado para o teste conseguir travá-lo.
+ *
+ * Sem `max-h` + `flex-col` no painel e `overflow-y-auto` no corpo, um
+ * formulário longo cresce além da tela e empurra o cabeçalho e o rodapé para
+ * fora — a pessoa perde o título e o botão de salvar sem nenhum aviso.
+ */
+export const DIALOG_LAYOUT = {
+  panel: "flex max-h-[calc(100dvh-2rem)] flex-col",
+  header: "shrink-0",
+  body: "min-h-0 flex-1 overflow-y-auto overscroll-contain",
+  footer: "shrink-0",
+} as const;
+
 export function Dialog({
   open,
   onClose,
@@ -17,6 +39,7 @@ export function Dialog({
   description,
   children,
   footer,
+  size = "sm",
 }: {
   open: boolean;
   onClose: () => void;
@@ -24,6 +47,7 @@ export function Dialog({
   description?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  size?: DialogSize;
 }) {
   const panelRef = React.useRef<HTMLDivElement>(null);
   const openerRef = React.useRef<HTMLElement | null>(null);
@@ -99,10 +123,19 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
-        className="relative w-full max-w-md rounded border border-border bg-surface"
+        className={cn(
+          "relative w-full rounded border border-border bg-surface",
+          WIDTHS[size],
+          DIALOG_LAYOUT.panel,
+        )}
         style={{ boxShadow: "var(--shadow-menu)" }}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+        <div
+          className={cn(
+            "flex items-start justify-between gap-3 border-b border-border px-4 py-3",
+            DIALOG_LAYOUT.header,
+          )}
+        >
           <div className="min-w-0">
             <h2 id={titleId} className="font-display text-[15px] font-semibold text-text">
               {title}
@@ -126,10 +159,15 @@ export function Dialog({
           </button>
         </div>
 
-        <div className="px-4 py-4">{children}</div>
+        <div className={cn("px-4 py-4", DIALOG_LAYOUT.body)}>{children}</div>
 
         {footer ? (
-          <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
+          <div
+            className={cn(
+              "flex items-center justify-end gap-2 border-t border-border px-4 py-3",
+              DIALOG_LAYOUT.footer,
+            )}
+          >
             {footer}
           </div>
         ) : null}

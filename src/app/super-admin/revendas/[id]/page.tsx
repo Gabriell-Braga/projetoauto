@@ -13,6 +13,7 @@ import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { effectiveBillingStatus, getTenantCoreById, graceDaysLeft } from "@/lib/tenant/service";
 import { getTenantSubscription, listActivePlanOptions } from "@/lib/services/subscriptions";
 import { BillingPanel } from "./billing-panel";
+import { PaymentsPanel } from "./payments-panel";
 import { SubscriptionPanel } from "./subscription-panel";
 import { DangerZone } from "./danger-zone";
 import { ImpersonateButton } from "./impersonate-button";
@@ -125,6 +126,10 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
           plans={planOptions}
           subscription={subscription?.summary ?? null}
         />
+      ) : null}
+
+      {financeiro && subscription?.summary?.gatewaySubscriptionId ? (
+        <PaymentsPanel tenantId={id} />
       ) : null}
 
       {tab === "financeiro" ? (

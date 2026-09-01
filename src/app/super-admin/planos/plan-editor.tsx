@@ -153,6 +153,7 @@ export function PlanEditor({
   return (
     <Dialog
       open
+      size="lg"
       onClose={onClose}
       title={isNew ? "Novo plano" : `Editar ${plan?.name}`}
       description={

@@ -85,10 +85,13 @@ export function ShellFrame({
         <RouteProgress />
       </Suspense>
 
-      {/* -------------------------------------------------- sidebar fixa */}
+      {/*
+        Sidebar fixa: `sticky top-0` + altura de viewport. Sem isso ela e uma
+        coluna flex comum e desce junto com o scroll da pagina em telas altas.
+      */}
       <aside
         data-theme-transition
-        className="hidden w-[var(--sidebar-w)] shrink-0 flex-col border-r border-border bg-surface md:flex"
+        className="sticky top-0 hidden h-[100dvh] w-[var(--sidebar-w)] shrink-0 flex-col border-r border-border bg-surface md:flex"
       >
         {brand}
         {nav}

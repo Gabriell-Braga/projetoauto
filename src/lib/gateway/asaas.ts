@@ -279,3 +279,62 @@ export function createWebhook(input: {
 export function listWebhooks(): Promise<{ data: AsaasWebhook[] }> {
   return request<{ data: AsaasWebhook[] }>("GET", "/webhooks");
 }
+
+/* ------------------------------------------------------------------------ */
+/* Cobranças                                                                 */
+/* ------------------------------------------------------------------------ */
+
+export type AsaasPaymentStatus =
+  | "PENDING"
+  | "RECEIVED"
+  | "CONFIRMED"
+  | "OVERDUE"
+  | "REFUNDED"
+  | "RECEIVED_IN_CASH"
+  | "AWAITING_RISK_ANALYSIS";
+
+export type AsaasPayment = {
+  id: string;
+  status: AsaasPaymentStatus;
+  value: number;
+  netValue: number | null;
+  billingType: AsaasBillingType;
+  dueDate: string;
+  paymentDate: string | null;
+  description: string | null;
+  invoiceUrl: string | null;
+  bankSlipUrl: string | null;
+  transactionReceiptUrl: string | null;
+};
+
+/** Cobranças de uma assinatura, da mais recente para a mais antiga. */
+export function listSubscriptionPayments(
+  subscriptionId: string,
+): Promise<{ data: AsaasPayment[] }> {
+  return request<{ data: AsaasPayment[] }>(
+    "GET",
+    `/subscriptions/${subscriptionId}/payments?limit=20`,
+  );
+}
+
+export function getPayment(paymentId: string): Promise<AsaasPayment> {
+  return request<AsaasPayment>("GET", `/payments/${paymentId}`);
+}
+
+/**
+ * Marca a cobrança como recebida em dinheiro.
+ *
+ * É como se confirma um pagamento sem passar por banco. No sandbox serve para
+ * disparar o evento de pagamento e exercitar o webhook ponta a ponta; em
+ * produção é a baixa manual de quem pagou por fora.
+ */
+export function receivePaymentInCash(
+  paymentId: string,
+  input: { value: number; date: Date; notifyCustomer?: boolean },
+): Promise<AsaasPayment> {
+  return request<AsaasPayment>("POST", `/payments/${paymentId}/receiveInCash`, {
+    paymentDate: toAsaasDate(input.date),
+    value: input.value,
+    notifyCustomer: input.notifyCustomer ?? false,
+  });
+}

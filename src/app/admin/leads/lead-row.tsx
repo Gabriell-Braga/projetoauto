@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, MessageCircle } from "lucide-react";
 import { LeadStatusBadge } from "@/components/admin/status-badges";
@@ -85,7 +86,12 @@ export function LeadRow({
               )}
             />
             <span>
-              <span className="block font-medium text-text">{lead.name}</span>
+              <Link
+                href={`/admin/leads/${lead.id}`}
+                className="block font-medium text-text hover:text-accent-text"
+              >
+                {lead.name}
+              </Link>
               <span className="block text-xs text-faint">{formatPhone(lead.phone)}</span>
             </span>
           </button>

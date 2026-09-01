@@ -6,6 +6,8 @@ import { requireApiTenant } from "@/lib/auth/guards";
 import { hashPassword } from "@/lib/auth/password";
 import { assignableRoles } from "@/lib/auth/rbac";
 import { badRequest, forbidden, jsonOk, notFound, withApi } from "@/lib/http";
+import { requireFeature } from "@/lib/api/feature-guard";
+import { TENANT_PERMISSIONS } from "@/lib/auth/rbac";
 import { resetPasswordSchema, updateUserSchema } from "@/lib/validation/users";
 
 export const dynamic = "force-dynamic";
@@ -37,8 +39,26 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
     throw forbidden("Você não pode atribuir este perfil");
   }
   // evita a revenda se trancar para fora do próprio painel
-  if (target.id === context.claims.sub && (input.status === "disabled" || input.role)) {
+  if (
+    target.id === context.claims.sub &&
+    (input.status === "disabled" || input.role || input.permissionOverrides !== undefined)
+  ) {
     throw forbidden("Você não pode alterar o próprio acesso");
+  }
+
+  if (input.permissionOverrides !== undefined) {
+    await requireFeature(context.tenant.id, "permissoes_avancadas");
+
+    // permissão fora do catálogo da revenda seria concedida sem que nenhuma
+    // tela a mostrasse — inclusive as de plataforma
+    const chosen = [
+      ...(input.permissionOverrides?.granted ?? []),
+      ...(input.permissionOverrides?.revoked ?? []),
+    ];
+    const invalid = chosen.filter(
+      (permission) => !TENANT_PERMISSIONS.includes(permission as (typeof TENANT_PERMISSIONS)[number]),
+    );
+    if (invalid.length > 0) throw badRequest(`Permissão inválida: ${invalid.join(", ")}`);
   }
 
   const db = await getDb();

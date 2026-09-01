@@ -1,4 +1,14 @@
-import type { BillingStatus, BodyType, Fuel, LeadStatus, Transmission, VehicleStatus } from "@/db/schema";
+import type {
+  BillingStatus,
+  BodyType,
+  FinancingStatus,
+  Fuel,
+  LeadSource,
+  LeadStatus,
+  StageKind,
+  Transmission,
+  VehicleStatus,
+} from "@/db/schema";
 
 export const TRANSMISSION_LABELS: Record<Transmission, string> = {
   manual: "Manual",
@@ -52,3 +62,31 @@ export const COLORS = [
   "Branco", "Prata", "Preto", "Cinza", "Vermelho", "Azul", "Verde",
   "Marrom", "Bege", "Amarelo", "Laranja", "Dourado", "Vinho",
 ];
+
+export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
+  form: "Formulário do site",
+  whatsapp: "WhatsApp",
+  phone: "Telefone",
+  manual: "Cadastro manual",
+};
+
+export const STAGE_KIND_LABELS: Record<StageKind, string> = {
+  open: "Em andamento",
+  won: "Fecha como ganho",
+  lost: "Fecha como perdido",
+};
+
+export const FINANCING_STATUS_LABELS: Record<FinancingStatus, string> = {
+  rascunho: "Rascunho",
+  em_analise: "Em análise",
+  aprovado: "Aprovado",
+  recusado: "Recusado",
+  contratado: "Contratado",
+  cancelado: "Cancelado",
+};
+
+export const DISTRIBUTION_MODE_LABELS: Record<string, string> = {
+  off: "Desligada",
+  round_robin: "Rodízio entre a equipe",
+  by_store: "Rodízio dentro da unidade",
+};

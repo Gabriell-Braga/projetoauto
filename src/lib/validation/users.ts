@@ -20,6 +20,15 @@ export const updateUserSchema = z.object({
   name: z.string().trim().min(2).max(120).optional(),
   role: z.enum(ROLES).optional(),
   status: z.enum(USER_STATUS).optional(),
+  storeId: z.string().uuid().nullable().optional(),
+  receivesLeads: z.boolean().optional(),
+  permissionOverrides: z
+    .object({
+      granted: z.array(z.string()).max(40).optional(),
+      revoked: z.array(z.string()).max(40).optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const resetPasswordSchema = z.object({

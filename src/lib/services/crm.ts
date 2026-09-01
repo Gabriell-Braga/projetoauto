@@ -263,3 +263,103 @@ export async function pickAssignee(
 
   return nextId;
 }
+
+/* ------------------------------------------------------------------------ */
+/* Quadro do funil                                                           */
+/* ------------------------------------------------------------------------ */
+
+export type BoardCard = {
+  id: string;
+  name: string;
+  phone: string;
+  vehicleLabel: string | null;
+  assignedToName: string | null;
+  createdAt: string;
+  source: string;
+};
+
+export type BoardColumn = {
+  id: string;
+  name: string;
+  kind: StageKind;
+  cards: BoardCard[];
+};
+
+/**
+ * Leads agrupados por etapa.
+ *
+ * Fechados entram só se decididos dentro da janela: sem isso, "Vendido" e
+ * "Perdido" acumulam para sempre e o quadro fica ilegível depois de alguns
+ * meses. As colunas abertas mostram tudo, porque lead parado há muito tempo é
+ * justamente o que precisa aparecer.
+ */
+export async function loadBoard(tenantId: string, closedWindowDays = 30): Promise<BoardColumn[]> {
+  const stages = await ensureStages(tenantId);
+  const db = await getDb();
+  const since = new Date(Date.now() - closedWindowDays * 24 * 60 * 60 * 1000);
+
+  const rows = await db
+    .select({
+      id: leads.id,
+      name: leads.name,
+      phone: leads.phone,
+      vehicleLabel: leads.vehicleLabel,
+      stageId: leads.stageId,
+      source: leads.source,
+      createdAt: leads.createdAt,
+      updatedAt: leads.updatedAt,
+      assignedToName: users.name,
+    })
+    .from(leads)
+    .leftJoin(users, eq(users.id, leads.assignedToUserId))
+    .where(eq(leads.tenantId, tenantId))
+    .orderBy(desc(leads.createdAt))
+    .limit(1000);
+
+  const closedStageIds = new Set(
+    stages.filter((stage) => stage.kind !== "open").map((stage) => stage.id),
+  );
+
+  return stages.map((stage) => ({
+    id: stage.id,
+    name: stage.name,
+    kind: stage.kind,
+    cards: rows
+      .filter((row) => row.stageId === stage.id)
+      .filter((row) => !closedStageIds.has(stage.id) || row.updatedAt >= since)
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        phone: row.phone,
+        vehicleLabel: row.vehicleLabel,
+        assignedToName: row.assignedToName,
+        source: row.source,
+        createdAt: row.createdAt.toISOString(),
+      })),
+  }));
+}
+
+/** Leads que ainda não entraram no funil — existiam antes de ele ser criado. */
+export async function countLeadsWithoutStage(tenantId: string): Promise<number> {
+  const db = await getDb();
+  const rows = await db
+    .select({ id: leads.id })
+    .from(leads)
+    .where(and(eq(leads.tenantId, tenantId), isNull(leads.stageId)));
+  return rows.length;
+}
+
+/** Coloca na primeira etapa aberta os leads que ficaram de fora do funil. */
+export async function adoptOrphanLeads(tenantId: string): Promise<number> {
+  const stages = await ensureStages(tenantId);
+  const first = stages.find((stage) => stage.kind === "open") ?? stages[0];
+  if (!first) return 0;
+
+  const db = await getDb();
+  const updated = await db
+    .update(leads)
+    .set({ stageId: first.id })
+    .where(and(eq(leads.tenantId, tenantId), isNull(leads.stageId)))
+    .returning({ id: leads.id });
+  return updated.length;
+}

@@ -1,4 +1,15 @@
-import { Car, LayoutDashboard, MessagesSquare, Palette, Users } from "lucide-react";
+import {
+  BarChart3,
+  Building2,
+  Car,
+  Handshake,
+  KanbanSquare,
+  LayoutDashboard,
+  MessagesSquare,
+  Palette,
+  Plug,
+  Users,
+} from "lucide-react";
 import { AppShell, type NavSection } from "@/components/layout/shell";
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import { Alert } from "@/components/ui/alert";
@@ -27,7 +38,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       ? [{ href: "/admin/estoque", label: "Estoque", icon: <Car className={ICON} /> }]
       : []),
     ...(can(context.role, "leads:read")
-      ? [{ href: "/admin/leads", label: "Leads", icon: <MessagesSquare className={ICON} /> }]
+      ? [
+          { href: "/admin/leads", label: "Leads", icon: <MessagesSquare className={ICON} /> },
+          { href: "/admin/funil", label: "Funil", icon: <KanbanSquare className={ICON} /> },
+        ]
+      : []),
+    ...(can(context.role, "financings:read")
+      ? [
+          {
+            href: "/admin/financiamentos",
+            label: "Financiamentos",
+            icon: <Handshake className={ICON} />,
+          },
+        ]
+      : []),
+    ...(can(context.role, "reports:read")
+      ? [{ href: "/admin/relatorios", label: "Relatórios", icon: <BarChart3 className={ICON} /> }]
       : []),
   ];
 
@@ -37,6 +63,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       : []),
     ...(can(context.role, "users:read")
       ? [{ href: "/admin/usuarios", label: "Usuários", icon: <Users className={ICON} /> }]
+      : []),
+    ...(can(context.role, "stores:write")
+      ? [{ href: "/admin/unidades", label: "Unidades", icon: <Building2 className={ICON} /> }]
+      : []),
+    ...(can(context.role, "api:manage")
+      ? [{ href: "/admin/integracoes", label: "API e webhooks", icon: <Plug className={ICON} /> }]
       : []),
   ];
 

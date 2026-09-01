@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FALLBACK_LIMITS, unreadyFeatures } from "./catalog";
+import { FALLBACK_LIMITS, FEATURES, unreadyFeatures } from "./catalog";
 import {
   buildEntitlements,
   checkLimit,
@@ -110,15 +110,25 @@ describe("funcionalidades", () => {
 });
 
 describe("aviso de funcionalidade não entregue", () => {
+  /**
+   * Escolhida do catálogo, não fixada no teste.
+   *
+   * A versão anterior citava uma funcionalidade pelo nome e quebrou no dia em
+   * que ela ficou pronta — o teste acusava um defeito que era, na verdade,
+   * trabalho entregue.
+   */
+  const naoEntregue = FEATURES.find((feature) => feature.status !== "pronto")!;
+  const entregue = FEATURES.find((feature) => feature.status === "pronto")!;
+
   it("acusa quando o plano liga algo que ainda não existe", () => {
-    const pending = unreadyFeatures({ gestao_multiunidade: true, gestao_estoque: true });
+    const pending = unreadyFeatures({ [naoEntregue.key]: true, [entregue.key]: true });
     const keys = pending.map((feature) => feature.key);
-    expect(keys).toContain("gestao_multiunidade");
-    expect(keys).not.toContain("gestao_estoque");
+    expect(keys).toContain(naoEntregue.key);
+    expect(keys).not.toContain(entregue.key);
   });
 
   it("não acusa o que está desligado", () => {
-    expect(unreadyFeatures({ gestao_multiunidade: false })).toEqual([]);
+    expect(unreadyFeatures({ [naoEntregue.key]: false })).toEqual([]);
   });
 
   it("acusa dependência de fornecedor", () => {

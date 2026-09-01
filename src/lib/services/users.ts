@@ -4,7 +4,17 @@ import { passwordResets, tenants, users, type Role, type User } from "@/db/schem
 
 export type UserListItem = Pick<
   User,
-  "id" | "name" | "email" | "role" | "status" | "lastLoginAt" | "mustChangePassword" | "createdAt"
+  | "id"
+  | "name"
+  | "email"
+  | "role"
+  | "status"
+  | "lastLoginAt"
+  | "mustChangePassword"
+  | "createdAt"
+  | "storeId"
+  | "receivesLeads"
+  | "permissionOverrides"
 >;
 
 const LIST_COLUMNS = {
@@ -16,6 +26,9 @@ const LIST_COLUMNS = {
   lastLoginAt: users.lastLoginAt,
   mustChangePassword: users.mustChangePassword,
   createdAt: users.createdAt,
+  storeId: users.storeId,
+  receivesLeads: users.receivesLeads,
+  permissionOverrides: users.permissionOverrides,
 };
 
 export async function listTenantUsers(tenantId: string): Promise<UserListItem[]> {

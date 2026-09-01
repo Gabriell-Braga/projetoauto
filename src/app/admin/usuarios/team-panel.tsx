@@ -10,6 +10,7 @@ import { Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import type { Role } from "@/db/schema";
 import { ROLE_LABELS } from "@/lib/auth/rbac";
 import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
+import { MemberTuning } from "./member-tuning";
 import { PasswordInput, PasswordRequirements } from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -30,6 +31,9 @@ export type TeamMember = {
   status: "active" | "disabled";
   mustChangePassword: boolean;
   lastLoginAt: string | null;
+  storeId: string | null;
+  receivesLeads: boolean;
+  permissionOverrides: { granted?: string[]; revoked?: string[] } | null;
 };
 
 const ROLE_HINTS: Record<string, string> = {
@@ -43,15 +47,22 @@ export function TeamPanel({
   currentUserId,
   assignableRoles,
   canWrite,
+  stores,
+  showDistribution,
+  showPermissions,
 }: {
   members: TeamMember[];
   currentUserId: string;
   assignableRoles: Role[];
   canWrite: boolean;
+  stores: { id: string; name: string }[];
+  showDistribution: boolean;
+  showPermissions: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [resetTarget, setResetTarget] = useState<TeamMember | null>(null);
+  const [tuning, setTuning] = useState<TeamMember | null>(null);
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
@@ -184,6 +195,16 @@ export function TeamPanel({
                   <Td className="text-right">
                     {canWrite ? (
                       <div className="flex justify-end gap-2">
+                        {(showDistribution || showPermissions || stores.length > 0) && !isSelf ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setTuning(member)}
+                          >
+                            Ajustes
+                          </Button>
+                        ) : null}
                         <Button
                           type="button"
                           size="sm"
@@ -286,6 +307,20 @@ export function TeamPanel({
           </ul>
         </CardContent>
       </Card>
+
+      {tuning ? (
+        <MemberTuning
+          member={tuning}
+          stores={stores}
+          showDistribution={showDistribution}
+          showPermissions={showPermissions}
+          onClose={() => setTuning(null)}
+          onSaved={() => {
+            setTuning(null);
+            router.refresh();
+          }}
+        />
+      ) : null}
 
       <ResetPasswordDialog
         open={resetTarget !== null}

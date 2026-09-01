@@ -35,6 +35,8 @@ export const GET = withApi(async (request: Request) => {
     segredos: {
       ASAAS_API_KEY: apiKeyPresent ? "configurado" : "AUSENTE",
       ASAAS_WEBHOOK_TOKEN: webhookTokenPresent ? "configurado" : "AUSENTE",
+      // só a presença e o tamanho: o valor nunca sai daqui
+      VAULT_KEY: describeVaultKey(),
     },
   };
 

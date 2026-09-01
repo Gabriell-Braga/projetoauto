@@ -15,3 +15,12 @@ OPS_SECRET="troque-por-outro-segredo-longo"
 
 # O mount path NÃO precisa ser cadastrado: o next.config.ts deriva
 # NEXT_PUBLIC_BASE_PATH do BASE_URL que o Webflow Cloud injeta no build.
+
+# --- Gateway de pagamento (Asaas) ---------------------------------------
+# A propria chave diz o ambiente: $aact_hmlg_ = sandbox, $aact_prod_ = producao.
+# ASAAS_API_KEY="$aact_hmlg_..."
+# Token estatico que o Asaas envia no header asaas-access-token do webhook.
+# Gerado na criacao do webhook — guarde na hora, ele aparece uma unica vez.
+# ASAAS_WEBHOOK_TOKEN="..."
+# Opcional: forca o ambiente independentemente do prefixo da chave.
+# ASAAS_ENV="sandbox"

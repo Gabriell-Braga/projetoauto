@@ -21,6 +21,8 @@ export const tenants = sqliteTable(
     blockMode: text("block_mode").$type<BlockMode>().notNull().default("readonly"),
     /** GTM definido pela plataforma; a revenda pode sobrescrever em tenant_sites.gtm_code. */
     gtmCode: text("gtm_code"),
+    /** Plano contratado. Sem plano, a revenda roda com os limites de fallback. */
+    planId: text("plan_id"),
     notes: text("notes"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

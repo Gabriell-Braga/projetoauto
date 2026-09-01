@@ -18,6 +18,8 @@ import {
   type PhotoVariantName,
 } from "@/lib/storage/r2";
 import { photoCoverSchema, photoOrderSchema } from "@/lib/validation/vehicles";
+import { getEntitlements } from "@/lib/plans/service";
+import { limitOf } from "@/lib/plans/entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +37,11 @@ export const POST = withApi(async (request: Request, { params }: Params) => {
 
   const existing = await getVehicle(context.tenant.id, id);
   if (!existing) throw notFound("Veículo não encontrado");
-  if (existing.photos.length >= 40) throw badRequest("Limite de 40 fotos por veículo atingido");
+  const entitlements = await getEntitlements(context.tenant.id);
+  const maxPhotos = limitOf(entitlements, "maxPhotosPerVehicle");
+  if (maxPhotos !== null && existing.photos.length >= maxPhotos) {
+    throw badRequest(`Limite de ${maxPhotos} fotos por veículo atingido.`);
+  }
 
   const formData = await request.formData().catch(() => null);
   if (!formData) throw badRequest("Envio inválido");

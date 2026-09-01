@@ -11,6 +11,8 @@ import {
   tenantAssetKey,
 } from "@/lib/storage/r2";
 import { invalidateTenantCache } from "@/lib/tenant/service";
+import { getEntitlements } from "@/lib/plans/service";
+import { limitOf } from "@/lib/plans/entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -34,8 +36,10 @@ export const POST = withApi(async (request: Request) => {
     .where(eq(tenantBanners.tenantId, context.tenant.id))
     .orderBy(asc(tenantBanners.position));
 
-  if (existing.length >= MAX_BANNERS) {
-    throw badRequest("Limite de banners atingido");
+  const entitlements = await getEntitlements(context.tenant.id);
+  const maxBanners = limitOf(entitlements, "maxBanners") ?? MAX_BANNERS;
+  if (existing.length >= maxBanners) {
+    throw badRequest(`Limite de ${maxBanners} banners atingido.`);
   }
 
   const extension =

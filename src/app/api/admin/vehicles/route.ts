@@ -2,8 +2,9 @@ import { getDb } from "@/db";
 import { vehicles } from "@/db/schema";
 import { logAuditFor } from "@/lib/audit";
 import { requireApiTenant } from "@/lib/auth/guards";
-import { badRequest, jsonOk, withApi } from "@/lib/http";
+import { badRequest, forbidden, jsonOk, withApi } from "@/lib/http";
 import { buildVehicleSlug } from "@/lib/services/vehicles";
+import { checkTenantLimit } from "@/lib/plans/service";
 import { vehicleSchema } from "@/lib/validation/vehicles";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,12 @@ export const POST = withApi(async (request: Request) => {
   const parsed = vehicleSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) throw badRequest("Dados inválidos", parsed.error.issues);
   const input = parsed.data;
+
+  // rascunho não ocupa vaga; só publicar consome o limite do plano
+  if (input.status === "available" || input.status === "reserved") {
+    const limit = await checkTenantLimit(context.tenant.id, "maxVehicles");
+    if (!limit.allowed) throw forbidden(limit.message!);
+  }
 
   const slug = await buildVehicleSlug(context.tenant.id, input);
   const db = await getDb();

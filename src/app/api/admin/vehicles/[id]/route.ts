@@ -3,8 +3,9 @@ import { getDb } from "@/db";
 import { vehicles } from "@/db/schema";
 import { logAuditFor } from "@/lib/audit";
 import { requireApiTenant } from "@/lib/auth/guards";
-import { badRequest, jsonOk, notFound, withApi } from "@/lib/http";
+import { badRequest, forbidden, jsonOk, notFound, withApi } from "@/lib/http";
 import { buildVehicleSlug, deleteVehicle, getVehicle } from "@/lib/services/vehicles";
+import { checkTenantLimit } from "@/lib/plans/service";
 import { vehicleUpdateSchema } from "@/lib/validation/vehicles";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,15 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
 
   const existing = await getVehicle(context.tenant.id, id);
   if (!existing) throw notFound("Veículo não encontrado");
+
+  // tirar do rascunho ocupa uma vaga: precisa caber no plano
+  const willPublish = input.status === "available" || input.status === "reserved";
+  const wasPublished =
+    existing.vehicle.status === "available" || existing.vehicle.status === "reserved";
+  if (willPublish && !wasPublished) {
+    const limit = await checkTenantLimit(context.tenant.id, "maxVehicles");
+    if (!limit.allowed) throw forbidden(limit.message!);
+  }
 
   const identityChanged =
     (input.brand !== undefined && input.brand !== existing.vehicle.brand) ||

@@ -6,3 +6,5 @@ export * from "./vehicles";
 export * from "./leads";
 export * from "./audit";
 export * from "./password-resets";
+export * from "./plans";
+export * from "./subscriptions";

@@ -20,6 +20,20 @@ export const users = sqliteTable(
     passwordSalt: text("password_salt").notNull(),
     role: text("role").$type<Role>().notNull(),
     status: text("status").$type<UserStatus>().notNull().default("active"),
+    storeId: text("store_id"),
+    /** Entra no rodízio de distribuição de leads. */
+    receivesLeads: integer("receives_leads", { mode: "boolean" }).notNull().default(true),
+    /**
+     * Ajustes finos por pessoa, sobre o que o perfil já dá.
+     *
+     * Guardado como duas listas em vez de substituir o perfil: assim a pessoa
+     * continua herdando as mudanças futuras do perfil dela, e o desvio fica
+     * explícito na tela — "vendedor, e além disso pode X".
+     */
+    permissionOverrides: text("permission_overrides", { mode: "json" }).$type<{
+      granted?: string[];
+      revoked?: string[];
+    }>(),
     mustChangePassword: integer("must_change_password", { mode: "boolean" })
       .notNull()
       .default(false),

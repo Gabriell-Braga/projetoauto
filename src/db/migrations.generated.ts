@@ -86,5 +86,34 @@ export const MIGRATIONS: BundledMigration[] = [
       "ALTER TABLE `vehicles` ADD `draft_expires_at` integer;",
       "CREATE INDEX `vehicles_draft_expiry_idx` ON `vehicles` (`draft_expires_at`);"
     ]
+  },
+  {
+    "tag": "0005_crm_stores_and_api",
+    "statements": [
+      "CREATE TABLE `stores` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`name` text NOT NULL,\n\t`slug` text NOT NULL,\n\t`whatsapp` text,\n\t`phone` text,\n\t`email` text,\n\t`address_zip` text,\n\t`address_street` text,\n\t`address_number` text,\n\t`address_complement` text,\n\t`address_district` text,\n\t`address_city` text,\n\t`address_state` text,\n\t`is_default` integer DEFAULT false NOT NULL,\n\t`active` integer DEFAULT true NOT NULL,\n\t`sort_order` integer DEFAULT 0 NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      "CREATE UNIQUE INDEX `stores_tenant_slug_unique` ON `stores` (`tenant_id`,`slug`);",
+      "CREATE INDEX `stores_tenant_active_idx` ON `stores` (`tenant_id`,`active`,`sort_order`);",
+      "CREATE TABLE `pipeline_stages` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`name` text NOT NULL,\n\t`kind` text DEFAULT 'open' NOT NULL,\n\t`position` integer DEFAULT 0 NOT NULL,\n\t`active` integer DEFAULT true NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      "CREATE INDEX `pipeline_stages_tenant_idx` ON `pipeline_stages` (`tenant_id`,`position`);",
+      "CREATE TABLE `lead_events` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`lead_id` text NOT NULL,\n\t`type` text DEFAULT 'note' NOT NULL,\n\t`body` text,\n\t`user_id` text,\n\t`user_name` text,\n\t`metadata` text,\n\t`created_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`lead_id`) REFERENCES `leads`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE INDEX `lead_events_lead_idx` ON `lead_events` (`lead_id`,`created_at`);",
+      "CREATE TABLE `lead_routing` (\n\t`tenant_id` text PRIMARY KEY NOT NULL,\n\t`mode` text DEFAULT 'off' NOT NULL,\n\t`last_assigned_user_id` text,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`last_assigned_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE TABLE `financings` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`lead_id` text,\n\t`vehicle_id` text,\n\t`vehicle_label` text,\n\t`customer_name` text NOT NULL,\n\t`customer_document` text,\n\t`customer_phone` text,\n\t`bank` text,\n\t`vehicle_price_cents` integer DEFAULT 0 NOT NULL,\n\t`down_payment_cents` integer DEFAULT 0 NOT NULL,\n\t`financed_cents` integer DEFAULT 0 NOT NULL,\n\t`installments` integer DEFAULT 0 NOT NULL,\n\t`installment_cents` integer DEFAULT 0 NOT NULL,\n\t`status` text DEFAULT 'rascunho' NOT NULL,\n\t`notes` text,\n\t`store_id` text,\n\t`created_by_user_id` text,\n\t`decided_at` integer,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`lead_id`) REFERENCES `leads`(`id`) ON UPDATE no action ON DELETE set null,\n\tFOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE INDEX `financings_tenant_status_idx` ON `financings` (`tenant_id`,`status`,`created_at`);",
+      "CREATE INDEX `financings_lead_idx` ON `financings` (`lead_id`);",
+      "CREATE TABLE `api_keys` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`name` text NOT NULL,\n\t`prefix` text NOT NULL,\n\t`key_hash` text NOT NULL,\n\t`created_by_user_id` text,\n\t`last_used_at` integer,\n\t`revoked_at` integer,\n\t`created_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE UNIQUE INDEX `api_keys_hash_unique` ON `api_keys` (`key_hash`);",
+      "CREATE INDEX `api_keys_tenant_idx` ON `api_keys` (`tenant_id`,`revoked_at`);",
+      "CREATE TABLE `tenant_webhooks` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`url` text NOT NULL,\n\t`secret` text NOT NULL,\n\t`events` text,\n\t`active` integer DEFAULT true NOT NULL,\n\t`last_status` integer,\n\t`last_error` text,\n\t`last_attempt_at` integer,\n\t`failure_count` integer DEFAULT 0 NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      "CREATE INDEX `tenant_webhooks_tenant_idx` ON `tenant_webhooks` (`tenant_id`,`active`);",
+      "ALTER TABLE `vehicles` ADD `store_id` text;",
+      "ALTER TABLE `leads` ADD `stage_id` text;",
+      "ALTER TABLE `leads` ADD `store_id` text;",
+      "ALTER TABLE `users` ADD `store_id` text;",
+      "ALTER TABLE `users` ADD `receives_leads` integer DEFAULT true NOT NULL;",
+      "ALTER TABLE `users` ADD `permission_overrides` text;",
+      "CREATE INDEX `vehicles_store_idx` ON `vehicles` (`tenant_id`,`store_id`);",
+      "CREATE INDEX `leads_stage_idx` ON `leads` (`tenant_id`,`stage_id`);"
+    ]
   }
 ];

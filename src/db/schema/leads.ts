@@ -36,6 +36,9 @@ export const leads = sqliteTable(
     message: text("message"),
     source: text("source").$type<LeadSource>().notNull().default("form"),
     status: text("status").$type<LeadStatus>().notNull().default("new"),
+    /** Etapa do funil. Nulo enquanto a revenda não montar o funil dela. */
+    stageId: text("stage_id"),
+    storeId: text("store_id"),
     assignedToUserId: text("assigned_to_user_id").references(() => users.id, {
       onDelete: "set null",
     }),

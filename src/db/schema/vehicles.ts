@@ -48,6 +48,8 @@ export const vehicles = sqliteTable(
     /** Lista de opcionais (chaves do catálogo em src/lib/catalog/options.ts). */
     options: text("options", { mode: "json" }).$type<string[]>(),
     description: text("description"),
+    /** Unidade dona do carro; nulo em revenda de uma loja só. */
+    storeId: text("store_id"),
     status: text("status").$type<VehicleStatus>().notNull().default("draft"),
     /**
      * Rascunho provisório: existe só para as fotos terem onde morar enquanto a

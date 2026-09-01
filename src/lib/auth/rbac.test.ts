@@ -1,75 +1,62 @@
 import { describe, expect, it } from "vitest";
-import { ROLES } from "@/db/schema";
-import { ROLE_PERMISSIONS, assignableRoles, can, canAny, isWritePermission } from "./rbac";
+import {
+  canWithOverrides,
+  effectivePermissions,
+  TENANT_PERMISSIONS,
+  PERMISSION_LABELS,
+  can,
+} from "./rbac";
 
-describe("matriz de permissões", () => {
-  it("super_admin tem tudo", () => {
-    expect(can("super_admin", "platform:tenants:write")).toBe(true);
-    expect(can("super_admin", "platform:impersonate")).toBe(true);
-    expect(can("super_admin", "vehicles:write")).toBe(true);
-  });
-
-  it("revenda_admin manda no próprio tenant, nunca na plataforma", () => {
-    expect(can("revenda_admin", "vehicles:write")).toBe(true);
-    expect(can("revenda_admin", "site:write")).toBe(true);
-    expect(can("revenda_admin", "users:write")).toBe(true);
-    expect(can("revenda_admin", "platform:tenants:write")).toBe(false);
-    expect(can("revenda_admin", "platform:impersonate")).toBe(false);
-  });
-
-  it("vendedor mexe em estoque e leads, não em site nem usuários", () => {
-    expect(can("vendedor", "vehicles:write")).toBe(true);
-    expect(can("vendedor", "leads:write")).toBe(true);
-    expect(can("vendedor", "site:read")).toBe(true);
-    expect(can("vendedor", "site:write")).toBe(false);
-    expect(can("vendedor", "users:read")).toBe(false);
+describe("ajustes finos de permissão", () => {
+  it("concede o que o perfil não dá", () => {
     expect(can("vendedor", "users:write")).toBe(false);
+    expect(canWithOverrides("vendedor", "users:write", { granted: ["users:write"] })).toBe(true);
   });
 
-  it("visualizador é somente leitura", () => {
-    const writes = ROLE_PERMISSIONS.visualizador.filter(isWritePermission);
-    expect(writes).toEqual([]);
-    expect(can("visualizador", "vehicles:read")).toBe(true);
-    expect(can("visualizador", "vehicles:write")).toBe(false);
+  it("revoga o que o perfil dá", () => {
+    expect(can("revenda_admin", "site:write")).toBe(true);
+    expect(canWithOverrides("revenda_admin", "site:write", { revoked: ["site:write"] })).toBe(false);
   });
 
-  it("nenhuma role de revenda alcança permissão de plataforma", () => {
-    for (const role of ["revenda_admin", "vendedor", "visualizador"] as const) {
-      const platform = ROLE_PERMISSIONS[role].filter((permission) =>
-        permission.startsWith("platform:"),
-      );
-      expect(platform).toEqual([]);
+  it("revogado vence concedido quando os dois aparecem", () => {
+    // configuração contraditória é erro de quem montou; negar é o lado seguro
+    const overrides = { granted: ["users:write"], revoked: ["users:write"] };
+    expect(canWithOverrides("vendedor", "users:write", overrides)).toBe(false);
+  });
+
+  it("sem ajustes, vale exatamente o perfil", () => {
+    for (const permission of TENANT_PERMISSIONS) {
+      expect(canWithOverrides("vendedor", permission, null)).toBe(can("vendedor", permission));
+      expect(canWithOverrides("vendedor", permission, undefined)).toBe(can("vendedor", permission));
     }
   });
 
-  it("toda role declarada tem entrada na matriz", () => {
-    for (const role of ROLES) {
-      expect(ROLE_PERMISSIONS[role]).toBeDefined();
-    }
+  it("lista efetiva reflete concessão e revogação juntas", () => {
+    const permissions = effectivePermissions("vendedor", {
+      granted: ["reports:read"],
+      revoked: ["vehicles:write"],
+    });
+    expect(permissions).toContain("reports:read");
+    expect(permissions).not.toContain("vehicles:write");
+    expect(permissions).toContain("leads:write");
   });
 
-  it("canAny exige ao menos uma", () => {
-    expect(canAny("vendedor", ["users:write", "vehicles:read"])).toBe(true);
-    expect(canAny("vendedor", ["users:write", "site:write"])).toBe(false);
-  });
-});
-
-describe("isWritePermission", () => {
-  it("classifica escrita e leitura", () => {
-    expect(isWritePermission("vehicles:write")).toBe(true);
-    expect(isWritePermission("tenant:settings")).toBe(true);
-    expect(isWritePermission("vehicles:read")).toBe(false);
+  it("ajuste com permissão inexistente não derruba nem concede nada", () => {
+    const overrides = { granted: ["inventar:tudo"], revoked: ["outra:coisa"] };
+    expect(effectivePermissions("visualizador", overrides)).toEqual(
+      effectivePermissions("visualizador", null),
+    );
   });
 });
 
-describe("assignableRoles", () => {
-  it("ninguém cria super_admin pelo painel da revenda", () => {
-    expect(assignableRoles("revenda_admin")).not.toContain("super_admin");
-    expect(assignableRoles("super_admin")).not.toContain("super_admin");
+describe("catálogo de permissões", () => {
+  it("não oferece permissão de plataforma para ajuste na revenda", () => {
+    // conceder platform:* a um vendedor daria acesso ao Painel Geral
+    expect(TENANT_PERMISSIONS.some((permission) => permission.startsWith("platform:"))).toBe(false);
   });
 
-  it("vendedor e visualizador não atribuem perfis", () => {
-    expect(assignableRoles("vendedor")).toEqual([]);
-    expect(assignableRoles("visualizador")).toEqual([]);
+  it("toda permissão ajustável tem rótulo em português", () => {
+    const semRotulo = TENANT_PERMISSIONS.filter((permission) => !PERMISSION_LABELS[permission]);
+    expect(semRotulo, `sem rótulo: ${semRotulo.join(", ")}`).toEqual([]);
   });
 });

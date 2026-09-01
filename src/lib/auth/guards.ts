@@ -10,7 +10,9 @@ import {
   type TenantCore,
 } from "@/lib/tenant/service";
 import { readSessionCookie } from "./cookies";
-import { can, isWritePermission, type Permission } from "./rbac";
+import { can, canWithOverrides, isWritePermission, type Permission } from "./rbac";
+import { getEntitlements } from "@/lib/plans/service";
+import { hasFeature } from "@/lib/plans/entitlements";
 import { verifySessionToken, type SessionClaims } from "./session";
 
 export type AuthContext = {
@@ -59,6 +61,25 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   };
 }
 
+/**
+ * Decide o acesso somando os ajustes finos ao perfil.
+ *
+ * Os ajustes só valem se o plano da revenda incluir permissões avançadas —
+ * senão, quem baixasse de plano manteria acessos que deixou de contratar.
+ * Sem o recurso, vale o perfil puro, que é o comportamento de sempre.
+ */
+export async function allows(
+  context: AuthContext,
+  tenantId: string,
+  permission: Permission,
+): Promise<boolean> {
+  const entitlements = await getEntitlements(tenantId);
+  const overrides = hasFeature(entitlements, "permissoes_avancadas")
+    ? context.user.permissionOverrides
+    : null;
+  return canWithOverrides(context.role, permission, overrides);
+}
+
 /* ------------------------------------------------------------------ */
 /* Guards para páginas (redirecionam)                                  */
 /* ------------------------------------------------------------------ */
@@ -87,7 +108,9 @@ export async function requireTenantPage(permission?: Permission): Promise<Tenant
 
   const access = resolvePanelAccess(tenant);
   if (access === "blocked") redirect("/bloqueado");
-  if (permission && !can(context.role, permission)) redirect("/admin?erro=permissao");
+  if (permission && !(await allows(context, tenant.id, permission))) {
+    redirect("/admin?erro=permissao");
+  }
 
   return { ...context, tenant, access };
 }
@@ -121,7 +144,7 @@ export async function requireApiTenant(permission: Permission): Promise<TenantCo
   if (access === "readonly" && isWritePermission(permission)) {
     throw forbidden("Revenda suspensa: painel em modo somente leitura");
   }
-  if (!can(context.role, permission)) throw forbidden();
+  if (!(await allows(context, tenant.id, permission))) throw forbidden();
 
   return { ...context, tenant, access };
 }

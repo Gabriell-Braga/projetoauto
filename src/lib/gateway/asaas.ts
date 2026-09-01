@@ -310,6 +310,25 @@ export function listWebhooks(): Promise<{ data: AsaasWebhook[] }> {
   return request<{ data: AsaasWebhook[] }>("GET", "/webhooks");
 }
 
+export function getWebhook(webhookId: string): Promise<AsaasWebhook> {
+  return request<AsaasWebhook>("GET", `/webhooks/${webhookId}`);
+}
+
+/**
+ * Religa a entrega e recoloca a lista de eventos.
+ *
+ * Mandamos `events` junto de propósito: as duas causas de "nada chega" — fila
+ * parada e evento não assinado — se resolvem no mesmo lugar, e quem clica não
+ * tem por que saber qual das duas era.
+ */
+export function resumeWebhook(webhookId: string): Promise<AsaasWebhook> {
+  return request<AsaasWebhook>("PUT", `/webhooks/${webhookId}`, {
+    enabled: true,
+    interrupted: false,
+    events: WEBHOOK_EVENTS,
+  });
+}
+
 /* ------------------------------------------------------------------------ */
 /* Cobranças                                                                 */
 /* ------------------------------------------------------------------------ */

@@ -8,8 +8,10 @@ import {
   listWebhooks,
   WEBHOOK_EVENTS,
 } from "@/lib/gateway/asaas";
+import { getWebhook, resumeWebhook } from "@/lib/gateway/asaas";
 import { lastDeliveries } from "@/lib/gateway/delivery-log";
-import { jsonOk, withApi } from "@/lib/http";
+import { logAuditFor } from "@/lib/audit";
+import { badRequest, jsonOk, notFound, withApi } from "@/lib/http";
 
 export const dynamic = "force-dynamic";
 
@@ -135,3 +137,41 @@ function diagnose(state: {
   }
   return "Webhook ativo e recebendo eventos.";
 }
+
+/**
+ * Religa a fila do webhook sem sair daqui.
+ *
+ * Relê o estado depois de mandar e devolve o que o gateway REALMENTE gravou —
+ * se ele ignorar o pedido, a tela mostra que continua parada em vez de dizer
+ * "pronto" e deixar o problema de pé.
+ */
+export const POST = withApi(async (request: Request) => {
+  const context = await requireApiSuperAdmin("platform:billing:write");
+
+  if (!isGatewayConfigured()) throw badRequest("Gateway não configurado");
+
+  const { data } = await listWebhooks();
+  const ours = data.find((hook) => hook.url?.includes("/api/webhooks/asaas"));
+  if (!ours) throw notFound("Nenhum webhook aponta para cá");
+
+  await resumeWebhook(ours.id);
+  const after = await getWebhook(ours.id);
+
+  await logAuditFor(
+    context,
+    {
+      action: "gateway.webhook.resume",
+      entity: "webhook",
+      entityId: ours.id,
+      metadata: { enabled: after.enabled, interrupted: Boolean(after.interrupted) },
+    },
+    request,
+  );
+
+  return jsonOk({
+    enabled: after.enabled,
+    interrupted: Boolean(after.interrupted),
+    events: after.events ?? [],
+    resolvido: after.enabled && !after.interrupted,
+  });
+});

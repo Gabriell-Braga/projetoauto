@@ -1,14 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { PlugZap, RefreshCw } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
-import { apiGet } from "@/lib/client/api";
+import { useToast } from "@/components/ui/toast";
+import { apiGet, apiPost } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/utils";
 
 type Mark = { at: string; detail?: string } | null;
@@ -49,8 +50,10 @@ function toneFor(health: Health): "info" | "warning" | "danger" | "success" {
 }
 
 export function WebhookHealth() {
+  const toast = useToast();
   const [health, setHealth] = useState<Health | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resuming, setResuming] = useState(false);
 
   const load = useCallback(async () => {
     const result = await apiGet<Health>("/api/super-admin/gateway");
@@ -65,6 +68,28 @@ export function WebhookHealth() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function handleResume() {
+    setResuming(true);
+    const result = await apiPost<{ resolvido: boolean }>("/api/super-admin/gateway");
+    setResuming(false);
+
+    if (!result.ok) {
+      toast.error("Não consegui religar", result.error);
+      return;
+    }
+
+    // o gateway pode ter ignorado o pedido; quem manda é o estado relido
+    if (result.data.resolvido) {
+      toast.success("Fila religada", "As entregas pendentes voltam a sair pelo gateway.");
+    } else {
+      toast.error(
+        "O gateway não religou",
+        "Ele aceitou o pedido mas manteve a fila parada. Precisa ser religada no painel do Asaas.",
+      );
+    }
+    await load();
+  }
 
   return (
     <Card className="mb-4">
@@ -104,6 +129,15 @@ export function WebhookHealth() {
         <>
           <CardContent className="space-y-3">
             <Alert tone={toneFor(health)}>{health.diagnostico}</Alert>
+
+            {health.webhook && (health.webhook.interrupted || health.missingEvents?.length) ? (
+              <div>
+                <Button type="button" loading={resuming} onClick={handleResume}>
+                  <PlugZap className="h-3.5 w-3.5" />
+                  Religar fila e reassinar eventos
+                </Button>
+              </div>
+            ) : null}
 
             {health.missingEvents?.length ? (
               <Alert tone="danger">

@@ -30,10 +30,6 @@ export default async function TeamPage() {
         title="Usuários"
         description="Controle quem acessa o painel e o que cada pessoa pode fazer."
       />
-      {hasDistribution && canWrite ? (
-        <TeamSettings mode={routing.mode} hasStores={hasStores} />
-      ) : null}
-
       <TeamPanel
         canWrite={canWrite}
         currentUserId={context.claims.sub}
@@ -54,6 +50,10 @@ export default async function TeamPage() {
           permissionOverrides: member.permissionOverrides ?? null,
         }))}
       />
+
+      {hasDistribution && canWrite ? (
+        <TeamSettings mode={routing.mode} hasStores={hasStores} />
+      ) : null}
     </>
   );
 }

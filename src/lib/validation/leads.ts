@@ -34,6 +34,14 @@ export type PublicLeadInput = z.infer<typeof publicLeadSchema>;
 
 export const leadUpdateSchema = z.object({
   status: z.enum(LEAD_STATUS).optional(),
+  /** Etapa do funil; null tira o lead do quadro sem apagá-lo. */
+  stageId: z.string().uuid().nullable().optional(),
+  storeId: z.string().uuid().nullable().optional(),
   assignedToUserId: z.string().uuid().nullable().optional(),
   internalNotes: z.string().trim().max(2000).optional(),
+});
+
+export const leadEventSchema = z.object({
+  type: z.enum(["note", "call", "whatsapp", "email", "visit", "proposal"]),
+  body: z.string().trim().min(1, "Escreva o que aconteceu").max(4000),
 });

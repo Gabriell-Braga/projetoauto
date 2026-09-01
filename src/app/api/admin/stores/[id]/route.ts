@@ -1,0 +1,33 @@
+import { logAuditFor } from "@/lib/audit";
+import { requireApiTenant } from "@/lib/auth/guards";
+import { requireFeature } from "@/lib/api/feature-guard";
+import { badRequest, jsonOk, withApi } from "@/lib/http";
+import { deleteStore, updateStore } from "@/lib/services/stores";
+import { storeSchema } from "@/lib/validation/crm";
+
+export const dynamic = "force-dynamic";
+
+type Params = { params: Promise<{ id: string }> };
+
+export const PATCH = withApi(async (request: Request, { params }: Params) => {
+  const context = await requireApiTenant("stores:write");
+  await requireFeature(context.tenant.id, "gestao_multiunidade");
+  const { id } = await params;
+
+  const parsed = storeSchema.partial().safeParse(await request.json().catch(() => null));
+  if (!parsed.success) throw badRequest("Dados inválidos", parsed.error.issues);
+
+  await updateStore(context.tenant.id, id, { ...parsed.data, email: parsed.data.email || null });
+  await logAuditFor(context, { action: "store.update", entity: "store", entityId: id }, request);
+  return jsonOk({ id });
+});
+
+export const DELETE = withApi(async (request: Request, { params }: Params) => {
+  const context = await requireApiTenant("stores:write");
+  await requireFeature(context.tenant.id, "gestao_multiunidade");
+  const { id } = await params;
+
+  await deleteStore(context.tenant.id, id);
+  await logAuditFor(context, { action: "store.delete", entity: "store", entityId: id }, request);
+  return jsonOk({ deleted: true });
+});

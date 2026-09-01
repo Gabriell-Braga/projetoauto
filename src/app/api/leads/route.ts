@@ -7,6 +7,9 @@ import { getTenantCoreBySlug, isPublicSiteAvailable } from "@/lib/tenant/service
 import { onlyDigits } from "@/lib/utils";
 import { publicLeadSchema } from "@/lib/validation/leads";
 
+import { listStages, pickAssignee, recordLeadEvent } from "@/lib/services/crm";
+import { dispatchTenantEvent } from "@/lib/services/api-access";
+
 export const dynamic = "force-dynamic";
 
 const PUBLIC_STATUSES: VehicleStatus[] = ["available", "reserved"];
@@ -59,6 +62,12 @@ export const POST = withApi(async (request: Request) => {
     }
   }
 
+  // etapa inicial e responsável saem das regras da revenda; sem funil montado
+  // ou sem rodízio ligado, ficam nulos e o lead cai na lista como antes
+  const stages = await listStages(tenant.id);
+  const firstStage = stages.find((stage) => stage.kind === "open") ?? stages[0] ?? null;
+  const assignedToUserId = await pickAssignee(tenant.id, null);
+
   const created = await db
     .insert(leads)
     .values({
@@ -71,9 +80,31 @@ export const POST = withApi(async (request: Request) => {
       message: input.message || null,
       source: "form",
       status: "new",
+      stageId: firstStage?.id ?? null,
+      assignedToUserId,
       utm: input.utm,
     })
     .returning({ id: leads.id });
 
-  return jsonOk({ id: created[0].id, received: true });
+  const leadId = created[0].id;
+
+  await recordLeadEvent({
+    tenantId: tenant.id,
+    leadId,
+    type: "created",
+    body: vehicleLabel ? `Lead pelo site, sobre ${vehicleLabel}.` : "Lead pelo site.",
+    metadata: { source: "form", stage: firstStage?.name ?? null },
+  });
+
+  // avisa quem integrou, sem poder derrubar a captação do lead
+  await dispatchTenantEvent(tenant.id, "lead.created", {
+    id: leadId,
+    name: input.name,
+    phone: input.phone,
+    email: input.email || null,
+    vehicle: vehicleLabel,
+    source: "form",
+  });
+
+  return jsonOk({ id: leadId, received: true });
 });

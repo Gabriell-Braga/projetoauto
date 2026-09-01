@@ -5,7 +5,7 @@ import { RefreshCw } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { apiGet } from "@/lib/client/api";
@@ -16,7 +16,14 @@ type Mark = { at: string; detail?: string } | null;
 type Health = {
   configured: boolean;
   environment?: string;
-  webhook?: { url: string; enabled: boolean; name: string } | null;
+  webhook?: {
+    url: string;
+    enabled: boolean;
+    name: string;
+    interrupted: boolean;
+    events: string[];
+  } | null;
+  missingEvents?: string[];
   connectionError?: string | null;
   lastAccepted?: Mark;
   lastRejected?: Mark;
@@ -33,7 +40,8 @@ type Health = {
 /** Recusa por token é a única falha que trava a fila inteira do gateway. */
 function toneFor(health: Health): "info" | "warning" | "danger" | "success" {
   if (!health.configured || !health.webhook) return "warning";
-  if (!health.webhook.enabled) return "danger";
+  if (!health.webhook.enabled || health.webhook.interrupted) return "danger";
+  if (health.missingEvents?.length) return "danger";
   if (health.lastRejected && (!health.lastAccepted || health.lastRejected.at > health.lastAccepted.at)) {
     return "danger";
   }
@@ -84,18 +92,25 @@ export function WebhookHealth() {
       </CardHeader>
 
       {error ? (
-        <div className="px-4 pb-4">
+        <CardContent>
           <Alert tone="danger">{error}</Alert>
-        </div>
+        </CardContent>
       ) : !health ? (
-        <div className="space-y-2 px-4 pb-4">
+        <CardContent className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-8 w-2/3" />
-        </div>
+        </CardContent>
       ) : (
         <>
-          <div className="space-y-3 px-4 pb-4">
+          <CardContent className="space-y-3">
             <Alert tone={toneFor(health)}>{health.diagnostico}</Alert>
+
+            {health.missingEvents?.length ? (
+              <Alert tone="danger">
+                Estes eventos não estão marcados no cadastro do webhook e por isso nunca chegam:{" "}
+                {health.missingEvents.join(", ")}.
+              </Alert>
+            ) : null}
 
             {health.connectionError ? (
               <Alert tone="danger">Não consegui falar com o gateway: {health.connectionError}</Alert>
@@ -107,9 +122,22 @@ export function WebhookHealth() {
                 <Line
                   label="Estado no gateway"
                   value={
-                    <Badge tone={health.webhook.enabled ? "success" : "danger"}>
-                      {health.webhook.enabled ? "Ativo" : "Desligado"}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={health.webhook.enabled ? "success" : "danger"}>
+                        {health.webhook.enabled ? "Ativo" : "Desligado"}
+                      </Badge>
+                      {health.webhook.interrupted ? (
+                        <Badge tone="danger">Fila interrompida</Badge>
+                      ) : null}
+                    </div>
+                  }
+                />
+                <Line
+                  label="Eventos assinados"
+                  value={
+                    health.webhook.events.length
+                      ? `${health.webhook.events.length} evento(s)`
+                      : "o gateway não informou"
                   }
                 />
                 <Line
@@ -135,7 +163,7 @@ export function WebhookHealth() {
                 />
               </div>
             ) : null}
-          </div>
+          </CardContent>
 
           {health.events?.length ? (
             <Table>

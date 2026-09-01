@@ -2,7 +2,12 @@ import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { tenants, webhookEvents } from "@/db/schema";
 import { requireApiSuperAdmin } from "@/lib/auth/guards";
-import { asaasEnvironment, isGatewayConfigured, listWebhooks } from "@/lib/gateway/asaas";
+import {
+  asaasEnvironment,
+  isGatewayConfigured,
+  listWebhooks,
+  WEBHOOK_EVENTS,
+} from "@/lib/gateway/asaas";
 import { lastDeliveries } from "@/lib/gateway/delivery-log";
 import { jsonOk, withApi } from "@/lib/http";
 
@@ -50,12 +55,26 @@ export const GET = withApi(async () => {
   const registered = "error" in webhooks ? [] : webhooks.data;
   const ours = registered.find((hook) => hook.url?.includes("/api/webhooks/asaas"));
 
+  // eventos que precisamos e o webhook não entrega: causa silenciosa de
+  // "nada chegou" com o webhook aparentemente saudável
+  const subscribed = ours?.events ?? [];
+  const missingEvents = ours
+    ? WEBHOOK_EVENTS.filter((event) => subscribed.length > 0 && !subscribed.includes(event))
+    : [];
+
   return jsonOk({
     configured: true,
     environment: asaasEnvironment(),
     webhook: ours
-      ? { url: ours.url, enabled: ours.enabled, name: ours.name }
+      ? {
+          url: ours.url,
+          enabled: ours.enabled,
+          name: ours.name,
+          interrupted: Boolean(ours.interrupted),
+          events: subscribed,
+        }
       : null,
+    missingEvents,
     connectionError: "error" in webhooks ? webhooks.error : null,
     lastAccepted: deliveries.accepted,
     lastRejected: deliveries.rejected,
@@ -69,6 +88,8 @@ export const GET = withApi(async () => {
     diagnostico: diagnose({
       hasWebhook: Boolean(ours),
       enabled: ours?.enabled ?? false,
+      interrupted: Boolean(ours?.interrupted),
+      missingEvents,
       eventCount: events.length,
       rejectedAfterAccepted: isRejectionMoreRecent(deliveries),
       neverDelivered: !deliveries.accepted && !deliveries.rejected,
@@ -85,6 +106,8 @@ function isRejectionMoreRecent(deliveries: Awaited<ReturnType<typeof lastDeliver
 function diagnose(state: {
   hasWebhook: boolean;
   enabled: boolean;
+  interrupted: boolean;
+  missingEvents: readonly string[];
   eventCount: number;
   rejectedAfterAccepted: boolean;
   neverDelivered: boolean;
@@ -94,6 +117,12 @@ function diagnose(state: {
   }
   if (!state.enabled) {
     return "O webhook existe mas está desligado no Asaas. Uma resposta diferente de 200 interrompe a fila até religarem na mão.";
+  }
+  if (state.interrupted) {
+    return "A fila do webhook está INTERROMPIDA no Asaas. Ele para de entregar depois de respostas diferentes de 200 e não reenvia sozinho — religue a fila no painel do gateway.";
+  }
+  if (state.missingEvents.length > 0) {
+    return `O webhook não assina ${state.missingEvents.length} evento(s) que usamos: ${state.missingEvents.join(", ")}. Marque-os no cadastro do webhook, senão esses avisos nunca chegam.`;
   }
   if (state.rejectedAfterAccepted) {
     return "A última entrega foi RECUSADA por token. O que está no campo de token no painel do Asaas não confere com ASAAS_WEBHOOK_TOKEN aqui — e a fila do gateway fica parada até isso bater.";

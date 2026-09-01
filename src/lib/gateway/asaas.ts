@@ -272,6 +272,15 @@ export type AsaasWebhook = {
   /** O Asaas mostra o token uma única vez, na criação. */
   authToken?: string;
   enabled: boolean;
+  /**
+   * Fila parada. O Asaas interrompe depois de respostas diferentes de 200 e
+   * NÃO reenvia até religarem — com `enabled` ainda true, o que faz o webhook
+   * parecer saudável enquanto nada é entregue.
+   */
+  interrupted?: boolean;
+  /** Só os eventos listados aqui são entregues. */
+  events?: string[];
+  sendType?: string;
 };
 
 /**

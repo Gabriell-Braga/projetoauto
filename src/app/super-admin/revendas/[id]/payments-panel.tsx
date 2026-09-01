@@ -6,7 +6,7 @@ import { ExternalLink, RefreshCw } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { useConfirm } from "@/components/ui/confirm";
@@ -155,15 +155,15 @@ export function PaymentsPanel({ tenantId }: { tenantId: string }) {
       </CardHeader>
 
       {error ? (
-        <div className="px-4 pb-4">
+        <CardContent>
           <Alert tone="warning">{error}</Alert>
-        </div>
+        </CardContent>
       ) : payments === null ? (
-        <div className="space-y-2 px-4 pb-4">
+        <CardContent className="space-y-2">
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-8 w-2/3" />
-        </div>
+        </CardContent>
       ) : payments.length === 0 ? (
         <EmptyState
           title="Nenhuma cobrança ainda"

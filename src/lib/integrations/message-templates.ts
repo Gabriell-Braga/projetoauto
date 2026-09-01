@@ -100,3 +100,25 @@ export const DEFAULT_TEMPLATES: { name: string; body: string }[] = [
     body: "{{primeiro_nome}}, confirmando nossa visita para ver o {{veiculo}}. Estarei te esperando na loja. Até breve!",
   },
 ];
+
+/**
+ * Variáveis que o modelo realmente usa, na ordem em que aparecem.
+ *
+ * Serve para a lista mostrar do que aquele modelo depende sem exibir o texto
+ * cru inteiro ao lado da prévia — dois parágrafos quase iguais, um embaixo do
+ * outro, é o que tornava a tela ilegível.
+ */
+export function usedVariables(body: string): string[] {
+  const known = new Set(TEMPLATE_VARIABLES.map((variable) => variable.key as string));
+  const found: string[] = [];
+
+  for (const match of body.matchAll(PLACEHOLDER)) {
+    const name = match[1].toLowerCase();
+    if (known.has(name) && !found.includes(name)) found.push(name);
+  }
+  return found;
+}
+
+export function variableLabel(key: string): string {
+  return TEMPLATE_VARIABLES.find((variable) => variable.key === key)?.label ?? key;
+}

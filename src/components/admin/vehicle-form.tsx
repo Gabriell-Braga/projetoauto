@@ -18,12 +18,11 @@ import { OPTION_GROUPS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { PhotoManager, type PhotoItem } from "@/components/admin/photo-manager";
-import { FipeLookup, type FipeResult } from "@/components/admin/fipe-lookup";
+import { useFipe, type FipeQuote } from "@/components/admin/use-fipe";
 import { priceGapPercent, priceVerdict } from "@/lib/integrations/fipe";
-import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/client/api";
+import { apiDelete, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
 
-type BrandCatalog = { brand: string; models: string[] }[];
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -52,7 +51,8 @@ export function VehicleForm({
 
   const [values, setValues] = useState<VehicleFormValues>(initial);
   const [priceText, setPriceText] = useState(centsToInput(initial.priceCents));
-  const [catalog, setCatalog] = useState<BrandCatalog>([]);
+  const [fipeYear, setFipeYear] = useState("");
+  const [loadingQuote, setLoadingQuote] = useState(false);
   const [saving, setSaving] = useState(false);
 
   /**
@@ -108,22 +108,14 @@ export function VehicleForm({
     router.push("/admin/estoque");
   }
 
-  useEffect(() => {
-    let active = true;
-    apiGet<BrandCatalog>("/api/admin/catalog/brands").then((result) => {
-      if (active && result.ok) setCatalog(result.data);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
 
-  const models = useMemo(() => {
-    const entry = catalog.find(
-      (item) => item.brand.toLowerCase() === values.brand.trim().toLowerCase(),
-    );
-    return entry?.models ?? [];
-  }, [catalog, values.brand]);
+  /**
+   * A FIPE agora alimenta os próprios campos de marca e modelo.
+   *
+   * Antes havia um card separado perguntando as duas coisas de novo, e só
+   * depois o formulário — a mesma pergunta duas vezes na mesma tela.
+   */
+  const fipe = useFipe(values.brand, values.model);
 
   function update<K extends keyof VehicleFormValues>(key: K, value: VehicleFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -159,11 +151,28 @@ export function VehicleForm({
       : `${distance} abaixo da FIPE`;
   }, [priceText, values.fipePriceCents]);
 
-  function applyFipe(result: FipeResult) {
+  async function pickFipeYear(yearCode: string) {
+    setFipeYear(yearCode);
+    if (!yearCode) return;
+
+    setLoadingQuote(true);
+    const quote = await fipe.fetchQuote(yearCode);
+    setLoadingQuote(false);
+
+    if (!quote) {
+      toast.error("Não consegui consultar a FIPE", "Preencha o preço na mão e siga.");
+      return;
+    }
+    applyFipe(quote);
+    toast.success(
+      "Referência da FIPE gravada",
+      `${quote.marca} ${quote.modelo}, ${quote.mesReferencia}.`,
+    );
+  }
+
+  function applyFipe(result: FipeQuote) {
     setValues((current) => ({
       ...current,
-      brand: result.marca,
-      model: result.modelo,
       yearModel: result.anoModelo,
       yearManufacture: current.yearManufacture || result.anoModelo,
       fipeCode: result.codigoFipe,
@@ -254,28 +263,16 @@ export function VehicleForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/*
-        A consulta vem antes de tudo porque é ela que preenche marca, modelo e
-        ano. No fim da página, a pessoa já digitou tudo à mão antes de descobrir
-        que existia.
-      */}
-      {!readOnly ? (
-        <FipeLookup
-          onApply={applyFipe}
-          reference={{
-            code: values.fipeCode,
-            priceCents: values.fipePriceCents,
-            month: values.fipeReference,
-          }}
-        />
-      ) : null}
-
       <Accordion title="Identificação" summary="Marca, modelo e ano">
         <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
           <FormField
             label="Marca"
             htmlFor="brand"
-            hint={catalog.length > 0 ? "Escolha da lista para o filtro do site funcionar" : undefined}
+            hint={
+              fipe.brandRecognized
+                ? "Reconhecida na tabela FIPE"
+                : "Escolha da lista para o preço de referência aparecer"
+            }
           >
             <Input
               id="brand"
@@ -287,8 +284,8 @@ export function VehicleForm({
               placeholder="Chevrolet"
             />
             <datalist id="brand-options">
-              {catalog.map((item) => (
-                <option key={item.brand} value={item.brand} />
+              {fipe.brands.map((item) => (
+                <option key={item} value={item} />
               ))}
             </datalist>
           </FormField>
@@ -296,7 +293,13 @@ export function VehicleForm({
           <FormField
             label="Modelo"
             htmlFor="model"
-            hint={values.brand && models.length === 0 ? "Marca sem modelos no catálogo" : undefined}
+            hint={
+              !fipe.brandRecognized
+                ? "Escolha a marca primeiro"
+                : fipe.modelRecognized
+                  ? "Reconhecido na tabela FIPE"
+                  : "Escolha da lista para trazer os anos"
+            }
           >
             <Input
               id="model"
@@ -308,8 +311,8 @@ export function VehicleForm({
               placeholder="Onix"
             />
             <datalist id="model-options">
-              {models.map((model) => (
-                <option key={model} value={model} />
+              {fipe.models.map((item) => (
+                <option key={item} value={item} />
               ))}
             </datalist>
           </FormField>
@@ -349,6 +352,42 @@ export function VehicleForm({
               onChange={(event) => update("yearModel", Number(event.target.value))}
             />
           </FormField>
+
+          {/*
+            Aparece só quando há o que consultar. Escolher aqui preenche os anos
+            e grava o preço de referência — é o que antes exigia repetir marca e
+            modelo num card à parte.
+          */}
+          {!readOnly && fipe.years.length > 0 ? (
+            <FormField
+              label="Ano na tabela FIPE"
+              htmlFor="fipe-year"
+              hint={
+                values.fipePriceCents
+                  ? `Referência: ${(values.fipePriceCents / 100).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })} · ${values.fipeReference ?? ""}`
+                  : "Preenche os anos e traz o preço de referência"
+              }
+            >
+              <Select
+                id="fipe-year"
+                value={fipeYear}
+                disabled={loadingQuote}
+                onChange={(event) => void pickFipeYear(event.target.value)}
+              >
+                <option value="">
+                  {loadingQuote ? "Consultando..." : "Escolha o ano"}
+                </option>
+                {fipe.years.map((year) => (
+                  <option key={year.codigo} value={year.codigo}>
+                    {year.nome}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          ) : null}
 
           <FormField label="Quilometragem" htmlFor="mileageKm" hint="Em km rodados">
             <Input

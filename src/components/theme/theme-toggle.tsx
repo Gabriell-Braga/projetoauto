@@ -2,13 +2,8 @@
 
 import { useState } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
-import { BASE_PATH } from "@/lib/paths";
-import {
-  THEME_COOKIE,
-  THEME_LABELS,
-  THEME_PREFERENCES,
-  type ThemePreference,
-} from "@/lib/theme";
+import { apiPost } from "@/lib/client/api";
+import { THEME_LABELS, THEME_PREFERENCES, type ThemePreference } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<ThemePreference, typeof Sun> = {
@@ -17,26 +12,29 @@ const ICONS: Record<ThemePreference, typeof Sun> = {
   system: Monitor,
 };
 
-function applyTheme(preference: ThemePreference) {
+/** Pinta na hora; a persistência vai por trás, sem travar o clique. */
+function paintTheme(preference: ThemePreference) {
   const root = document.documentElement;
   root.classList.remove("light", "dark");
   if (preference !== "system") root.classList.add(preference);
-
-  document.cookie = [
-    `${THEME_COOKIE}=${preference}`,
-    `path=${BASE_PATH || "/"}`,
-    "max-age=31536000",
-    "samesite=lax",
-  ].join("; ");
 }
 
 /** Três opções em um seletor segmentado, do jeito de ferramenta: sem menu extra. */
 export function ThemeToggle({ current }: { current: ThemePreference }) {
   const [preference, setPreference] = useState<ThemePreference>(current);
 
-  function handleSelect(next: ThemePreference) {
+  async function handleSelect(next: ThemePreference) {
+    const previous = preference;
     setPreference(next);
-    applyTheme(next);
+    paintTheme(next);
+
+    // o servidor grava o cookie com o caminho certo; o cliente teria que
+    // adivinhá-lo a partir do mount path, que vem vazio no bundle
+    const result = await apiPost("/api/theme", { preference: next });
+    if (!result.ok) {
+      setPreference(previous);
+      paintTheme(previous);
+    }
   }
 
   return (
@@ -55,7 +53,7 @@ export function ThemeToggle({ current }: { current: ThemePreference }) {
             role="radio"
             aria-checked={active}
             title={THEME_LABELS[option]}
-            onClick={() => handleSelect(option)}
+            onClick={() => void handleSelect(option)}
             className={cn(
               "flex h-6 w-7 items-center justify-center rounded-sm transition-colors",
               active

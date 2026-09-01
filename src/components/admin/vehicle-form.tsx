@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Accordion } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/field";
 import { BODY_TYPES, FUELS, TRANSMISSIONS, VEHICLE_STATUS } from "@/db/schema";
 import {
@@ -239,320 +240,338 @@ export function VehicleForm({
     router.refresh();
   }
 
+  const optionCount = values.options.length;
+  const hasDescription = values.description.trim().length > 0;
+
+  /**
+   * Cor fora do catálogo continua na lista.
+   *
+   * Sem isso, abrir um veículo antigo com a cor digitada à mão apagaria o
+   * valor ao salvar, e a pessoa nem veria acontecer.
+   */
+  const colorOptions =
+    values.color && !COLORS.includes(values.color) ? [values.color, ...COLORS] : COLORS;
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Identificação</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
-            <FormField label="Marca" htmlFor="brand">
-              <Input
-                id="brand"
-                list="brand-options"
-                required
-                disabled={readOnly}
-                value={values.brand}
-                onChange={(event) => update("brand", event.target.value)}
-                placeholder="Chevrolet"
-              />
-              <datalist id="brand-options">
-                {catalog.map((item) => (
-                  <option key={item.brand} value={item.brand} />
-                ))}
-              </datalist>
-            </FormField>
+      {/*
+        A consulta vem antes de tudo porque é ela que preenche marca, modelo e
+        ano. No fim da página, a pessoa já digitou tudo à mão antes de descobrir
+        que existia.
+      */}
+      {!readOnly ? (
+        <FipeLookup
+          onApply={applyFipe}
+          reference={{
+            code: values.fipeCode,
+            priceCents: values.fipePriceCents,
+            month: values.fipeReference,
+          }}
+        />
+      ) : null}
 
-            <FormField label="Modelo" htmlFor="model">
-              <Input
-                id="model"
-                list="model-options"
-                required
-                disabled={readOnly}
-                value={values.model}
-                onChange={(event) => update("model", event.target.value)}
-                placeholder="Onix"
-              />
-              <datalist id="model-options">
-                {models.map((model) => (
-                  <option key={model} value={model} />
-                ))}
-              </datalist>
-            </FormField>
-
-            <FormField label="Versão" htmlFor="version">
-              <Input
-                id="version"
-                disabled={readOnly}
-                value={values.version}
-                onChange={(event) => update("version", event.target.value)}
-                placeholder="1.0 Turbo LTZ"
-              />
-            </FormField>
-
-            <FormField label="Ano de fabricação" htmlFor="yearManufacture">
-              <Input
-                id="yearManufacture"
-                type="number"
-                required
-                min={1950}
-                max={CURRENT_YEAR + 2}
-                disabled={readOnly}
-                value={values.yearManufacture}
-                onChange={(event) => update("yearManufacture", Number(event.target.value))}
-              />
-            </FormField>
-
-            <FormField label="Ano do modelo" htmlFor="yearModel">
-              <Input
-                id="yearModel"
-                type="number"
-                required
-                min={1950}
-                max={CURRENT_YEAR + 2}
-                disabled={readOnly}
-                value={values.yearModel}
-                onChange={(event) => update("yearModel", Number(event.target.value))}
-              />
-            </FormField>
-
-            <FormField label="Quilometragem" htmlFor="mileageKm">
-              <Input
-                id="mileageKm"
-                type="number"
-                min={0}
-                disabled={readOnly}
-                value={values.mileageKm}
-                onChange={(event) => update("mileageKm", Number(event.target.value))}
-              />
-            </FormField>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Preço e publicação</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
-            <FormField label="Preço (R$)" htmlFor="price" hint={fipeHint}>
-              <Input
-                id="price"
-                inputMode="decimal"
-                disabled={readOnly || values.priceOnRequest}
-                value={priceText}
-                onChange={(event) => {
-                  setPriceText(event.target.value);
-                }}
-              />
-            </FormField>
-
-            <FormField label="Situação do anúncio" htmlFor="status">
-              <Select
-                id="status"
-                disabled={readOnly}
-                value={values.status}
-                onChange={(event) => update("status", event.target.value)}
-              >
-                {VEHICLE_STATUS.map((status) => (
-                  <option key={status} value={status}>
-                    {VEHICLE_STATUS_LABELS[status]}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-
-            <div className="flex flex-col justify-center gap-3 pb-4">
-              <label className="flex items-center gap-2 text-[13px] text-muted">
-                <Checkbox
-                  disabled={readOnly}
-                  checked={values.priceOnRequest}
-                  onChange={(event) => update("priceOnRequest", event.target.checked)}
-                />
-                Preço sob consulta
-              </label>
-              <label className="flex items-center gap-2 text-[13px] text-muted">
-                <Checkbox
-                  disabled={readOnly}
-                  checked={values.featured}
-                  onChange={(event) => update("featured", event.target.checked)}
-                />
-                Destacar na home do site
-              </label>
-            </div>
-          </div>
-          <p className="text-xs text-muted">
-            Somente anúncios <strong>disponíveis</strong> e <strong>reservados</strong> aparecem no
-            site público. Rascunhos ficam visíveis apenas aqui.
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Ficha técnica</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
-            <FormField label="Câmbio" htmlFor="transmission">
-              <Select
-                id="transmission"
-                disabled={readOnly}
-                value={values.transmission}
-                onChange={(event) => update("transmission", event.target.value)}
-              >
-                <option value="">Não informado</option>
-                {TRANSMISSIONS.map((value) => (
-                  <option key={value} value={value}>
-                    {TRANSMISSION_LABELS[value]}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-
-            <FormField label="Combustível" htmlFor="fuel">
-              <Select
-                id="fuel"
-                disabled={readOnly}
-                value={values.fuel}
-                onChange={(event) => update("fuel", event.target.value)}
-              >
-                <option value="">Não informado</option>
-                {FUELS.map((value) => (
-                  <option key={value} value={value}>
-                    {FUEL_LABELS[value]}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-
-            <FormField label="Carroceria" htmlFor="bodyType">
-              <Select
-                id="bodyType"
-                disabled={readOnly}
-                value={values.bodyType}
-                onChange={(event) => update("bodyType", event.target.value)}
-              >
-                <option value="">Não informado</option>
-                {BODY_TYPES.map((value) => (
-                  <option key={value} value={value}>
-                    {BODY_TYPE_LABELS[value]}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-
-            <FormField label="Cor" htmlFor="color">
-              <Input
-                id="color"
-                list="color-options"
-                disabled={readOnly}
-                value={values.color}
-                onChange={(event) => update("color", event.target.value)}
-              />
-              <datalist id="color-options">
-                {COLORS.map((color) => (
-                  <option key={color} value={color} />
-                ))}
-              </datalist>
-            </FormField>
-
-            <FormField label="Portas" htmlFor="doors">
-              <Select
-                id="doors"
-                disabled={readOnly}
-                value={values.doors}
-                onChange={(event) => update("doors", event.target.value)}
-              >
-                <option value="">Não informado</option>
-                {[2, 3, 4, 5].map((value) => (
-                  <option key={value} value={value}>
-                    {value} portas
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-
-            <FormField
-              label="Final da placa"
-              htmlFor="licensePlateEnd"
-              hint="Apenas o último dígito"
-            >
-              <Input
-                id="licensePlateEnd"
-                maxLength={1}
-                disabled={readOnly}
-                value={values.licensePlateEnd}
-                onChange={(event) =>
-                  update("licensePlateEnd", event.target.value.replace(/\D/g, ""))
-                }
-              />
-            </FormField>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Opcionais</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {OPTION_GROUPS.map((group) => (
-              <div key={group}>
-                <p className="label-instrument mb-2 text-faint">
-                  {group}
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {VEHICLE_OPTIONS.filter((option) => option.group === group).map((option) => (
-                    <label
-                      key={option.key}
-                      className="flex items-center gap-2 text-[13px] text-muted"
-                    >
-                      <Checkbox
-                        disabled={readOnly}
-                        checked={values.options.includes(option.key)}
-                        onChange={() => toggleOption(option.key)}
-                      />
-                      {option.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Descrição</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FormField label="Texto do anúncio" htmlFor="description" className="mb-0">
-            <Textarea
-              id="description"
-              rows={6}
+      <Accordion title="Identificação" summary="Marca, modelo e ano">
+        <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
+          <FormField
+            label="Marca"
+            htmlFor="brand"
+            hint={catalog.length > 0 ? "Escolha da lista para o filtro do site funcionar" : undefined}
+          >
+            <Input
+              id="brand"
+              list="brand-options"
+              required
               disabled={readOnly}
-              value={values.description}
-              onChange={(event) => update("description", event.target.value)}
-              placeholder="Único dono, revisões em concessionária, pneus novos..."
+              value={values.brand}
+              onChange={(event) => update("brand", event.target.value)}
+              placeholder="Chevrolet"
+            />
+            <datalist id="brand-options">
+              {catalog.map((item) => (
+                <option key={item.brand} value={item.brand} />
+              ))}
+            </datalist>
+          </FormField>
+
+          <FormField
+            label="Modelo"
+            htmlFor="model"
+            hint={values.brand && models.length === 0 ? "Marca sem modelos no catálogo" : undefined}
+          >
+            <Input
+              id="model"
+              list="model-options"
+              required
+              disabled={readOnly}
+              value={values.model}
+              onChange={(event) => update("model", event.target.value)}
+              placeholder="Onix"
+            />
+            <datalist id="model-options">
+              {models.map((model) => (
+                <option key={model} value={model} />
+              ))}
+            </datalist>
+          </FormField>
+
+          <FormField label="Versão" htmlFor="version">
+            <Input
+              id="version"
+              disabled={readOnly}
+              value={values.version}
+              onChange={(event) => update("version", event.target.value)}
+              placeholder="1.0 Turbo LTZ"
             />
           </FormField>
-        </CardContent>
-      </Card>
 
+          <FormField label="Ano de fabricação" htmlFor="yearManufacture">
+            <Input
+              id="yearManufacture"
+              type="number"
+              required
+              min={1950}
+              max={CURRENT_YEAR + 2}
+              disabled={readOnly}
+              value={values.yearManufacture}
+              onChange={(event) => update("yearManufacture", Number(event.target.value))}
+            />
+          </FormField>
 
-      <FipeLookup
-        onApply={applyFipe}
-        reference={{
-          code: values.fipeCode,
-          priceCents: values.fipePriceCents,
-          month: values.fipeReference,
-        }}
-      />
+          <FormField label="Ano do modelo" htmlFor="yearModel">
+            <Input
+              id="yearModel"
+              type="number"
+              required
+              min={1950}
+              max={CURRENT_YEAR + 2}
+              disabled={readOnly}
+              value={values.yearModel}
+              onChange={(event) => update("yearModel", Number(event.target.value))}
+            />
+          </FormField>
+
+          <FormField label="Quilometragem" htmlFor="mileageKm" hint="Em km rodados">
+            <Input
+              id="mileageKm"
+              type="number"
+              min={0}
+              disabled={readOnly}
+              value={values.mileageKm}
+              onChange={(event) => update("mileageKm", Number(event.target.value))}
+            />
+          </FormField>
+        </div>
+      </Accordion>
+
+      <Accordion title="Ficha técnica" summary="Câmbio, combustível e cor">
+        <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
+          <FormField label="Câmbio" htmlFor="transmission">
+            <Select
+              id="transmission"
+              disabled={readOnly}
+              value={values.transmission}
+              onChange={(event) => update("transmission", event.target.value)}
+            >
+              <option value="">Não informado</option>
+              {TRANSMISSIONS.map((value) => (
+                <option key={value} value={value}>
+                  {TRANSMISSION_LABELS[value]}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          <FormField label="Combustível" htmlFor="fuel">
+            <Select
+              id="fuel"
+              disabled={readOnly}
+              value={values.fuel}
+              onChange={(event) => update("fuel", event.target.value)}
+            >
+              <option value="">Não informado</option>
+              {FUELS.map((value) => (
+                <option key={value} value={value}>
+                  {FUEL_LABELS[value]}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          <FormField label="Carroceria" htmlFor="bodyType">
+            <Select
+              id="bodyType"
+              disabled={readOnly}
+              value={values.bodyType}
+              onChange={(event) => update("bodyType", event.target.value)}
+            >
+              <option value="">Não informado</option>
+              {BODY_TYPES.map((value) => (
+                <option key={value} value={value}>
+                  {BODY_TYPE_LABELS[value]}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          {/*
+            Cor virou lista fechada. Digitada à mão, o mesmo tom vira "Prata",
+            "prata" e "Cinza prata" no estoque, e o filtro do site passa a
+            mostrar três cores onde existe uma.
+          */}
+          <FormField label="Cor" htmlFor="color">
+            <Select
+              id="color"
+              disabled={readOnly}
+              value={values.color}
+              onChange={(event) => update("color", event.target.value)}
+            >
+              <option value="">Não informada</option>
+              {colorOptions.map((color) => (
+                <option key={color} value={color}>
+                  {color}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          <FormField label="Portas" htmlFor="doors">
+            <Select
+              id="doors"
+              disabled={readOnly}
+              value={values.doors}
+              onChange={(event) => update("doors", event.target.value)}
+            >
+              <option value="">Não informado</option>
+              {[2, 3, 4, 5].map((value) => (
+                <option key={value} value={value}>
+                  {value} portas
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          <FormField label="Final da placa" htmlFor="licensePlateEnd" hint="Apenas o último dígito">
+            <Input
+              id="licensePlateEnd"
+              maxLength={1}
+              inputMode="numeric"
+              disabled={readOnly}
+              value={values.licensePlateEnd}
+              onChange={(event) => update("licensePlateEnd", event.target.value.replace(/\D/g, ""))}
+            />
+          </FormField>
+        </div>
+      </Accordion>
+
+      <Accordion title="Preço e publicação" summary="Valor e onde o anúncio aparece">
+        <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
+          <FormField label="Preço (R$)" htmlFor="price" hint={fipeHint}>
+            <Input
+              id="price"
+              inputMode="decimal"
+              disabled={readOnly || values.priceOnRequest}
+              value={priceText}
+              onChange={(event) => setPriceText(event.target.value)}
+            />
+          </FormField>
+
+          <FormField
+            label="Situação do anúncio"
+            htmlFor="status"
+            hint="Rascunho fica só aqui dentro"
+          >
+            <Select
+              id="status"
+              disabled={readOnly}
+              value={values.status}
+              onChange={(event) => update("status", event.target.value)}
+            >
+              {VEHICLE_STATUS.map((status) => (
+                <option key={status} value={status}>
+                  {VEHICLE_STATUS_LABELS[status]}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          <div className="mb-4 flex flex-col justify-center gap-2.5">
+            <label className="flex items-center gap-2 text-[13px] text-text">
+              <Checkbox
+                disabled={readOnly}
+                checked={values.priceOnRequest}
+                onChange={(event) => update("priceOnRequest", event.target.checked)}
+              />
+              Preço sob consulta
+            </label>
+            <label className="flex items-center gap-2 text-[13px] text-text">
+              <Checkbox
+                disabled={readOnly}
+                checked={values.featured}
+                onChange={(event) => update("featured", event.target.checked)}
+              />
+              Destacar na home do site
+            </label>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted">
+          Somente anúncios <strong>disponíveis</strong> e <strong>reservados</strong> aparecem no
+          site público.
+        </p>
+      </Accordion>
+
+      {/*
+        Sessenta caixas de seleção dominavam a página. Fechada por padrão, com a
+        contagem no cabeçalho para ninguém esquecer que a seção existe.
+      */}
+      <Accordion
+        title="Opcionais"
+        defaultOpen={optionCount > 0}
+        summary={optionCount === 0 ? "nenhum marcado" : optionCount + " marcados"}
+        badge={optionCount > 0 ? <Badge tone="info">{optionCount}</Badge> : null}
+      >
+        <div className="space-y-5">
+          {OPTION_GROUPS.map((group) => (
+            <div key={group}>
+              <p className="label-instrument mb-2 text-faint">{group}</p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {VEHICLE_OPTIONS.filter((option) => option.group === group).map((option) => (
+                  <label key={option.key} className="flex items-center gap-2 text-[13px] text-text">
+                    <Checkbox
+                      disabled={readOnly}
+                      checked={values.options.includes(option.key)}
+                      onChange={() => toggleOption(option.key)}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Accordion>
+
+      <Accordion
+        title="Descrição"
+        defaultOpen={hasDescription}
+        summary={hasDescription ? "preenchida" : "vazia"}
+      >
+        <FormField
+          label="Texto do anúncio"
+          htmlFor="description"
+          hint="Aparece na página do veículo e conta para a busca do Google"
+          className="mb-0"
+        >
+          <Textarea
+            id="description"
+            rows={6}
+            disabled={readOnly}
+            value={values.description}
+            onChange={(event) => update("description", event.target.value)}
+            placeholder="Único dono, revisões em concessionária, pneus novos..."
+          />
+        </FormField>
+      </Accordion>
 
       <PhotoManager
         vehicleId={isEditing ? initial.id : draftId ?? undefined}
@@ -583,7 +602,7 @@ export function VehicleForm({
           )}
           {hasUnsavedPhotos ? (
             <p className="text-xs text-warning">
-              {photoCount === 1 ? "1 foto enviada" : `${photoCount} fotos enviadas`}. Salve o
+              {photoCount === 1 ? "1 foto enviada" : photoCount + " fotos enviadas"}. Salve o
               veículo para não perdê-las.
             </p>
           ) : null}

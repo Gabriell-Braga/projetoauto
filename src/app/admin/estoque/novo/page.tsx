@@ -19,8 +19,9 @@ export default async function NewVehiclePage() {
       />
       <div className="mb-4">
         <Alert tone="info">
-          As fotos podem ser enviadas antes de salvar. Ele fica como rascunho até você mudar a
-          situação para &quot;Disponível&quot;.
+          Comece pela consulta FIPE: ela preenche marca, modelo e ano. As fotos podem ser enviadas
+          antes de salvar, e o veículo fica como rascunho até você mudar a situação para
+          &quot;Disponível&quot;.
         </Alert>
       </div>
       <VehicleForm initial={emptyVehicle()} />

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { billingStatus, subscriptions, tenants, webhookEvents } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
+import { markAcceptedDelivery, markRejectedDelivery } from "@/lib/gateway/delivery-log";
 import { advanceDueDate, mapAsaasEvent } from "@/lib/gateway/event-map";
 import { clientIp } from "@/lib/http";
 import { invalidateTenantCache } from "@/lib/tenant/service";
@@ -39,12 +40,18 @@ export async function POST(request: Request) {
   const expected = process.env.ASAAS_WEBHOOK_TOKEN;
   if (!expected) {
     console.error("[asaas] ASAAS_WEBHOOK_TOKEN não configurado");
+    await markRejectedDelivery("ASAAS_WEBHOOK_TOKEN não está configurado aqui");
     return new Response("unauthorized", { status: 401 });
   }
 
   const provided = request.headers.get("asaas-access-token") ?? "";
   if (!timingSafeEqual(provided, expected)) {
     console.warn("[asaas] token inválido de", clientIp(request));
+    await markRejectedDelivery(
+      provided
+        ? "o token enviado não confere com ASAAS_WEBHOOK_TOKEN"
+        : "a entrega veio sem o header asaas-access-token",
+    );
     return new Response("unauthorized", { status: 401 });
   }
 
@@ -62,6 +69,8 @@ export async function POST(request: Request) {
   if (!eventId || !eventType) {
     return Response.json({ received: true, ignored: "evento sem id ou tipo" });
   }
+
+  await markAcceptedDelivery(eventType);
 
   try {
     const processed = await handleEvent(eventId, eventType, payload, request);

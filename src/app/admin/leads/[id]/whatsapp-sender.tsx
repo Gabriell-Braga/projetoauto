@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MessageCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, Select, Textarea } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
-import { apiPost } from "@/lib/client/api";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { apiGet, apiPost } from "@/lib/client/api";
 import {
   firstName,
   renderTemplate,
@@ -42,6 +44,33 @@ export function WhatsappSender({
 }) {
   const toast = useToast();
   const active = templates.filter((template) => template.active);
+
+  /**
+   * Como a mensagem sai daqui.
+   *
+   * Conectado ao WhatsApp oficial, sai pela API — e a Meta só aceita texto
+   * livre dentro das 24 horas seguintes à última mensagem do cliente. Sem
+   * conexão, cai no wa.me, que abre o aplicativo do vendedor e funciona
+   * sempre.
+   */
+  const [channel, setChannel] = useState<{
+    conectado: boolean;
+    modo?: "texto_livre" | "template";
+    minutosRestantes?: number;
+  } | null>(null);
+
+  const loadChannel = useCallback(async () => {
+    const result = await apiGet<{
+      conectado: boolean;
+      modo?: "texto_livre" | "template";
+      minutosRestantes?: number;
+    }>(`/api/admin/leads/${leadId}/whatsapp`);
+    setChannel(result.ok ? result.data : { conectado: false });
+  }, [leadId]);
+
+  useEffect(() => {
+    void loadChannel();
+  }, [loadChannel]);
   const [templateId, setTemplateId] = useState(active[0]?.id ?? "");
   const [edited, setEdited] = useState<string | null>(null);
   const [registering, setRegistering] = useState(false);
@@ -60,6 +89,11 @@ export function WhatsappSender({
   async function handleSend() {
     if (!message.trim()) {
       toast.error("Escreva a mensagem antes de enviar");
+      return;
+    }
+
+    if (channel?.conectado) {
+      await sendThroughApi();
       return;
     }
 
@@ -83,6 +117,32 @@ export function WhatsappSender({
     onSent();
   }
 
+  /** Envio pela API oficial: a mensagem sai do número da loja, não do celular. */
+  async function sendThroughApi() {
+    setRegistering(true);
+    const result = await apiPost(`/api/admin/leads/${leadId}/whatsapp`, {
+      text: message,
+      // fora da janela, o nome do modelo escolhido vira o template da Meta
+      templateName: channel?.modo === "template" ? metaTemplateName : undefined,
+    });
+    setRegistering(false);
+
+    if (!result.ok) {
+      toast.error("Não consegui enviar", result.error);
+      return;
+    }
+    toast.success("Mensagem enviada pelo WhatsApp da loja");
+    setEdited(null);
+    await loadChannel();
+    onSent();
+  }
+
+  // o modelo escolhido aqui e o template aprovado na Meta compartilham o nome
+  const metaTemplateName = active
+    .find((template) => template.id === templateId)
+    ?.name.toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_");
+
   if (active.length === 0) {
     return (
       <Card>
@@ -103,8 +163,29 @@ export function WhatsappSender({
         <CardDescription>
           Escolha um modelo, ajuste o que quiser e envie. Fica registrado no histórico.
         </CardDescription>
+        {channel ? (
+          <div className="mt-2">
+            <Badge tone={channel.conectado ? "success" : "neutral"}>
+              {channel.conectado ? "WhatsApp oficial" : "Pelo seu aparelho"}
+            </Badge>
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent>
+        {channel?.conectado && channel.modo === "template" ? (
+          <Alert tone="warning" className="mb-4">
+            O cliente não escreve há mais de 24 horas. A Meta só deixa reabrir a conversa com um
+            modelo aprovado por ela — o texto abaixo não será usado como está.
+          </Alert>
+        ) : null}
+
+        {channel?.conectado && channel.modo === "texto_livre" ? (
+          <Alert tone="info" className="mb-4">
+            Conversa aberta por mais {Math.floor((channel.minutosRestantes ?? 0) / 60)}h. Dentro
+            desse prazo a mensagem sai exatamente como você escrever.
+          </Alert>
+        ) : null}
+
         <FormField label="Modelo" htmlFor="wa-template">
           <Select
             id="wa-template"
@@ -143,13 +224,13 @@ export function WhatsappSender({
           ) : (
             <span className="text-xs text-faint">
               <MessageCircle className="mr-1 inline h-3 w-3" />
-              abre no seu WhatsApp
+              {channel?.conectado ? "sai pelo WhatsApp da loja" : "abre no seu WhatsApp"}
             </span>
           )}
 
           <Button type="button" loading={registering} onClick={handleSend}>
             <Send className="h-3.5 w-3.5" />
-            Abrir e registrar
+            {channel?.conectado ? "Enviar" : "Abrir e registrar"}
           </Button>
         </div>
       </CardContent>

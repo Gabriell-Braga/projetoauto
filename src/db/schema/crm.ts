@@ -79,10 +79,23 @@ export const leadEvents = sqliteTable(
     userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
     /** Nome de quem fez, congelado — sobrevive à exclusão do usuário. */
     userName: text("user_name"),
+    /**
+     * Quem falou: `in` é o cliente, `out` somos nós, nulo é evento do sistema.
+     *
+     * Coluna própria, não um campo dentro do metadata, porque é o que decide
+     * se a janela de 24 horas do WhatsApp está aberta — e isso precisa ser
+     * consultável por índice, não por leitura de JSON.
+     */
+    direction: text("direction").$type<"in" | "out">(),
+    /** Id da mensagem no provedor, para não registrar a mesma duas vezes. */
+    externalId: text("external_id"),
     metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
     createdAt: createdAt(),
   },
-  (table) => [index("lead_events_lead_idx").on(table.leadId, table.createdAt)],
+  (table) => [
+    index("lead_events_lead_idx").on(table.leadId, table.createdAt),
+    index("lead_events_direction_idx").on(table.leadId, table.direction, table.createdAt),
+  ],
 );
 
 export type LeadEvent = typeof leadEvents.$inferSelect;
@@ -284,3 +297,43 @@ export const messageTemplates = sqliteTable(
 );
 
 export type MessageTemplate = typeof messageTemplates.$inferSelect;
+
+
+/* ------------------------------------------------------------------------ */
+/* WhatsApp oficial                                                          */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * Conta de WhatsApp Business da revenda.
+ *
+ * Uma por revenda, e o número é dela — não nosso. O cliente precisa ver o
+ * telefone da loja com quem já falou, não um número genérico da plataforma;
+ * e a resposta dele tem que chegar em quem vende, não em nós.
+ *
+ * O token vive no cofre: é credencial de terceiro e precisamos do valor
+ * original para chamar a API da Meta.
+ */
+export const whatsappConnections = sqliteTable(
+  "whatsapp_connections",
+  {
+    tenantId: text("tenant_id")
+      .primaryKey()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    phoneNumberId: text("phone_number_id").notNull(),
+    wabaId: text("waba_id"),
+    /** Número como o cliente o vê, só para exibição. */
+    displayPhone: text("display_phone"),
+    credentials: text("credentials").notNull(),
+    status: text("status").notNull().default("conectado"),
+    lastError: text("last_error"),
+    lastInboundAt: integer("last_inbound_at", { mode: "timestamp_ms" }),
+    connectedByUserId: text("connected_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [uniqueIndex("whatsapp_phone_number_unique").on(table.phoneNumberId)],
+);
+
+export type WhatsappConnection = typeof whatsappConnections.$inferSelect;

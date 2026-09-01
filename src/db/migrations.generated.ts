@@ -140,5 +140,15 @@ export const MIGRATIONS: BundledMigration[] = [
       "CREATE UNIQUE INDEX `vehicle_publications_unique` ON `vehicle_publications` (`vehicle_id`,`portal`);",
       "CREATE INDEX `vehicle_publications_pending_idx` ON `vehicle_publications` (`tenant_id`,`status`);"
     ]
+  },
+  {
+    "tag": "0009_whatsapp",
+    "statements": [
+      "CREATE TABLE `whatsapp_connections` (\n\t`tenant_id` text PRIMARY KEY NOT NULL,\n\t`phone_number_id` text NOT NULL,\n\t`waba_id` text,\n\t`display_phone` text,\n\t`credentials` text NOT NULL,\n\t`status` text DEFAULT 'conectado' NOT NULL,\n\t`last_error` text,\n\t`last_inbound_at` integer,\n\t`connected_by_user_id` text,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`connected_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE UNIQUE INDEX `whatsapp_phone_number_unique` ON `whatsapp_connections` (`phone_number_id`);",
+      "ALTER TABLE `lead_events` ADD `direction` text;",
+      "ALTER TABLE `lead_events` ADD `external_id` text;",
+      "CREATE INDEX `lead_events_direction_idx` ON `lead_events` (`lead_id`,`direction`,`created_at`);"
+    ]
   }
 ];

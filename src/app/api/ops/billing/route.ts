@@ -4,6 +4,7 @@ import { billingStatus, tenants, type BillingStatus, type TenantStatus } from "@
 import { logAudit } from "@/lib/audit";
 import { jsonOk, withApi } from "@/lib/http";
 import { assertOpsSecret } from "@/lib/ops";
+import { cleanupAbandonedDrafts } from "@/lib/services/draft-cleanup";
 import { registerBillingEvent } from "@/lib/services/tenants";
 import { DAY_MS, invalidateTenantCache } from "@/lib/tenant/service";
 
@@ -27,6 +28,11 @@ type Transition = {
  * refletir a realidade e para o histórico registrar quando cada virada
  * aconteceu. Pode ser chamado por qualquer agendador (cron do Cloudflare,
  * GitHub Actions, cron-job.org) com o header `x-ops-secret`.
+ *
+ * Aproveita a mesma passagem para varrer rascunhos provisórios abandonados.
+ * Duas rotinas num agendador só: pedir um segundo agendamento é convite para
+ * alguém configurar um e esquecer o outro, e a faxina que ninguém chama é
+ * exatamente igual a não ter faxina.
  */
 export const POST = withApi(async (request: Request) => {
   assertOpsSecret(request);
@@ -110,10 +116,17 @@ export const POST = withApi(async (request: Request) => {
     }
   }
 
+  const cleanup = await cleanupAbandonedDrafts(new Date(now), dryRun);
+
   return jsonOk({
     dryRun,
     evaluated: rows.length,
     changed: transitions.length,
+    faxina: {
+      rascunhosRemovidos: cleanup.vehicles,
+      fotosRemovidas: cleanup.photos,
+      arquivosRemovidos: cleanup.objects,
+    },
     transitions: transitions.map((item) => ({
       revenda: item.name,
       slug: item.slug,

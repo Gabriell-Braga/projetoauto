@@ -4,7 +4,6 @@ import { ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/shell";
 import { Button } from "@/components/ui/button";
-import { PhotoManager } from "@/components/admin/photo-manager";
 import { VehicleStatusBadge } from "@/components/admin/status-badges";
 import { Badge } from "@/components/ui/badge";
 import { VehicleForm } from "@/components/admin/vehicle-form";
@@ -63,19 +62,14 @@ export default async function EditVehiclePage({ params }: Props) {
       </div>
 
       <div className="flex flex-col gap-4">
-        <PhotoManager
-          vehicleId={vehicle.id}
-          disabled={!canWrite}
+        <VehicleForm
+          readOnly={!canWrite}
           photos={photos.map((photo) => ({
             id: photo.id,
             variants: photo.variants,
             isCover: photo.isCover,
             position: photo.position,
           }))}
-        />
-
-        <VehicleForm
-          readOnly={!canWrite}
           initial={{
             id: vehicle.id,
             brand: vehicle.brand,

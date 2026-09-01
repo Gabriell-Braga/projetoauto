@@ -15,7 +15,9 @@ import {
 } from "@/lib/catalog/labels";
 import { OPTION_GROUPS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
 import { useToast } from "@/components/ui/toast";
-import { apiGet, apiPatch, apiPost } from "@/lib/client/api";
+import { useConfirm } from "@/components/ui/confirm";
+import { PhotoManager, type PhotoItem } from "@/components/admin/photo-manager";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
 
 type BrandCatalog = { brand: string; models: string[] }[];
@@ -34,18 +36,74 @@ function inputToCents(value: string): number {
 export function VehicleForm({
   initial,
   readOnly,
+  photos = [],
 }: {
   initial: VehicleFormValues;
   readOnly?: boolean;
+  photos?: PhotoItem[];
 }) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const isEditing = Boolean(initial.id);
 
   const [values, setValues] = useState<VehicleFormValues>(initial);
   const [priceText, setPriceText] = useState(centsToInput(initial.priceCents));
   const [catalog, setCatalog] = useState<BrandCatalog>([]);
   const [saving, setSaving] = useState(false);
+
+  /**
+   * Rascunho aberto para receber as fotos antes de a ficha existir.
+   *
+   * Enquanto ele estiver aqui e a ficha não tiver sido salva, existe trabalho
+   * que se perde ao sair da tela — daí o aviso de saída e o botão de descartar.
+   */
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [photoCount, setPhotoCount] = useState(photos.length);
+  const [discarding, setDiscarding] = useState(false);
+
+  const hasUnsavedPhotos = !isEditing && draftId !== null && photoCount > 0;
+
+  // sair com fotos enviadas e ficha não salva perde as fotos
+  useEffect(() => {
+    if (!hasUnsavedPhotos) return;
+    function warn(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasUnsavedPhotos]);
+
+  /** Abre o rascunho no primeiro envio de foto. */
+  async function ensureDraft(): Promise<string | null> {
+    if (draftId) return draftId;
+    const result = await apiPost<{ id: string }>("/api/admin/vehicles/draft");
+    if (!result.ok) {
+      toast.error("Não consegui preparar o envio das fotos", result.error);
+      return null;
+    }
+    setDraftId(result.data.id);
+    return result.data.id;
+  }
+
+  async function handleDiscard() {
+    const confirmed = await confirm({
+      title: "Descartar cadastro",
+      description: `Você sai sem salvar e ${photoCount === 1 ? "a foto enviada é apagada" : `as ${photoCount} fotos enviadas são apagadas`}.`,
+      confirmLabel: "Descartar",
+      cancelLabel: "Continuar cadastrando",
+      tone: "danger",
+    });
+    if (!confirmed || !draftId) return;
+
+    setDiscarding(true);
+    await apiDelete(`/api/admin/vehicles/${draftId}`);
+    setDraftId(null);
+    setPhotoCount(0);
+    setDiscarding(false);
+    router.push("/admin/estoque");
+  }
 
   useEffect(() => {
     let active = true;
@@ -104,8 +162,10 @@ export function VehicleForm({
       featured: values.featured,
     };
 
-    const result = isEditing
-      ? await apiPatch<{ id: string }>(`/api/admin/vehicles/${initial.id}`, payload)
+    // o rascunho já existe e já tem as fotos: completar ele, não criar outro
+    const target = isEditing ? initial.id : draftId;
+    const result = target
+      ? await apiPatch<{ id: string }>(`/api/admin/vehicles/${target}`, payload)
       : await apiPost<{ id: string }>("/api/admin/vehicles", payload);
 
     setSaving(false);
@@ -120,8 +180,14 @@ export function VehicleForm({
       return;
     }
 
-    toast.success("Veículo cadastrado. Agora envie as fotos.");
-    router.push(`/admin/estoque/${result.data.id}`);
+    // salvo: as fotos deixaram de ser provisórias, o aviso de saída sai de cena
+    setDraftId(null);
+    toast.success(
+      photoCount > 0
+        ? "Veículo cadastrado com as fotos."
+        : "Veículo cadastrado. Você pode adicionar fotos a qualquer momento.",
+    );
+    router.push(`/admin/estoque/${target ?? result.data.id}`);
     router.refresh();
   }
 
@@ -431,14 +497,39 @@ export function VehicleForm({
       </Card>
 
 
+      <PhotoManager
+        vehicleId={isEditing ? initial.id : draftId ?? undefined}
+        photos={photos}
+        disabled={readOnly}
+        resolveVehicleId={isEditing ? undefined : ensureDraft}
+        onPhotosChange={setPhotoCount}
+      />
+
       {!readOnly ? (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button type="submit" loading={saving}>
             {isEditing ? "Salvar alterações" : "Cadastrar veículo"}
           </Button>
-          <Button type="button" variant="ghost" onClick={() => router.push("/admin/estoque")}>
-            Cancelar
-          </Button>
+          {hasUnsavedPhotos ? (
+            <Button
+              type="button"
+              variant="outlineDanger"
+              loading={discarding}
+              onClick={handleDiscard}
+            >
+              Descartar cadastro
+            </Button>
+          ) : (
+            <Button type="button" variant="ghost" onClick={() => router.push("/admin/estoque")}>
+              Cancelar
+            </Button>
+          )}
+          {hasUnsavedPhotos ? (
+            <p className="text-xs text-warning">
+              {photoCount === 1 ? "1 foto enviada" : `${photoCount} fotos enviadas`}. Salve o
+              veículo para não perdê-las.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </form>

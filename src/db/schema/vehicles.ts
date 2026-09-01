@@ -49,6 +49,13 @@ export const vehicles = sqliteTable(
     options: text("options", { mode: "json" }).$type<string[]>(),
     description: text("description"),
     status: text("status").$type<VehicleStatus>().notNull().default("draft"),
+    /**
+     * Rascunho provisório: existe só para as fotos terem onde morar enquanto a
+     * ficha ainda não foi salva. Preenchido na criação e zerado no primeiro
+     * salvamento — a faxina apaga o que passar da validade, e rascunho que a
+     * pessoa guardou de propósito tem isto nulo e nunca é tocado.
+     */
+    draftExpiresAt: integer("draft_expires_at", { mode: "timestamp_ms" }),
     featured: integer("featured", { mode: "boolean" }).notNull().default(false),
     sortOrder: integer("sort_order").notNull().default(0),
     views: integer("views").notNull().default(0),

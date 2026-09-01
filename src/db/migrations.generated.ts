@@ -79,5 +79,12 @@ export const MIGRATIONS: BundledMigration[] = [
       "CREATE INDEX `webhook_events_tenant_idx` ON `webhook_events` (`tenant_id`,`created_at`);",
       "ALTER TABLE `tenants` ADD `plan_id` text;"
     ]
+  },
+  {
+    "tag": "0004_provisional_drafts",
+    "statements": [
+      "ALTER TABLE `vehicles` ADD `draft_expires_at` integer;",
+      "CREATE INDEX `vehicles_draft_expiry_idx` ON `vehicles` (`draft_expires_at`);"
+    ]
   }
 ];

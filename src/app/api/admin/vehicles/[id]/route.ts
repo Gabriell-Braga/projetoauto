@@ -54,7 +54,13 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
   const db = await getDb();
   await db
     .update(vehicles)
-    .set({ ...input, ...(slug ? { slug } : {}) })
+    .set({
+      ...input,
+      ...(slug ? { slug } : {}),
+      // salvar tira o veículo da faxina: a partir daqui ele é da pessoa, não
+      // um rascunho provisório que o cron pode varrer
+      draftExpiresAt: null,
+    })
     .where(and(eq(vehicles.tenantId, context.tenant.id), eq(vehicles.id, id)));
 
   await logAuditFor(

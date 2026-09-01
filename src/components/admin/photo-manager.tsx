@@ -22,13 +22,23 @@ export type PhotoItem = {
 const MAX_PHOTOS = 40;
 
 export function PhotoManager({
-  vehicleId,
+  vehicleId: fixedId,
   photos,
   disabled,
+  resolveVehicleId,
+  onPhotosChange,
 }: {
-  vehicleId: string;
+  /** Já existe: tela de edição. */
+  vehicleId?: string;
   photos: PhotoItem[];
   disabled?: boolean;
+  /**
+   * Cadastro novo: o veículo ainda não existe quando a pessoa escolhe a
+   * primeira foto. Chamado uma vez, no primeiro envio, para abrir o rascunho
+   * que vai receber as imagens.
+   */
+  resolveVehicleId?: () => Promise<string | null>;
+  onPhotosChange?: (count: number) => void;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -37,12 +47,34 @@ export function PhotoManager({
   const [items, setItems] = useState<PhotoItem[]>(photos);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [resolvedId, setResolvedId] = useState<string | null>(fixedId ?? null);
+
+  const vehicleId: string | null = fixedId ?? resolvedId;
+
+  function replaceItems(next: PhotoItem[]) {
+    setItems(next);
+    onPhotosChange?.(next.length);
+  }
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
     const files = Array.from(fileList);
 
     setBusy(true);
+
+    // no cadastro novo o veículo nasce aqui, no primeiro envio — não ao abrir
+    // a tela, senão quem só espia o formulário deixa rascunho para trás
+    let targetId: string | null = vehicleId;
+    if (!targetId && resolveVehicleId) {
+      targetId = await resolveVehicleId();
+      if (targetId) setResolvedId(targetId);
+    }
+    if (!targetId) {
+      setBusy(false);
+      toast.error("Não consegui preparar o envio das fotos. Tente de novo.");
+      return;
+    }
+
     setProgress({ done: 0, total: files.length });
 
     let uploaded = 0;
@@ -50,7 +82,7 @@ export function PhotoManager({
       try {
         const variants = await generateVariants(file);
         const result = await apiUpload<{ photos: PhotoItem[] }>(
-          `/api/admin/vehicles/${vehicleId}/photos`,
+          `/api/admin/vehicles/${targetId}/photos`,
           buildPhotoFormData(variants),
         );
 
@@ -58,7 +90,7 @@ export function PhotoManager({
           toast.error(`${file.name}: ${result.error}`);
           break;
         }
-        setItems(result.data.photos);
+        replaceItems(result.data.photos);
         uploaded += 1;
       } catch (uploadError) {
         toast.error(
@@ -81,6 +113,7 @@ export function PhotoManager({
   }
 
   async function persistOrder(next: PhotoItem[]) {
+    if (!vehicleId) return;
     const previous = items;
     setItems(next);
     setBusy(true);
@@ -107,6 +140,7 @@ export function PhotoManager({
   }
 
   async function handleCover(photoId: string) {
+    if (!vehicleId) return;
     const previous = items;
     setItems((current) => current.map((photo) => ({ ...photo, isCover: photo.id === photoId })));
     setBusy(true);
@@ -130,7 +164,7 @@ export function PhotoManager({
       confirmLabel: "Remover foto",
       tone: "danger",
     });
-    if (!confirmed) return;
+    if (!confirmed || !vehicleId) return;
 
     setBusy(true);
     const result = await apiDelete(`/api/admin/vehicles/${vehicleId}/photos/${photoId}`);
@@ -140,7 +174,7 @@ export function PhotoManager({
       toast.error(result.error);
       return;
     }
-    setItems((current) => current.filter((photo) => photo.id !== photoId));
+    replaceItems(items.filter((photo) => photo.id !== photoId));
     toast.success("Foto removida.");
     router.refresh();
   }

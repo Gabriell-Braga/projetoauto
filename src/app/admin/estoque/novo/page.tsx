@@ -15,11 +15,11 @@ export default async function NewVehiclePage() {
     <>
       <PageHeader
         title="Novo veículo"
-        description="Cadastre a ficha primeiro; as fotos são adicionadas logo depois de salvar."
+        description="Ficha e fotos na mesma tela. Nada é publicado até você salvar."
       />
       <div className="mb-4">
         <Alert tone="info">
-          Salve o veículo para liberar o envio de fotos. Ele fica como rascunho até você mudar a
+          As fotos podem ser enviadas antes de salvar. Ele fica como rascunho até você mudar a
           situação para &quot;Disponível&quot;.
         </Alert>
       </div>

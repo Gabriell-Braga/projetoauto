@@ -1,4 +1,4 @@
-import { Building2, LayoutDashboard, ScrollText, Users } from "lucide-react";
+import { Building2, LayoutDashboard, ScrollText, SlidersHorizontal, Tags, Users } from "lucide-react";
 import { AppShell, type NavSection } from "@/components/layout/shell";
 import { requireSuperAdminPage } from "@/lib/auth/guards";
 import { ROLE_LABELS } from "@/lib/auth/rbac";
@@ -26,6 +26,12 @@ const SECTIONS: NavSection[] = [
   {
     label: "Plataforma",
     items: [
+      { href: "/super-admin/planos", label: "Planos", icon: <Tags className={ICON} /> },
+      {
+        href: "/super-admin/configuracoes",
+        label: "Configurações",
+        icon: <SlidersHorizontal className={ICON} />,
+      },
       { href: "/super-admin/usuarios", label: "Usuários", icon: <Users className={ICON} /> },
       { href: "/super-admin/auditoria", label: "Auditoria", icon: <ScrollText className={ICON} /> },
     ],

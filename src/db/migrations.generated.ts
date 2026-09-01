@@ -59,5 +59,25 @@ export const MIGRATIONS: BundledMigration[] = [
       "CREATE INDEX `password_resets_expires_idx` ON `password_resets` (`expires_at`);",
       "ALTER TABLE `billing_status` ADD `grace_days` integer DEFAULT 5 NOT NULL;"
     ]
+  },
+  {
+    "tag": "0003_plans_and_subscriptions",
+    "statements": [
+      "CREATE TABLE `coupons` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`code` text NOT NULL,\n\t`description` text,\n\t`discount_type` text DEFAULT 'PERCENTAGE' NOT NULL,\n\t`discount_value` integer NOT NULL,\n\t`duration_cycles` integer,\n\t`max_redemptions` integer,\n\t`redemptions` integer DEFAULT 0 NOT NULL,\n\t`plan_ids` text,\n\t`expires_at` integer,\n\t`active` integer DEFAULT true NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL\n);",
+      "CREATE UNIQUE INDEX `coupons_code_unique` ON `coupons` (`code`);",
+      "CREATE TABLE `plans` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`name` text NOT NULL,\n\t`slug` text NOT NULL,\n\t`description` text,\n\t`price_cents` integer DEFAULT 0 NOT NULL,\n\t`cycle` text DEFAULT 'MONTHLY' NOT NULL,\n\t`billing_mode` text DEFAULT 'gateway' NOT NULL,\n\t`trial_days` integer DEFAULT 0 NOT NULL,\n\t`limits` text,\n\t`features` text,\n\t`public_visible` integer DEFAULT true NOT NULL,\n\t`highlighted` integer DEFAULT false NOT NULL,\n\t`active` integer DEFAULT true NOT NULL,\n\t`sort_order` integer DEFAULT 0 NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL\n);",
+      "CREATE UNIQUE INDEX `plans_slug_unique` ON `plans` (`slug`);",
+      "CREATE INDEX `plans_active_idx` ON `plans` (`active`,`sort_order`);",
+      "CREATE TABLE `platform_settings` (\n\t`id` text PRIMARY KEY DEFAULT 'default' NOT NULL,\n\t`fine_percent` integer DEFAULT 2 NOT NULL,\n\t`interest_percent` integer DEFAULT 1 NOT NULL,\n\t`default_trial_days` integer DEFAULT 0 NOT NULL,\n\t`gateway_notifications` integer DEFAULT true NOT NULL,\n\t`default_grace_days` integer DEFAULT 5 NOT NULL,\n\t`updated_at` integer NOT NULL\n);",
+      "CREATE TABLE `subscriptions` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`plan_id` text,\n\t`status` text DEFAULT 'manual' NOT NULL,\n\t`billing_type` text DEFAULT 'UNDEFINED' NOT NULL,\n\t`gateway_customer_id` text,\n\t`gateway_subscription_id` text,\n\t`price_cents` integer DEFAULT 0 NOT NULL,\n\t`coupon_code` text,\n\t`discount_cents` integer DEFAULT 0 NOT NULL,\n\t`trial_ends_at` integer,\n\t`current_period_end` integer,\n\t`canceled_at` integer,\n\t`last_event_type` text,\n\t`last_event_at` integer,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`plan_id`) REFERENCES `plans`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE UNIQUE INDEX `subscriptions_tenant_unique` ON `subscriptions` (`tenant_id`);",
+      "CREATE INDEX `subscriptions_gateway_idx` ON `subscriptions` (`gateway_subscription_id`);",
+      "CREATE INDEX `subscriptions_customer_idx` ON `subscriptions` (`gateway_customer_id`);",
+      "CREATE INDEX `subscriptions_status_idx` ON `subscriptions` (`status`);",
+      "CREATE TABLE `webhook_events` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`provider` text DEFAULT 'asaas' NOT NULL,\n\t`event_type` text NOT NULL,\n\t`tenant_id` text,\n\t`payload` text,\n\t`processed_at` integer,\n\t`error` text,\n\t`created_at` integer NOT NULL\n);",
+      "CREATE INDEX `webhook_events_received_idx` ON `webhook_events` (`created_at`);",
+      "CREATE INDEX `webhook_events_tenant_idx` ON `webhook_events` (`tenant_id`,`created_at`);",
+      "ALTER TABLE `tenants` ADD `plan_id` text;"
+    ]
   }
 ];

@@ -11,7 +11,9 @@ import { listTenantUsers } from "@/lib/services/users";
 import { getTemplateManifest } from "@/templates/manifests";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { effectiveBillingStatus, getTenantCoreById, graceDaysLeft } from "@/lib/tenant/service";
+import { getTenantSubscription, listActivePlanOptions } from "@/lib/services/subscriptions";
 import { BillingPanel } from "./billing-panel";
+import { SubscriptionPanel } from "./subscription-panel";
 import { DangerZone } from "./danger-zone";
 import { ImpersonateButton } from "./impersonate-button";
 import { Tabs } from "@/components/ui/tabs";
@@ -45,9 +47,12 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
   const detail = await getTenantDetail(id);
   if (!detail) notFound();
 
-  const [events, users] = await Promise.all([
-    tab === "financeiro" ? listBillingEvents(id) : Promise.resolve([]),
+  const financeiro = tab === "financeiro";
+  const [events, users, subscription, planOptions] = await Promise.all([
+    financeiro ? listBillingEvents(id) : Promise.resolve([]),
     tab === "usuarios" ? listTenantUsers(id) : Promise.resolve([]),
+    financeiro ? getTenantSubscription(id) : Promise.resolve(null),
+    financeiro ? listActivePlanOptions() : Promise.resolve([]),
   ]);
 
   const template = getTemplateManifest(detail.tenant.templateId);
@@ -110,6 +115,16 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
           />
           <DangerZone tenantId={detail.tenant.id} tenantName={detail.tenant.name} />
         </div>
+      ) : null}
+
+      {tab === "financeiro" ? (
+        <SubscriptionPanel
+          tenantId={id}
+          hasCnpj={Boolean(detail.tenant.cnpj)}
+          planName={subscription?.planName ?? null}
+          plans={planOptions}
+          subscription={subscription?.summary ?? null}
+        />
       ) : null}
 
       {tab === "financeiro" ? (

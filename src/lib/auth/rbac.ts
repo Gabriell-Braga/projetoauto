@@ -8,6 +8,7 @@ export const PERMISSIONS = [
   // plataforma (super-admin)
   "platform:tenants:read",
   "platform:tenants:write",
+  "platform:billing:read",
   "platform:billing:write",
   "platform:users:write",
   "platform:audit:read",

@@ -9,6 +9,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/field";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
+import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPatch, apiPost, fieldErrorsFrom, type FieldErrors } from "@/lib/client/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -53,15 +54,27 @@ function describeDiscount(coupon: CouponRow): string {
 export function CouponsPanel({ coupons, plans }: { coupons: CouponRow[]; plans: PlanRow[] }) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const [editing, setEditing] = useState<CouponRow | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function handleDelete(coupon: CouponRow) {
     const willDeactivate = coupon.redemptions > 0;
-    const question = willDeactivate
-      ? `O cupom "${coupon.code}" já foi usado ${coupon.redemptions}x e será desativado, não excluído. Continuar?`
-      : `Excluir o cupom "${coupon.code}"?`;
-    if (!window.confirm(question)) return;
+    const confirmed = await confirm(
+      willDeactivate
+        ? {
+            title: "Desativar cupom",
+            description: `"${coupon.code}" já foi usado ${coupon.redemptions}x, então ele é desativado em vez de excluído — quem está pagando com esse desconto continua com o registro.`,
+            confirmLabel: "Desativar cupom",
+          }
+        : {
+            title: "Excluir cupom",
+            description: `"${coupon.code}" nunca foi usado e será apagado.`,
+            confirmLabel: "Excluir cupom",
+            tone: "danger",
+          },
+    );
+    if (!confirmed) return;
 
     setDeletingId(coupon.id);
     const result = await apiDelete(`/api/super-admin/coupons/${coupon.id}`);

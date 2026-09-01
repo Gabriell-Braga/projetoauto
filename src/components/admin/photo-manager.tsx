@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Star, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPatch, apiUpload } from "@/lib/client/api";
 import { ACCEPTED_INPUT, buildPhotoFormData, generateVariants } from "@/lib/client/images";
@@ -31,6 +32,7 @@ export function PhotoManager({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const inputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<PhotoItem[]>(photos);
   const [busy, setBusy] = useState(false);
@@ -122,7 +124,13 @@ export function PhotoManager({
   }
 
   async function handleDelete(photoId: string) {
-    if (!window.confirm("Remover esta foto?")) return;
+    const confirmed = await confirm({
+      title: "Remover foto",
+      description: "A imagem é apagada e não dá para recuperar.",
+      confirmLabel: "Remover foto",
+      tone: "danger",
+    });
+    if (!confirmed) return;
 
     setBusy(true);
     const result = await apiDelete(`/api/admin/vehicles/${vehicleId}/photos/${photoId}`);

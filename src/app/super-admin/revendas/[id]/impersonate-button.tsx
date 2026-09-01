@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { apiPost } from "@/lib/client/api";
 
@@ -19,12 +20,15 @@ export function ImpersonateButton({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
 
   async function handleClick() {
-    const confirmed = window.confirm(
-      `Entrar no painel de "${tenantName}"? Todas as ações ficam registradas na auditoria como suas.`,
-    );
+    const confirmed = await confirm({
+      title: `Entrar como ${tenantName}`,
+      description: "Você passa a ver o painel como o administrador da revenda. Tudo o que fizer fica registrado na auditoria com o seu nome.",
+      confirmLabel: "Entrar no painel",
+    });
     if (!confirmed) return;
 
     setBusy(true);

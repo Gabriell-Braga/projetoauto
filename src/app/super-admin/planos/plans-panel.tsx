@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
+import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { apiDelete } from "@/lib/client/api";
 import { FEATURES } from "@/lib/plans/catalog";
@@ -33,6 +34,7 @@ function featureCount(features: Record<string, unknown> | null): number {
 export function PlansPanel({ plans, coupons }: { plans: PlanRow[]; coupons: CouponRow[] }) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const [editing, setEditing] = useState<PlanRow | null>(null);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -45,7 +47,13 @@ export function PlansPanel({ plans, coupons }: { plans: PlanRow[]; coupons: Coup
       );
       return;
     }
-    if (!window.confirm(`Excluir o plano "${plan.name}"? Isso não pode ser desfeito.`)) return;
+    const confirmed = await confirm({
+      title: "Excluir plano",
+      description: `"${plan.name}" some do catálogo. Não dá para desfazer.`,
+      confirmLabel: "Excluir plano",
+      tone: "danger",
+    });
+    if (!confirmed) return;
 
     setDeletingId(plan.id);
     const result = await apiDelete(`/api/super-admin/plans/${plan.id}`);

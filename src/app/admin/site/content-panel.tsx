@@ -6,6 +6,7 @@ import { Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox, FormField, Input, Textarea } from "@/components/ui/field";
+import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPatch, apiUpload } from "@/lib/client/api";
 import { ACCEPTED_INPUT, blobFileName, resizeSingle } from "@/lib/client/images";
@@ -39,6 +40,7 @@ export function ContentPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [values, setValues] = useState(initial);
@@ -101,7 +103,13 @@ export function ContentPanel({
   }
 
   async function deleteBanner(id: string) {
-    if (!window.confirm("Remover este banner?")) return;
+    const confirmed = await confirm({
+      title: "Remover banner",
+      description: "Ele sai do site na hora e a imagem é apagada.",
+      confirmLabel: "Remover banner",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     setBusy(true);
     const result = await apiDelete(`/api/admin/site/banners/${id}`);
     setBusy(false);

@@ -9,6 +9,8 @@
  *  - valores vão em reais decimais, não em centavos.
  */
 
+import { ApiError } from "@/lib/http";
+
 const SANDBOX_URL = "https://api-sandbox.asaas.com/v3";
 const PRODUCTION_URL = "https://api.asaas.com/v3";
 
@@ -16,15 +18,31 @@ const USER_AGENT = "ProjetoAuto";
 
 export type AsaasEnvironment = "sandbox" | "production";
 
-export class AsaasError extends Error {
+/**
+ * Falha vinda do gateway.
+ *
+ * Estende ApiError de proposito: como Error puro, ela caia no ramo generico do
+ * jsonError e a pessoa via "Erro interno" enquanto o motivo real — que o Asaas
+ * descreve em portugues — ficava so no log do servidor.
+ *
+ * O status do Asaas nao serve como resposta nossa. 401 dele e credencial
+ * NOSSA, nao erro de quem clicou, entao vira 502.
+ */
+export class AsaasError extends ApiError {
   constructor(
-    readonly status: number,
+    readonly gatewayStatus: number,
     message: string,
     readonly errors?: { code?: string; description?: string }[],
   ) {
-    super(message);
+    super(statusFor(gatewayStatus), message, errors);
     this.name = "AsaasError";
   }
+}
+
+function statusFor(gatewayStatus: number): number {
+  if (gatewayStatus === 400 || gatewayStatus === 422) return 400;
+  if (gatewayStatus === 404) return 404;
+  return 502;
 }
 
 function config(): { baseUrl: string; apiKey: string; environment: AsaasEnvironment } {
@@ -77,8 +95,9 @@ async function request<T>(
 
   if (!response.ok) {
     const errors = (payload as { errors?: { code?: string; description?: string }[] })?.errors;
-    const description = errors?.[0]?.description ?? `Asaas respondeu ${response.status}`;
-    throw new AsaasError(response.status, description, errors);
+    // a descricao do Asaas ja vem em portugues e explica o motivo
+    const description = errors?.[0]?.description ?? `o gateway respondeu ${response.status}`;
+    throw new AsaasError(response.status, `Asaas: ${description}`, errors);
   }
 
   return payload as T;

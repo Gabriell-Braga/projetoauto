@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { ConfirmProvider } from "@/components/ui/confirm";
 import { ToastProvider } from "@/components/ui/toast";
 import { THEME_COOKIE, isThemePreference, themeClassName } from "@/lib/theme";
 
@@ -46,7 +47,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body>
         {/* Avisos vivem no layout raiz: login, recuperação de senha e site
             público também precisam falar com quem está na tela. */}
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </ToastProvider>
       </body>
     </html>
   );

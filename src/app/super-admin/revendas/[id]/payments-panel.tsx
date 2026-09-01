@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
+import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { apiGet, apiPost } from "@/lib/client/api";
 import { formatCurrency } from "@/lib/utils";
@@ -60,6 +61,7 @@ function formatGatewayDate(value: string | null): string {
 export function PaymentsPanel({ tenantId }: { tenantId: string }) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const [payments, setPayments] = useState<Payment[] | null>(null);
   const [environment, setEnvironment] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,11 +87,22 @@ export function PaymentsPanel({ tenantId }: { tenantId: string }) {
   }, [load]);
 
   async function handleReceive(payment: Payment) {
-    const question =
-      environment === "production"
-        ? `Dar baixa manual em ${formatCurrency(payment.valueCents)}? Use só quando o dinheiro entrou por fora do gateway.`
-        : `Confirmar o pagamento de ${formatCurrency(payment.valueCents)}? Isto é sandbox: nenhum dinheiro se move.`;
-    if (!window.confirm(question)) return;
+    const production = environment === "production";
+    const confirmed = await confirm(
+      production
+        ? {
+            title: "Dar baixa manual",
+            description: `${formatCurrency(payment.valueCents)} serão registrados como recebidos. Use só quando o dinheiro entrou por fora do gateway — o Asaas passa a considerar a cobrança quitada.`,
+            confirmLabel: "Registrar recebimento",
+            tone: "danger",
+          }
+        : {
+            title: "Confirmar pagamento",
+            description: `Marca ${formatCurrency(payment.valueCents)} como pago para exercitar o webhook. Isto é sandbox: nenhum dinheiro se move.`,
+            confirmLabel: "Confirmar pagamento",
+          },
+    );
+    if (!confirmed) return;
 
     setReceivingId(payment.id);
     const result = await apiPost(`/api/super-admin/tenants/${tenantId}/payments`, {

@@ -7,6 +7,7 @@ import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, Input, Select } from "@/components/ui/field";
+import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPost, fieldErrorsFrom, type FieldErrors } from "@/lib/client/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -62,6 +63,7 @@ export function SubscriptionPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
   const [billingType, setBillingType] = useState("UNDEFINED");
   const [couponCode, setCouponCode] = useState("");
@@ -106,13 +108,15 @@ export function SubscriptionPanel({
   }
 
   async function handleCancel() {
-    if (
-      !window.confirm(
-        "Cancelar a assinatura? A cobrança automática para e a revenda volta ao controle manual.",
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Cancelar assinatura",
+      description:
+        "A cobrança automática para no gateway e a revenda volta ao controle manual. O acesso não é cortado agora — quem decide isso é a régua de vencimento.",
+      confirmLabel: "Cancelar assinatura",
+      cancelLabel: "Manter assinatura",
+      tone: "danger",
+    });
+    if (!confirmed) return;
 
     setWorking(true);
     const result = await apiDelete(`/api/super-admin/tenants/${tenantId}/subscription`);

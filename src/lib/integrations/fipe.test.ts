@@ -59,3 +59,43 @@ describe("veredito de preço", () => {
     expect(priceVerdict(null)).toBeNull();
   });
 });
+
+describe("separação de modelo e versão da FIPE", () => {
+  it("separa na primeira palavra", async () => {
+    const { splitFipeModel } = await import("./fipe");
+    expect(splitFipeModel("ONIX HATCH LT 1.0 12V Flex 5p Mec.")).toEqual({
+      model: "ONIX",
+      version: "HATCH LT 1.0 12V Flex 5p Mec.",
+    });
+  });
+
+  it("nunca perde informação: junta de volta igual ao original", async () => {
+    const { joinFipeModel, splitFipeModel } = await import("./fipe");
+    const nomes = [
+      "ONIX HATCH LT 1.0 12V Flex 5p Mec.",
+      "GRAND SIENA ATTRACTIVE 1.4 Flex 8V",
+      "500 Cabrio Dualogic Flex 1.4 8V",
+      "Fusca",
+    ];
+    for (const nome of nomes) {
+      const { model, version } = splitFipeModel(nome);
+      expect(joinFipeModel(model, version)).toBe(nome);
+    }
+  });
+
+  it("modelo de uma palavra fica sem versão", async () => {
+    const { splitFipeModel } = await import("./fipe");
+    expect(splitFipeModel("Fusca")).toEqual({ model: "Fusca", version: "" });
+  });
+
+  it("normaliza espaços repetidos", async () => {
+    const { splitFipeModel } = await import("./fipe");
+    expect(splitFipeModel("  ONIX   LT 1.0  ")).toEqual({ model: "ONIX", version: "LT 1.0" });
+  });
+
+  it("junta ignorando campo vazio", async () => {
+    const { joinFipeModel } = await import("./fipe");
+    expect(joinFipeModel("ONIX", "")).toBe("ONIX");
+    expect(joinFipeModel("", "LT 1.0")).toBe("LT 1.0");
+  });
+});

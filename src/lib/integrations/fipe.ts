@@ -143,3 +143,32 @@ export function priceVerdict(gapPercent: number | null): PriceVerdict | null {
   if (gapPercent < -5) return "abaixo";
   return "na_faixa";
 }
+
+/* ------------------------------------------------------------------------ */
+/* Modelo e versão                                                           */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * A FIPE junta modelo e versão numa string só.
+ *
+ * "ONIX HATCH LT 1.0 12V Flex 5p Mec." é o modelo ONIX na versão "HATCH LT
+ * 1.0...". Separamos na primeira palavra porque o filtro do site precisa de
+ * "Onix", não de trinta strings diferentes que começam com Onix — cada versão
+ * viraria um modelo distinto na lista de filtros.
+ *
+ * A separação nunca perde informação: modelo + versão reconstrói exatamente o
+ * nome original. Nome de modelo com duas palavras ("Grand Siena") fica com a
+ * segunda na versão, o que agrupa um pouco mais do que o ideal, mas o título
+ * do anúncio continua correto porque é a concatenação.
+ */
+export function splitFipeModel(fullName: string): { model: string; version: string } {
+  const trimmed = fullName.trim().replace(/\s+/g, " ");
+  const space = trimmed.indexOf(" ");
+  if (space === -1) return { model: trimmed, version: "" };
+  return { model: trimmed.slice(0, space), version: trimmed.slice(space + 1) };
+}
+
+/** Junta de volta, para casar com o nome que a FIPE conhece. */
+export function joinFipeModel(model: string, version: string): string {
+  return [model.trim(), version.trim()].filter(Boolean).join(" ");
+}

@@ -19,6 +19,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { PhotoManager, type PhotoItem } from "@/components/admin/photo-manager";
 import { useFipe, type FipeQuote } from "@/components/admin/use-fipe";
+import { CatalogSelect } from "@/components/admin/catalog-select";
 import { priceGapPercent, priceVerdict } from "@/lib/integrations/fipe";
 import { apiDelete, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
@@ -115,7 +116,7 @@ export function VehicleForm({
    * Antes havia um card separado perguntando as duas coisas de novo, e só
    * depois o formulário — a mesma pergunta duas vezes na mesma tela.
    */
-  const fipe = useFipe(values.brand, values.model);
+  const fipe = useFipe(values.brand, values.model, values.version);
 
   function update<K extends keyof VehicleFormValues>(key: K, value: VehicleFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -268,62 +269,59 @@ export function VehicleForm({
           <FormField
             label="Marca"
             htmlFor="brand"
-            hint={
-              fipe.brandRecognized
-                ? "Reconhecida na tabela FIPE"
-                : "Escolha da lista para o preço de referência aparecer"
-            }
+            hint={fipe.brandRecognized ? "Reconhecida na tabela FIPE" : undefined}
           >
-            <Input
+            <CatalogSelect
               id="brand"
-              list="brand-options"
-              required
-              disabled={readOnly}
               value={values.brand}
-              onChange={(event) => update("brand", event.target.value)}
-              placeholder="Chevrolet"
+              options={fipe.brands}
+              disabled={readOnly}
+              placeholder="Escolha a marca"
+              onChange={(next) => {
+                // trocar a marca invalida o que veio da anterior
+                setValues((current) => ({ ...current, brand: next, model: "", version: "" }));
+                setFipeYear("");
+              }}
             />
-            <datalist id="brand-options">
-              {fipe.brands.map((item) => (
-                <option key={item} value={item} />
-              ))}
-            </datalist>
           </FormField>
 
           <FormField
             label="Modelo"
             htmlFor="model"
-            hint={
-              !fipe.brandRecognized
-                ? "Escolha a marca primeiro"
-                : fipe.modelRecognized
-                  ? "Reconhecido na tabela FIPE"
-                  : "Escolha da lista para trazer os anos"
-            }
+            hint={fipe.modelRecognized ? "Reconhecido na tabela FIPE" : undefined}
           >
-            <Input
+            <CatalogSelect
               id="model"
-              list="model-options"
-              required
-              disabled={readOnly}
               value={values.model}
-              onChange={(event) => update("model", event.target.value)}
-              placeholder="Onix"
+              options={fipe.models}
+              disabled={readOnly || !values.brand}
+              placeholder={values.brand ? "Escolha o modelo" : "Escolha a marca primeiro"}
+              onChange={(next) => {
+                setValues((current) => ({ ...current, model: next, version: "" }));
+                setFipeYear("");
+              }}
             />
-            <datalist id="model-options">
-              {fipe.models.map((item) => (
-                <option key={item} value={item} />
-              ))}
-            </datalist>
           </FormField>
 
-          <FormField label="Versão" htmlFor="version">
-            <Input
+          <FormField
+            label="Versão"
+            htmlFor="version"
+            hint={
+              fipe.versions.length > 0
+                ? "Motor, acabamento e câmbio, como a FIPE registra"
+                : undefined
+            }
+          >
+            <CatalogSelect
               id="version"
-              disabled={readOnly}
               value={values.version}
-              onChange={(event) => update("version", event.target.value)}
-              placeholder="1.0 Turbo LTZ"
+              options={fipe.versions}
+              disabled={readOnly || !values.model}
+              placeholder={values.model ? "Escolha a versão" : "Escolha o modelo primeiro"}
+              onChange={(next) => {
+                update("version", next);
+                setFipeYear("");
+              }}
             />
           </FormField>
 

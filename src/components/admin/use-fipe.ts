@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "@/lib/client/api";
+import { joinFipeModel, splitFipeModel } from "@/lib/integrations/fipe";
 
 type Brand = { codigo: string; nome: string };
 type Model = { codigo: number; nome: string };
@@ -38,14 +39,16 @@ function same(a: string, b: string): boolean {
  * Falha em silêncio de propósito: FIPE fora do ar deixa as listas vazias e o
  * cadastro segue normal. O carro é da revenda, não da tabela.
  */
-export function useFipe(brand: string, model: string) {
+export function useFipe(brand: string, model: string, version: string) {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [models, setModels] = useState<Model[]>([]);
   const [years, setYears] = useState<Year[]>([]);
   const [loadingYears, setLoadingYears] = useState(false);
 
   const brandCode = brands.find((item) => same(item.nome, brand))?.codigo ?? null;
-  const modelCode = models.find((item) => same(item.nome, model))?.codigo ?? null;
+  // a FIPE conhece o nome inteiro; aqui ele está partido em dois campos
+  const fullModel = joinFipeModel(model, version);
+  const modelCode = models.find((item) => same(item.nome, fullModel))?.codigo ?? null;
 
   useEffect(() => {
     let active = true;
@@ -103,9 +106,17 @@ export function useFipe(brand: string, model: string) {
     [brandCode, modelCode],
   );
 
+  const split = models.map((item) => splitFipeModel(item.nome));
+
   return {
     brands: brands.map((item) => item.nome),
-    models: models.map((item) => item.nome),
+    /** Primeira palavra de cada nome, sem repetir: é o modelo que o filtro usa. */
+    models: [...new Set(split.map((item) => item.model))].sort((a, b) => a.localeCompare(b)),
+    /** Versões daquele modelo, já sem o nome do modelo na frente. */
+    versions: split
+      .filter((item) => same(item.model, model) && item.version)
+      .map((item) => item.version)
+      .sort((a, b) => a.localeCompare(b)),
     years,
     loadingYears,
     /** A marca digitada existe na tabela? Sem isso não há o que consultar. */

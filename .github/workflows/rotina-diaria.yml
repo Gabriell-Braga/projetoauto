@@ -1,0 +1,62 @@
+name: Rotina diária
+
+# O Webflow Cloud não tem agendador: ele lê só name, compatibility_date e as
+# três bindings de armazenamento do wrangler.json, e ignora o resto — um
+# triggers.crons seria descartado em silêncio. Então o agendamento mora aqui,
+# versionado junto do código, em vez de num serviço de terceiro que ninguém
+# lembra que existe até parar de funcionar.
+on:
+  schedule:
+    # 09:10 UTC = 06:10 em Brasília. Minuto quebrado de propósito: a hora cheia
+    # é o horário mais concorrido do agendador do GitHub e atrasa mais.
+    - cron: "10 9 * * *"
+  # permite rodar na mão pela aba Actions, para conferir sem esperar um dia
+  workflow_dispatch:
+
+concurrency:
+  group: rotina-diaria
+  cancel-in-progress: false
+
+jobs:
+  executar:
+    name: Régua de cobrança e faxina de rascunhos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar a rotina
+        env:
+          OPS_SECRET: ${{ secrets.OPS_SECRET }}
+          BASE_URL: ${{ vars.OPS_BASE_URL || 'https://projetoauto.webflow.io/app' }}
+        run: |
+          if [ -z "$OPS_SECRET" ]; then
+            echo "::error::Falta o segredo OPS_SECRET nas configurações do repositório."
+            exit 1
+          fi
+
+          # -sS mostra erro de rede; o corpo é gravado para poder ser lido
+          # tanto no sucesso quanto na falha
+          STATUS=$(curl -sS -o resposta.json -w "%{http_code}" \
+            -X POST \
+            -H "x-ops-secret: $OPS_SECRET" \
+            "$BASE_URL/api/ops/billing")
+
+          echo "HTTP $STATUS"
+          cat resposta.json
+
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::A rotina falhou com HTTP $STATUS."
+            exit 1
+          fi
+
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### Rotina diária"
+            if [ -f resposta.json ]; then
+              echo '```json'
+              cat resposta.json
+              echo '```'
+            else
+              echo "Sem resposta — a chamada não completou."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

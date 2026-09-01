@@ -34,6 +34,7 @@ type Health = {
     receivedAt: string | null;
     error: string | null;
     tenantName: string | null;
+    handled: boolean;
   }[];
   diagnostico: string;
 };
@@ -69,6 +70,10 @@ export function WebhookHealth() {
     void load();
   }, [load]);
 
+  const needsRepair = Boolean(
+    health?.webhook && (health.webhook.interrupted || health.missingEvents?.length),
+  );
+
   async function handleResume() {
     setResuming(true);
     const result = await apiPost<{ resolvido: boolean }>("/api/super-admin/gateway");
@@ -101,19 +106,26 @@ export function WebhookHealth() {
             adimplente sozinho.
           </CardDescription>
         </div>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="shrink-0"
-          onClick={() => {
-            setHealth(null);
-            void load();
-          }}
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Verificar
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          {needsRepair ? (
+            <Button type="button" size="sm" loading={resuming} onClick={handleResume}>
+              <PlugZap className="h-3.5 w-3.5" />
+              Religar fila
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setHealth(null);
+              void load();
+            }}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Verificar
+          </Button>
+        </div>
       </CardHeader>
 
       {error ? (
@@ -129,15 +141,6 @@ export function WebhookHealth() {
         <>
           <CardContent className="space-y-3">
             <Alert tone={toneFor(health)}>{health.diagnostico}</Alert>
-
-            {health.webhook && (health.webhook.interrupted || health.missingEvents?.length) ? (
-              <div>
-                <Button type="button" loading={resuming} onClick={handleResume}>
-                  <PlugZap className="h-3.5 w-3.5" />
-                  Religar fila e reassinar eventos
-                </Button>
-              </div>
-            ) : null}
 
             {health.missingEvents?.length ? (
               <Alert tone="danger">
@@ -220,8 +223,10 @@ export function WebhookHealth() {
                     <Td>
                       {event.error ? (
                         <span className="text-danger">{event.error}</span>
-                      ) : (
+                      ) : event.handled ? (
                         <Badge tone="success">Processado</Badge>
+                      ) : (
+                        <Badge tone="neutral">Registrado, sem efeito</Badge>
                       )}
                     </Td>
                   </Tr>

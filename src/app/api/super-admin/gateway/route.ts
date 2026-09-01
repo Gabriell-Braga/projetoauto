@@ -10,6 +10,7 @@ import {
 } from "@/lib/gateway/asaas";
 import { getWebhook, resumeWebhook } from "@/lib/gateway/asaas";
 import { lastDeliveries } from "@/lib/gateway/delivery-log";
+import { isKnownEvent } from "@/lib/gateway/event-map";
 import { logAuditFor } from "@/lib/audit";
 import { badRequest, jsonOk, notFound, withApi } from "@/lib/http";
 
@@ -86,6 +87,8 @@ export const GET = withApi(async () => {
       receivedAt: event.receivedAt?.toISOString() ?? null,
       error: event.error,
       tenantName: event.tenantName,
+      // guardado mas sem efeito: dizer "processado" aqui mentiria
+      handled: isKnownEvent(event.eventType),
     })),
     diagnostico: diagnose({
       hasWebhook: Boolean(ours),

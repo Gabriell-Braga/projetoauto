@@ -132,7 +132,12 @@ describe("aviso de funcionalidade não entregue", () => {
   });
 
   it("acusa dependência de fornecedor", () => {
-    const keys = unreadyFeatures({ whatsapp_integrado: 1 }).map((f) => f.key);
-    expect(keys).toContain("whatsapp_integrado");
+    // escolhida do catálogo pelo mesmo motivo da de cima: citar uma pelo nome
+    // faz o teste quebrar no dia em que ela fica pronta
+    const externa = FEATURES.find((feature) => feature.status === "depende_de_fornecedor");
+    if (!externa) return; // nenhuma depende mais de fornecedor: nada a acusar
+
+    const keys = unreadyFeatures({ [externa.key]: 1 }).map((feature) => feature.key);
+    expect(keys).toContain(externa.key);
   });
 });

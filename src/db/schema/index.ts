@@ -6,6 +6,7 @@ export * from "./stores";
 export * from "./vehicles";
 export * from "./leads";
 export * from "./crm";
+export * from "./portals";
 export * from "./audit";
 export * from "./password-resets";
 export * from "./plans";

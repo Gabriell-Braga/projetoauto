@@ -4,6 +4,8 @@ import { logAuditFor } from "@/lib/audit";
 import { requireApiTenant } from "@/lib/auth/guards";
 import { badRequest, forbidden, jsonOk, withApi } from "@/lib/http";
 import { buildVehicleSlug } from "@/lib/services/vehicles";
+import { queueVehicleSync } from "@/lib/services/portals";
+import { dispatchTenantEvent } from "@/lib/services/api-access";
 import { checkTenantLimit } from "@/lib/plans/service";
 import { vehicleSchema } from "@/lib/validation/vehicles";
 
@@ -50,6 +52,9 @@ export const POST = withApi(async (request: Request) => {
       featured: input.featured,
     })
     .returning({ id: vehicles.id, slug: vehicles.slug });
+  await queueVehicleSync(context.tenant.id, created[0].id);
+  await dispatchTenantEvent(context.tenant.id, "vehicle.created", { id: created[0].id });
+
 
   await logAuditFor(
     context,

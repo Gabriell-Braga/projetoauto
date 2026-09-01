@@ -5,6 +5,8 @@ import { logAuditFor } from "@/lib/audit";
 import { requireApiTenant } from "@/lib/auth/guards";
 import { badRequest, forbidden, jsonOk, notFound, withApi } from "@/lib/http";
 import { buildVehicleSlug, deleteVehicle, getVehicle } from "@/lib/services/vehicles";
+import { queueVehicleSync } from "@/lib/services/portals";
+import { dispatchTenantEvent } from "@/lib/services/api-access";
 import { checkTenantLimit } from "@/lib/plans/service";
 import { vehicleUpdateSchema } from "@/lib/validation/vehicles";
 
@@ -62,6 +64,15 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
       draftExpiresAt: null,
     })
     .where(and(eq(vehicles.tenantId, context.tenant.id), eq(vehicles.id, id)));
+
+  // portais e integradores são avisados depois de gravar, nunca antes:
+  // portal fora do ar não pode impedir a revenda de salvar o próprio carro
+  await queueVehicleSync(context.tenant.id, id);
+  await dispatchTenantEvent(
+    context.tenant.id,
+    input.status === "sold" ? "vehicle.sold" : "vehicle.updated",
+    { id, status: input.status ?? existing.vehicle.status },
+  );
 
   await logAuditFor(
     context,

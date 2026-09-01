@@ -9,6 +9,7 @@ import {
   MessageSquareQuote,
   Palette,
   Plug,
+  Radio,
   Users,
 } from "lucide-react";
 import { AppShell, type NavSection } from "@/components/layout/shell";
@@ -76,6 +77,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       : []),
     ...(can(context.role, "stores:write")
       ? [{ href: "/admin/unidades", label: "Unidades", icon: <Building2 className={ICON} /> }]
+      : []),
+    ...(can(context.role, "vehicles:read")
+      ? [{ href: "/admin/portais", label: "Portais", icon: <Radio className={ICON} /> }]
       : []),
     ...(can(context.role, "api:manage")
       ? [{ href: "/admin/integracoes", label: "API e webhooks", icon: <Plug className={ICON} /> }]

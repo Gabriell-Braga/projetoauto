@@ -130,5 +130,15 @@ export const MIGRATIONS: BundledMigration[] = [
       "CREATE TABLE `message_templates` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`name` text NOT NULL,\n\t`channel` text DEFAULT 'whatsapp' NOT NULL,\n\t`body` text NOT NULL,\n\t`active` integer DEFAULT true NOT NULL,\n\t`sort_order` integer DEFAULT 0 NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade\n);",
       "CREATE INDEX `message_templates_tenant_idx` ON `message_templates` (`tenant_id`,`channel`,`sort_order`);"
     ]
+  },
+  {
+    "tag": "0008_portal_connections",
+    "statements": [
+      "CREATE TABLE `portal_connections` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`portal` text NOT NULL,\n\t`status` text DEFAULT 'desconectado' NOT NULL,\n\t`credentials` text,\n\t`settings` text,\n\t`connected_by_user_id` text,\n\t`last_sync_at` integer,\n\t`last_error` text,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`connected_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE UNIQUE INDEX `portal_connections_tenant_portal_unique` ON `portal_connections` (`tenant_id`,`portal`);",
+      "CREATE TABLE `vehicle_publications` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`vehicle_id` text NOT NULL,\n\t`portal` text NOT NULL,\n\t`external_id` text,\n\t`external_url` text,\n\t`status` text DEFAULT 'pendente' NOT NULL,\n\t`last_error` text,\n\t`synced_at` integer,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`vehicle_id`) REFERENCES `vehicles`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      "CREATE UNIQUE INDEX `vehicle_publications_unique` ON `vehicle_publications` (`vehicle_id`,`portal`);",
+      "CREATE INDEX `vehicle_publications_pending_idx` ON `vehicle_publications` (`tenant_id`,`status`);"
+    ]
   }
 ];

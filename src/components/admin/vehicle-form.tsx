@@ -17,6 +17,8 @@ import { OPTION_GROUPS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { PhotoManager, type PhotoItem } from "@/components/admin/photo-manager";
+import { FipeLookup, type FipeResult } from "@/components/admin/fipe-lookup";
+import { priceGapPercent, priceVerdict } from "@/lib/integrations/fipe";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
 
@@ -126,6 +128,49 @@ export function VehicleForm({
     setValues((current) => ({ ...current, [key]: value }));
   }
 
+  /**
+   * Traz a FIPE para a ficha sem apagar o que a pessoa já preencheu.
+   *
+   * Marca, modelo e ano vêm da tabela porque é o que padroniza o estoque. O
+   * preço NÃO é copiado: a FIPE é referência, e o valor de venda é decisão da
+   * revenda — sobrescrever aqui apagaria uma escolha comercial.
+   */
+  /**
+   * Compara o preço pedido com a referência gravada.
+   *
+   * Fica ao lado do campo, não num painel separado: a comparação só ajuda no
+   * instante em que a pessoa decide o número. Depois de salvo, ninguém volta
+   * para conferir.
+   */
+  const fipeHint = useMemo(() => {
+    if (!values.fipePriceCents) return undefined;
+
+    const gap = priceGapPercent(inputToCents(priceText), values.fipePriceCents);
+    const verdict = priceVerdict(gap);
+    if (gap === null || verdict === null) {
+      return `FIPE ${centsToInput(values.fipePriceCents)}`;
+    }
+
+    const distance = `${Math.abs(gap).toFixed(1).replace(".", ",")}%`;
+    if (verdict === "na_faixa") return `Na faixa da FIPE (${distance} de diferença)`;
+    return verdict === "acima"
+      ? `${distance} acima da FIPE`
+      : `${distance} abaixo da FIPE`;
+  }, [priceText, values.fipePriceCents]);
+
+  function applyFipe(result: FipeResult) {
+    setValues((current) => ({
+      ...current,
+      brand: result.marca,
+      model: result.modelo,
+      yearModel: result.anoModelo,
+      yearManufacture: current.yearManufacture || result.anoModelo,
+      fipeCode: result.codigoFipe,
+      fipePriceCents: result.valorCents,
+      fipeReference: result.mesReferencia,
+    }));
+  }
+
   function toggleOption(optionKey: string) {
     setValues((current) => ({
       ...current,
@@ -160,6 +205,9 @@ export function VehicleForm({
       description: values.description,
       status: values.status,
       featured: values.featured,
+      fipeCode: values.fipeCode,
+      fipePriceCents: values.fipePriceCents,
+      fipeReference: values.fipeReference,
     };
 
     // o rascunho já existe e já tem as fotos: completar ele, não criar outro
@@ -289,7 +337,7 @@ export function VehicleForm({
         </CardHeader>
         <CardContent>
           <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
-            <FormField label="Preço (R$)" htmlFor="price">
+            <FormField label="Preço (R$)" htmlFor="price" hint={fipeHint}>
               <Input
                 id="price"
                 inputMode="decimal"
@@ -496,6 +544,15 @@ export function VehicleForm({
         </CardContent>
       </Card>
 
+
+      <FipeLookup
+        onApply={applyFipe}
+        reference={{
+          code: values.fipeCode,
+          priceCents: values.fipePriceCents,
+          month: values.fipeReference,
+        }}
+      />
 
       <PhotoManager
         vehicleId={isEditing ? initial.id : draftId ?? undefined}

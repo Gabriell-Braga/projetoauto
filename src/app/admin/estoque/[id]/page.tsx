@@ -90,6 +90,9 @@ export default async function EditVehiclePage({ params }: Props) {
             description: vehicle.description ?? "",
             status: vehicle.status,
             featured: vehicle.featured,
+            fipeCode: vehicle.fipeCode,
+            fipePriceCents: vehicle.fipePriceCents,
+            fipeReference: vehicle.fipeReference,
           }}
         />
 

@@ -50,6 +50,17 @@ export const vehicles = sqliteTable(
     description: text("description"),
     /** Unidade dona do carro; nulo em revenda de uma loja só. */
     storeId: text("store_id"),
+    /**
+     * Referência da FIPE congelada no momento da consulta.
+     *
+     * Guardada em vez de consultada na hora de exibir: a tabela muda todo mês,
+     * e um anúncio "10% acima da FIPE" que vira "na faixa" sozinho, sem
+     * ninguém mexer no preço, confunde quem precifica. O mês fica junto para
+     * a tela dizer de quando é a referência.
+     */
+    fipeCode: text("fipe_code"),
+    fipePriceCents: integer("fipe_price_cents"),
+    fipeReference: text("fipe_reference"),
     status: text("status").$type<VehicleStatus>().notNull().default("draft"),
     /**
      * Rascunho provisório: existe só para as fotos terem onde morar enquanto a

@@ -43,6 +43,13 @@
       "when": 1788223717059,
       "tag": "0005_crm_stores_and_api",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1788223718059,
+      "tag": "0006_fipe_reference",
+      "breakpoints": true
     }
   ]
 }

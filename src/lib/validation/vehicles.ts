@@ -37,6 +37,9 @@ export const vehicleSchema = z.object({
   description: z.preprocess(emptyToUndefined, z.string().trim().max(5000).optional()),
   status: z.enum(VEHICLE_STATUS).default("draft"),
   featured: z.boolean().default(false),
+  fipeCode: z.string().trim().max(20).nullable().optional(),
+  fipePriceCents: z.number().int().min(0).max(1_000_000_000).nullable().optional(),
+  fipeReference: z.string().trim().max(40).nullable().optional(),
 });
 
 export type VehicleInput = z.infer<typeof vehicleSchema>;

@@ -115,5 +115,13 @@ export const MIGRATIONS: BundledMigration[] = [
       "CREATE INDEX `vehicles_store_idx` ON `vehicles` (`tenant_id`,`store_id`);",
       "CREATE INDEX `leads_stage_idx` ON `leads` (`tenant_id`,`stage_id`);"
     ]
+  },
+  {
+    "tag": "0006_fipe_reference",
+    "statements": [
+      "ALTER TABLE `vehicles` ADD `fipe_code` text;",
+      "ALTER TABLE `vehicles` ADD `fipe_price_cents` integer;",
+      "ALTER TABLE `vehicles` ADD `fipe_reference` text;"
+    ]
   }
 ];

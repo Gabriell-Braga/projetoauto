@@ -1,0 +1,145 @@
+import { cached } from "@/lib/cache";
+import { ApiError } from "@/lib/http";
+
+/**
+ * Tabela FIPE.
+ *
+ * Fonte pública e gratuita, sem contrato nem credencial — é o que permite
+ * entregar preenchimento assistido e preço de referência sem depender de
+ * fornecedor. Não substitui consulta por placa: aqui se escolhe o modelo, ali
+ * se descobre qual é o carro.
+ */
+const BASE = "https://parallelum.com.br/fipe/api/v1/carros";
+
+/**
+ * Cache longo de propósito.
+ *
+ * Marcas e modelos mudam uma vez por ano; a tabela de preços, uma vez por mês.
+ * Sem cache, cada tecla digitada no formulário viraria uma chamada a um
+ * serviço de terceiro que não nos deve nada — e quando ele ficasse lento, o
+ * cadastro de veículo ficaria lento junto.
+ */
+const CATALOG_TTL = 7 * 24 * 60 * 60;
+const PRICE_TTL = 24 * 60 * 60;
+
+export type FipeBrand = { codigo: string; nome: string };
+export type FipeModel = { codigo: number; nome: string };
+export type FipeYear = { codigo: string; nome: string };
+
+export type FipeQuote = {
+  marca: string;
+  modelo: string;
+  anoModelo: number;
+  combustivel: string;
+  codigoFipe: string;
+  mesReferencia: string;
+  valorCents: number;
+};
+
+async function request<T>(path: string): Promise<T> {
+  const response = await fetch(`${BASE}${path}`, {
+    headers: { accept: "application/json", "user-agent": "ProjetoAuto" },
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(502, "A tabela FIPE não respondeu. Preencha manualmente e tente depois.");
+  }
+
+  const payload = (await response.json()) as T & { error?: string };
+  if (payload && typeof payload === "object" && "error" in payload && payload.error) {
+    throw new ApiError(404, "Combinação não encontrada na tabela FIPE.");
+  }
+  return payload;
+}
+
+export function listBrands(): Promise<FipeBrand[]> {
+  return cached("fipe:brands", CATALOG_TTL, () => request<FipeBrand[]>("/marcas"));
+}
+
+export function listModels(brandCode: string): Promise<FipeModel[]> {
+  return cached(`fipe:models:${brandCode}`, CATALOG_TTL, async () => {
+    const payload = await request<{ modelos: FipeModel[] }>(`/marcas/${brandCode}/modelos`);
+    return payload.modelos ?? [];
+  });
+}
+
+export function listYears(brandCode: string, modelCode: string): Promise<FipeYear[]> {
+  return cached(`fipe:years:${brandCode}:${modelCode}`, CATALOG_TTL, () =>
+    request<FipeYear[]>(`/marcas/${brandCode}/modelos/${modelCode}/anos`),
+  );
+}
+
+/**
+ * "R$ 48.328,00" vira 4832800.
+ *
+ * A API devolve o valor já formatado em português, então o ponto é separador
+ * de milhar e a vírgula é decimal — inverter isso daria um preço mil vezes
+ * menor sem nenhum erro visível.
+ */
+export function parseBrl(value: string): number {
+  const digits = value.replace(/[^\d,]/g, "").replace(",", ".");
+  return Math.round((Number(digits) || 0) * 100);
+}
+
+export function getQuote(
+  brandCode: string,
+  modelCode: string,
+  yearCode: string,
+): Promise<FipeQuote> {
+  return cached(`fipe:quote:${brandCode}:${modelCode}:${yearCode}`, PRICE_TTL, async () => {
+    const payload = await request<{
+      Marca: string;
+      Modelo: string;
+      AnoModelo: number;
+      Combustivel: string;
+      CodigoFipe: string;
+      MesReferencia: string;
+      Valor: string;
+    }>(`/marcas/${brandCode}/modelos/${modelCode}/anos/${yearCode}`);
+
+    return {
+      marca: payload.Marca,
+      modelo: payload.Modelo,
+      anoModelo: payload.AnoModelo,
+      combustivel: payload.Combustivel,
+      codigoFipe: payload.CodigoFipe,
+      mesReferencia: payload.MesReferencia.trim(),
+      valorCents: parseBrl(payload.Valor),
+    };
+  });
+}
+
+/* ------------------------------------------------------------------------ */
+/* Avaliação                                                                 */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * Quanto o preço pedido foge da referência, em pontos percentuais.
+ *
+ * Positivo é acima da FIPE. Devolve null sem referência, em vez de zero: zero
+ * significaria "está na tabela", o que é uma afirmação que não podemos fazer.
+ */
+export function priceGapPercent(
+  askingCents: number,
+  referenceCents: number | null | undefined,
+): number | null {
+  if (!referenceCents || referenceCents <= 0 || askingCents <= 0) return null;
+  return Math.round(((askingCents - referenceCents) / referenceCents) * 1000) / 10;
+}
+
+export type PriceVerdict = "abaixo" | "na_faixa" | "acima";
+
+/**
+ * Faixa de tolerância de 5%.
+ *
+ * A FIPE é referência, não preço praticado: quilometragem, estado e região
+ * movem o valor legitimamente. Marcar como "fora" qualquer diferença faria o
+ * aviso aparecer em todo anúncio e ninguém mais olharia para ele.
+ */
+export function priceVerdict(gapPercent: number | null): PriceVerdict | null {
+  if (gapPercent === null) return null;
+  if (gapPercent > 5) return "acima";
+  if (gapPercent < -5) return "abaixo";
+  return "na_faixa";
+}

@@ -18,4 +18,8 @@ export type VehicleFormValues = {
   description: string;
   status: string;
   featured: boolean;
+  /** Referência da FIPE gravada na última consulta. */
+  fipeCode: string | null;
+  fipePriceCents: number | null;
+  fipeReference: string | null;
 };

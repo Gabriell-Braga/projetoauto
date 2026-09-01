@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { billingStatus, tenants } from "@/db/schema";
+import { billingStatus, subscriptions, tenants } from "@/db/schema";
 import { logAuditFor } from "@/lib/audit";
 import { actorFromContext } from "@/lib/audit";
 import { requireApiSuperAdmin } from "@/lib/auth/guards";
@@ -57,6 +57,24 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
       amountCents: input.amountCents ?? 0,
       currentDueDate: input.currentDueDate ?? nextDueDate(input.dueDay ?? 10),
     });
+  }
+
+  /**
+   * O valor tem um dono só.
+   *
+   * Em plano negociado, quem manda é este campo — e sem espelhar aqui, a ficha
+   * da assinatura seguiria mostrando o preço de catálogo (zero) enquanto a
+   * cobrança usa outro número. Dois cards com valores diferentes para a mesma
+   * mensalidade.
+   *
+   * Plano de gateway não entra: lá o valor autoritativo é o que foi enviado ao
+   * Asaas, e mudar só aqui criaria divergência com o que o cliente é cobrado.
+   */
+  if (input.amountCents !== undefined) {
+    await db
+      .update(subscriptions)
+      .set({ priceCents: input.amountCents })
+      .where(and(eq(subscriptions.tenantId, id), eq(subscriptions.status, "manual")));
   }
 
   if (input.status && input.status !== billing?.status) {

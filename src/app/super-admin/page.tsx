@@ -84,6 +84,7 @@ export default async function SuperAdminHome() {
                 <Th>Financeiro</Th>
                 <Th numeric>Vencimento</Th>
                 <Th numeric>Criada em</Th>
+                <Th />
               </Tr>
             </Thead>
             <tbody>
@@ -106,6 +107,15 @@ export default async function SuperAdminHome() {
                   </Td>
                   <Td numeric>{formatDate(tenant.currentDueDate)}</Td>
                   <Td numeric>{formatDate(tenant.createdAt)}</Td>
+                  {/* mesma ação da lista de revendas: quem chega por aqui não
+                      deveria ter que descobrir que o nome é clicável */}
+                  <Td className="text-right">
+                    <Link href={`/super-admin/revendas/${tenant.id}`}>
+                      <Button size="sm" variant="secondary">
+                        Gerenciar
+                      </Button>
+                    </Link>
+                  </Td>
                 </Tr>
               ))}
             </tbody>

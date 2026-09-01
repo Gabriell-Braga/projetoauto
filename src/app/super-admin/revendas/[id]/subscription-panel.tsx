@@ -54,12 +54,15 @@ export function SubscriptionPanel({
   subscription,
   planName,
   plans,
+  billedCents,
 }: {
   tenantId: string;
   hasCnpj: boolean;
   subscription: SubscriptionSummary | null;
   planName: string | null;
   plans: PlanOption[];
+  /** O que a revenda realmente paga, vindo da cobrança. */
+  billedCents: number | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -153,7 +156,15 @@ export function SubscriptionPanel({
                   </Badge>
                 }
               />
-              <Field label="Valor" value={formatCurrency(subscription.priceCents)} />
+              {/*
+                O valor sai da cobrança, não do preço de catálogo do plano.
+                Enterprise vale zero na tabela porque é negociado caso a caso —
+                mostrar esse zero aqui contradizia a mensalidade ao lado.
+              */}
+              <Field
+                label="Valor"
+                value={formatCurrency(billedCents ?? subscription.priceCents)}
+              />
               <Field
                 label="Próximo ciclo"
                 value={

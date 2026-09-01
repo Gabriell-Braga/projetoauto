@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Link2, Link2Off } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
@@ -33,18 +33,30 @@ export function WhatsappConnection({
   connection,
   vaultReady,
   canWrite,
-  webhookUrl,
 }: {
   connection: WhatsappStatus;
   vaultReady: boolean;
   canWrite: boolean;
-  webhookUrl: string;
 }) {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
   const [connecting, setConnecting] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  /**
+   * Endereço montado no navegador, não no servidor.
+   *
+   * Atrás do proxy do Webflow o cabeçalho `host` chega com o domínio interno
+   * da infraestrutura, e era isso que aparecia aqui. Entregar esse endereço à
+   * Meta seria cadastrar um webhook num domínio que não é o nosso.
+   */
+  const [webhookUrl, setWebhookUrl] = useState("");
+
+  useEffect(() => {
+    const basePath = document.documentElement.dataset.basePath ?? "";
+    setWebhookUrl(`${window.location.origin}${basePath}/api/webhooks/whatsapp`);
+  }, []);
 
   async function handleDisconnect() {
     const confirmed = await confirm({
@@ -76,6 +88,10 @@ export function WhatsappConnection({
       toast.error("Não consegui copiar", "Selecione o texto e copie manualmente.");
     }
   }
+
+  // sem conexão e sem aviso, o bloco do webhook é o primeiro conteúdo do
+  // card: uma borda aqui encostaria na borda do cabeçalho
+  const hasContentAbove = Boolean(connection) || !vaultReady || Boolean(connection?.lastError);
 
   return (
     <>
@@ -150,7 +166,7 @@ export function WhatsappConnection({
             </div>
           ) : null}
 
-          <div className="mt-4 border-t border-border pt-4">
+          <div className={hasContentAbove ? "mt-4 border-t border-border pt-4" : undefined}>
             <p className="label-instrument mb-1.5 text-muted">
               Endereço do webhook, para cadastrar na Meta
             </p>

@@ -233,14 +233,22 @@ async function applyPlanToTenant(
   await db.update(tenants).set({ planId: plan.id }).where(eq(tenants.id, tenantId));
 
   const existing = await db
-    .select({ tenantId: billingStatus.tenantId })
+    .select({ tenantId: billingStatus.tenantId, amountCents: billingStatus.amountCents })
     .from(billingStatus)
     .where(eq(billingStatus.tenantId, tenantId))
     .limit(1);
 
+  /**
+   * Plano negociado tem preço zero no catálogo — o valor é combinado caso a
+   * caso. Escrever esse zero por cima apagaria a mensalidade já acordada, e a
+   * régua passaria a cobrar nada sem ninguém perceber.
+   */
+  const agreed = existing[0]?.amountCents ?? 0;
+  const amountCents = priceCents > 0 ? priceCents : agreed;
+
   const values = {
     status: "adimplente" as const,
-    amountCents: priceCents,
+    amountCents,
     dueDay,
     currentDueDate: nextDueDate,
   };

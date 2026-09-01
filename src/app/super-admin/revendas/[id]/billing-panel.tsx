@@ -139,7 +139,7 @@ export function BillingPanel({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Situação da assinatura</CardTitle>
+            <CardTitle>Cobrança e vencimento</CardTitle>
             <CardDescription>
               Marcar como suspensa tira o site do ar e restringe o painel da revenda.
             </CardDescription>

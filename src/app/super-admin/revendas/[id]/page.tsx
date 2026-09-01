@@ -125,6 +125,7 @@ export default async function TenantDetailPage({ params, searchParams }: Props) 
           planName={subscription?.planName ?? null}
           plans={planOptions}
           subscription={subscription?.summary ?? null}
+          billedCents={detail.billing?.amountCents ?? null}
         />
       ) : null}
 

@@ -247,3 +247,40 @@ export const tenantWebhooks = sqliteTable(
 );
 
 export type TenantWebhook = typeof tenantWebhooks.$inferSelect;
+
+/* ------------------------------------------------------------------------ */
+/* Modelos de mensagem                                                       */
+/* ------------------------------------------------------------------------ */
+
+export const MESSAGE_CHANNELS = ["whatsapp", "email"] as const;
+export type MessageChannel = (typeof MESSAGE_CHANNELS)[number];
+
+/**
+ * Mensagem pronta que o vendedor dispara para o cliente.
+ *
+ * Existe independente de provedor: hoje o texto abre o WhatsApp do aparelho
+ * com a mensagem já escrita, o que funciona sem contrato nenhum. Quando houver
+ * API oficial, o mesmo modelo passa a ser enviado por ela — o que a revenda
+ * escreveu continua valendo.
+ */
+export const messageTemplates = sqliteTable(
+  "message_templates",
+  {
+    id: idColumn(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    channel: text("channel").$type<MessageChannel>().notNull().default("whatsapp"),
+    body: text("body").notNull(),
+    active: integer("active", { mode: "boolean" }).notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index("message_templates_tenant_idx").on(table.tenantId, table.channel, table.sortOrder),
+  ],
+);
+
+export type MessageTemplate = typeof messageTemplates.$inferSelect;

@@ -123,5 +123,12 @@ export const MIGRATIONS: BundledMigration[] = [
       "ALTER TABLE `vehicles` ADD `fipe_price_cents` integer;",
       "ALTER TABLE `vehicles` ADD `fipe_reference` text;"
     ]
+  },
+  {
+    "tag": "0007_message_templates",
+    "statements": [
+      "CREATE TABLE `message_templates` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`name` text NOT NULL,\n\t`channel` text DEFAULT 'whatsapp' NOT NULL,\n\t`body` text NOT NULL,\n\t`active` integer DEFAULT true NOT NULL,\n\t`sort_order` integer DEFAULT 0 NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      "CREATE INDEX `message_templates_tenant_idx` ON `message_templates` (`tenant_id`,`channel`,`sort_order`);"
+    ]
   }
 ];

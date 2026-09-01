@@ -21,6 +21,7 @@ import { LEAD_STATUS, type LeadStatus } from "@/db/schema";
 import { LEAD_STATUS_LABELS } from "@/lib/catalog/labels";
 import { apiPatch, apiPost } from "@/lib/client/api";
 import { formatDateTime, formatPhone, onlyDigits } from "@/lib/utils";
+import { WhatsappSender, type Template } from "./whatsapp-sender";
 
 type TimelineEvent = {
   id: string;
@@ -70,6 +71,8 @@ export function LeadDetail({
   canWrite,
   hasTimeline,
   hasFunnel,
+  templates,
+  sender,
 }: {
   lead: LeadData;
   stages: { id: string; name: string; kind: string }[];
@@ -78,6 +81,8 @@ export function LeadDetail({
   canWrite: boolean;
   hasTimeline: boolean;
   hasFunnel: boolean;
+  templates: Template[];
+  sender: { name: string; tenantName: string };
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -127,11 +132,25 @@ export function LeadDetail({
     toast.success("Registrado na linha do tempo");
   }
 
-  const whatsappHref = `https://wa.me/55${onlyDigits(lead.phone)}`;
-
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex flex-col gap-4">
+        {canWrite ? (
+          <WhatsappSender
+            leadId={lead.id}
+            phone={lead.phone}
+            templates={templates}
+            context={{
+              nome: lead.name,
+              veiculo: lead.vehicleLabel,
+              vendedor: sender.name,
+              revenda: sender.tenantName,
+              telefone: lead.phone,
+            }}
+            onSent={() => router.refresh()}
+          />
+        ) : null}
+
         {hasTimeline ? (
           <Card>
             <CardHeader>
@@ -303,15 +322,6 @@ export function LeadDetail({
                 </p>
               </div>
             ) : null}
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-8 items-center gap-2 rounded border border-border px-3 text-[13px] text-text hover:bg-surface-2"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              Abrir no WhatsApp
-            </a>
           </CardContent>
         </Card>
 

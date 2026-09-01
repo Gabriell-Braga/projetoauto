@@ -6,6 +6,7 @@ import {
   KanbanSquare,
   LayoutDashboard,
   MessagesSquare,
+  MessageSquareQuote,
   Palette,
   Plug,
   Users,
@@ -60,6 +61,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const settings = [
     ...(can(context.role, "site:read")
       ? [{ href: "/admin/site", label: "Site", icon: <Palette className={ICON} /> }]
+      : []),
+    ...(can(context.role, "leads:read")
+      ? [
+          {
+            href: "/admin/mensagens",
+            label: "Mensagens",
+            icon: <MessageSquareQuote className={ICON} />,
+          },
+        ]
       : []),
     ...(can(context.role, "users:read")
       ? [{ href: "/admin/usuarios", label: "Usuários", icon: <Users className={ICON} /> }]

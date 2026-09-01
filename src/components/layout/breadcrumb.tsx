@@ -20,6 +20,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   relatorios: "Relatórios",
   unidades: "Unidades",
   integracoes: "API e webhooks",
+  mensagens: "Mensagens",
   planos: "Planos",
   cupons: "Cupons",
   configuracoes: "Configurações",

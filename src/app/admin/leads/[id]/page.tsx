@@ -7,6 +7,7 @@ import { tenantHasFeature } from "@/lib/api/feature-guard";
 import { listLeadEvents, listStages } from "@/lib/services/crm";
 import { getLead } from "@/lib/services/leads";
 import { listTenantUsers } from "@/lib/services/users";
+import { ensureTemplates } from "@/lib/services/message-templates";
 import { LeadDetail } from "./lead-detail";
 
 export const dynamic = "force-dynamic";
@@ -30,10 +31,11 @@ export default async function LeadDetailPage({ params }: Props) {
   const hasTimeline = await tenantHasFeature(context.tenant.id, "historico_conversas");
   const hasFunnel = await tenantHasFeature(context.tenant.id, "funil_comercial");
 
-  const [events, stages, users] = await Promise.all([
+  const [events, stages, users, templates] = await Promise.all([
     hasTimeline ? listLeadEvents(context.tenant.id, id) : Promise.resolve([]),
     hasFunnel ? listStages(context.tenant.id) : Promise.resolve([]),
     listTenantUsers(context.tenant.id),
+    ensureTemplates(context.tenant.id),
   ]);
 
   return (
@@ -70,6 +72,13 @@ export default async function LeadDetailPage({ params }: Props) {
           createdAt: event.createdAt.toISOString(),
         }))}
         canWrite={can(context.role, "leads:write")}
+        templates={templates.map((template) => ({
+          id: template.id,
+          name: template.name,
+          body: template.body,
+          active: template.active,
+        }))}
+        sender={{ name: context.user.name, tenantName: context.tenant.name }}
         hasTimeline={hasTimeline}
         hasFunnel={hasFunnel}
       />

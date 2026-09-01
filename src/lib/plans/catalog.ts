@@ -99,7 +99,7 @@ export const FEATURES: FeatureDefinition[] = [
     label: "WhatsApp integrado",
     group: "Comercial",
     status: "depende_de_fornecedor",
-    note: "Precisa de provedor de WhatsApp Business e número verificado.",
+    note: "Modelos e registro prontos; o envio pela API oficial precisa de provedor e número verificado.",
     kind: "number",
     unit: "números",
   },

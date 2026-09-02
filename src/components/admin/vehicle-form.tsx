@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/accordion";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/field";
 import { BODY_TYPES, FUELS, TRANSMISSIONS, VEHICLE_STATUS } from "@/db/schema";
@@ -265,6 +266,13 @@ export function VehicleForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Accordion title="Identificação" summary="Marca, modelo e ano">
+        {/* uma vez, no topo: repetir em cada campo viraria três avisos iguais */}
+        {fipe.failure && !readOnly ? (
+          <Alert tone="warning" className="mb-6">
+            {fipe.failure}
+          </Alert>
+        ) : null}
+
         <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
           <FormField
             label="Marca"
@@ -276,6 +284,7 @@ export function VehicleForm({
               value={values.brand}
               options={fipe.brands}
               disabled={readOnly}
+              loading={fipe.loadingBrands}
               placeholder="Escolha a marca"
               onChange={(next) => {
                 // trocar a marca invalida o que veio da anterior
@@ -295,6 +304,7 @@ export function VehicleForm({
               value={values.model}
               options={fipe.models}
               disabled={readOnly || !values.brand}
+              loading={fipe.loadingModels}
               placeholder={values.brand ? "Escolha o modelo" : "Escolha a marca primeiro"}
               onChange={(next) => {
                 setValues((current) => ({ ...current, model: next, version: "" }));
@@ -317,6 +327,7 @@ export function VehicleForm({
               value={values.version}
               options={fipe.versions}
               disabled={readOnly || !values.model}
+              loading={fipe.loadingModels}
               placeholder={values.model ? "Escolha a versão" : "Escolha o modelo primeiro"}
               onChange={(next) => {
                 update("version", next);

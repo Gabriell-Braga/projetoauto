@@ -1,7 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#0A0B0D"/>
-  <circle cx="16" cy="17" r="9.5" fill="none" stroke="#26292E" stroke-width="1.5"/>
-  <path d="M8.3 23.7A10.5 10.5 0 0 1 16 6.5" fill="none" stroke="#F5A623" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="16" y1="17" x2="21.5" y2="12.5" stroke="#F5A623" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="16" cy="17" r="1.8" fill="#F5A623"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="ProjetoAuto">
+  <!--
+    Marca na identidade C4MP: roxo de ação como fundo, glifo branco.
+
+    O tacômetro âmbar anterior era a assinatura do sistema antigo. Aqui a forma
+    é um carro reduzido ao essencial — quatro elementos sólidos, sem traço fino,
+    porque a favicon é lida a 16px e linha de 1px vira cinza sujo nesse tamanho.
+
+    Raio generoso no ladrilho para conversar com as superfícies do sistema.
+  -->
+  <rect width="32" height="32" rx="9" fill="#694AE5" />
+  <rect x="10.5" y="9.5" width="11" height="6.5" rx="2.4" fill="#FFFFFF" />
+  <rect x="5" y="14" width="22" height="7" rx="3" fill="#FFFFFF" />
+  <circle cx="10.5" cy="22" r="2.6" fill="#FFFFFF" />
+  <circle cx="21.5" cy="22" r="2.6" fill="#FFFFFF" />
 </svg>

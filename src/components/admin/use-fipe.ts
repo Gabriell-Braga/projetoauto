@@ -43,6 +43,9 @@ export function useFipe(brand: string, model: string, version: string) {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [models, setModels] = useState<Model[]>([]);
   const [years, setYears] = useState<Year[]>([]);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [loadingBrands, setLoadingBrands] = useState(true);
+  const [loadingModels, setLoadingModels] = useState(false);
   const [loadingYears, setLoadingYears] = useState(false);
 
   const brandCode = brands.find((item) => same(item.nome, brand))?.codigo ?? null;
@@ -53,7 +56,11 @@ export function useFipe(brand: string, model: string, version: string) {
   useEffect(() => {
     let active = true;
     apiGet<{ marcas: Brand[] }>("/api/admin/fipe?etapa=marcas").then((result) => {
-      if (active && result.ok) setBrands(result.data.marcas);
+      if (!active) return;
+      setLoadingBrands(false);
+      if (result.ok) setBrands(result.data.marcas);
+      // o motivo importa: cota esgotada tem conserto diferente de fora do ar
+      else setFailure(result.error);
     });
     return () => {
       active = false;
@@ -66,10 +73,14 @@ export function useFipe(brand: string, model: string, version: string) {
       return;
     }
     let active = true;
+    setLoadingModels(true);
     apiGet<{ modelos: Model[] }>(
       `/api/admin/fipe?etapa=modelos&marca=${encodeURIComponent(brandCode)}`,
     ).then((result) => {
-      if (active && result.ok) setModels(result.data.modelos);
+      if (!active) return;
+      setLoadingModels(false);
+      if (result.ok) setModels(result.data.modelos);
+      else setFailure(result.error);
     });
     return () => {
       active = false;
@@ -118,6 +129,10 @@ export function useFipe(brand: string, model: string, version: string) {
       .map((item) => item.version)
       .sort((a, b) => a.localeCompare(b)),
     years,
+    /** Mensagem da FIPE quando ela recusa; nula quando está tudo bem. */
+    failure,
+    loadingBrands,
+    loadingModels,
     loadingYears,
     /** A marca digitada existe na tabela? Sem isso não há o que consultar. */
     brandRecognized: Boolean(brandCode),

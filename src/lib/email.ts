@@ -60,10 +60,10 @@ export function passwordResetEmail(input: { name: string; url: string; minutes: 
     "Se não foi você, ignore esta mensagem: nada muda.",
   ].join("\n");
 
-  const html = `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;color:#17181a">
+  const html = `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;color:#11111c">
   <p>Olá, ${escapeHtml(input.name)}.</p>
   <p>Recebemos um pedido para redefinir a sua senha de acesso ao painel.</p>
-  <p><a href="${escapeHtml(input.url)}" style="display:inline-block;background:#d98e12;color:#17181a;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:600">Escolher nova senha</a></p>
+  <p><a href="${escapeHtml(input.url)}" style="display:inline-block;background:#694ae5;color:#ffffff;padding:14px 22px;border-radius:9999px;text-decoration:none;font-weight:600">Escolher nova senha</a></p>
   <p style="color:#6b6f76;font-size:13px">O link vale por ${input.minutes} minutos. Se não foi você, ignore esta mensagem: nada muda.</p>
 </div>`;
 

@@ -13,9 +13,11 @@ const OTHER = "__outro__";
  * "Volkswagen" e "volks" no mesmo estoque, e o filtro do site passa a mostrar
  * três marcas onde existe uma.
  *
- * Mas lista fechada sozinha trava o cadastro quando o catálogo não carrega —
- * e a FIPE é serviço de terceiro. Daí a opção "outro": mantém a padronização
- * no caminho normal sem deixar a revenda refém de um serviço fora do ar.
+ * A saída fica DENTRO da lista, como "Outro (digitar)". A versão anterior
+ * trocava sozinha para campo de texto quando não havia opções — e como lista
+ * vazia também é o estado de "ainda carregando" e de "escolha a marca
+ * primeiro", o campo anunciava catálogo indisponível quando nada havia
+ * falhado. Agora o select é sempre o select, e quem decide digitar é a pessoa.
  *
  * O valor atual sempre entra na lista, mesmo fora do catálogo. Sem isso, abrir
  * um veículo antigo e salvar apagaria o que estava lá, sem ninguém ver.
@@ -26,53 +28,48 @@ export function CatalogSelect({
   options,
   onChange,
   disabled,
+  loading,
   placeholder = "Escolha",
-  emptyHint = "Catálogo indisponível — digite",
 }: {
   id: string;
   value: string;
   options: string[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  /** Carregando é diferente de vazio: um espera, o outro é escolha da pessoa. */
+  loading?: boolean;
   placeholder?: string;
-  emptyHint?: string;
 }) {
+  const [typing, setTyping] = useState(false);
   const known = value && !options.includes(value) ? [value, ...options] : options;
 
-  // sem catálogo, cai direto no texto: um select vazio não deixaria cadastrar
-  const [typing, setTyping] = useState(false);
-  const asText = typing || (options.length === 0 && !value);
-
-  if (asText) {
+  if (typing) {
     return (
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-3">
         <Input
           id={id}
           value={value}
           disabled={disabled}
-          autoFocus={typing}
-          placeholder={options.length === 0 ? emptyHint : undefined}
+          autoFocus
           onChange={(event) => onChange(event.target.value)}
         />
-        {options.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setTyping(false)}
-            className="shrink-0 text-xs text-muted underline-offset-2 hover:text-text hover:underline"
-          >
-            lista
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => setTyping(false)}
+          className="shrink-0 text-sm text-muted underline-offset-2 hover:text-text hover:underline"
+        >
+          lista
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-3">
       <Select
         id={id}
         value={value}
-        disabled={disabled}
+        disabled={disabled || loading}
         onChange={(event) => {
           if (event.target.value === OTHER) {
             setTyping(true);
@@ -82,7 +79,7 @@ export function CatalogSelect({
           onChange(event.target.value);
         }}
       >
-        <option value="">{placeholder}</option>
+        <option value="">{loading ? "Carregando..." : placeholder}</option>
         {known.map((option) => (
           <option key={option} value={option}>
             {option}
@@ -94,10 +91,11 @@ export function CatalogSelect({
         type="button"
         aria-label="Digitar em vez de escolher"
         title="Digitar"
+        disabled={disabled}
         onClick={() => setTyping(true)}
-        className="shrink-0 text-faint transition-colors hover:text-text"
+        className="shrink-0 text-faint transition-colors hover:text-text disabled:opacity-40"
       >
-        <Pencil className="h-3.5 w-3.5" />
+        <Pencil className="h-6 w-6" />
       </button>
     </div>
   );

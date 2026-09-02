@@ -12,15 +12,18 @@ import { ApiError } from "@/lib/http";
 const BASE = "https://parallelum.com.br/fipe/api/v1/carros";
 
 /**
- * Cache longo de propósito.
+ * Cache muito longo, de propósito.
+ *
+ * A API devolve `x-ratelimit-limit: 500` por dia, e esse teto é da plataforma
+ * inteira — não de cada revenda. Sem cache, um punhado de cadastros consome a
+ * cota do dia e a lista fica vazia para todo mundo até a meia-noite.
  *
  * Marcas e modelos mudam uma vez por ano; a tabela de preços, uma vez por mês.
- * Sem cache, cada tecla digitada no formulário viraria uma chamada a um
- * serviço de terceiro que não nos deve nada — e quando ele ficasse lento, o
- * cadastro de veículo ficaria lento junto.
+ * O TTL longo também é a nossa proteção contra a API cair: enquanto a cópia
+ * estiver no cache, a queda dela é invisível aqui dentro.
  */
-const CATALOG_TTL = 7 * 24 * 60 * 60;
-const PRICE_TTL = 24 * 60 * 60;
+const CATALOG_TTL = 30 * 24 * 60 * 60;
+const PRICE_TTL = 7 * 24 * 60 * 60;
 
 export type FipeBrand = { codigo: string; nome: string };
 export type FipeModel = { codigo: number; nome: string };
@@ -37,13 +40,33 @@ export type FipeQuote = {
 };
 
 async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${BASE}${path}`, {
-    headers: { accept: "application/json", "user-agent": "ProjetoAuto" },
-    signal: AbortSignal.timeout(10_000),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${BASE}${path}`, {
+      headers: { accept: "application/json", "user-agent": "ProjetoAuto" },
+      // curto: o formulário não pode ficar preso esperando serviço de fora
+      signal: AbortSignal.timeout(8_000),
+    });
+  } catch {
+    throw new ApiError(
+      502,
+      'Não consegui falar com a tabela FIPE. Escolha "Outro" e digite.',
+    );
+  }
 
   if (!response.ok) {
-    throw new ApiError(502, "A tabela FIPE não respondeu. Preencha manualmente e tente depois.");
+    // 429 é o caso comum e tem conserto diferente de "fora do ar": quem lê
+    // precisa saber que é cota, não defeito
+    if (response.status === 429) {
+      throw new ApiError(
+        429,
+        "A tabela FIPE atingiu o limite de consultas do dia. Escolha \"Outro\" e digite; amanhã volta ao normal.",
+      );
+    }
+    throw new ApiError(
+      502,
+      `A tabela FIPE não respondeu (${response.status}). Escolha "Outro" e digite.`,
+    );
   }
 
   const payload = (await response.json()) as T & { error?: string };

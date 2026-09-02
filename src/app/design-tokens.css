@@ -58,6 +58,7 @@
   /* utilitários -------------------------------------------------------- */
   --focus: var(--c4mp-primary);
   --skeleton: var(--surface-2);
+  --scrollbar: rgba(17, 17, 28, 0.22);
   --overlay: rgba(17, 17, 28, 0.45);
   /* superfícies quase planas: borda e contraste antes de sombra */
   --shadow-menu: 0 8px 32px rgba(17, 17, 28, 0.06);
@@ -106,6 +107,7 @@
     --info-soft: rgba(59, 130, 246, 0.14);
 
     --skeleton: var(--surface-2);
+    --scrollbar: rgba(255, 255, 255, 0.22);
     --overlay: rgba(0, 0, 0, 0.6);
     --shadow-menu: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
@@ -143,6 +145,7 @@
   --info-soft: rgba(59, 130, 246, 0.14);
 
   --skeleton: var(--surface-2);
+  --scrollbar: rgba(255, 255, 255, 0.22);
   --overlay: rgba(0, 0, 0, 0.6);
   --shadow-menu: 0 8px 32px rgba(0, 0, 0, 0.4);
 }

@@ -11,8 +11,16 @@ export const dynamic = "force-dynamic";
 
 const ICON = "h-3.5 w-3.5";
 
+/**
+ * Três grupos de duas telas, cada um com um sentido próprio: o que se opera,
+ * o que se cobra e o que sustenta a plataforma.
+ *
+ * "Configurações" mora em Cobrança porque é onde vivem multa, juros, trial e
+ * o gateway — nada ali é configuração de sistema.
+ */
 const SECTIONS: NavSection[] = [
   {
+    label: "Operação",
     items: [
       {
         href: "/super-admin",
@@ -24,7 +32,7 @@ const SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Plataforma",
+    label: "Cobrança",
     items: [
       { href: "/super-admin/planos", label: "Planos", icon: <Tags className={ICON} /> },
       {
@@ -32,6 +40,11 @@ const SECTIONS: NavSection[] = [
         label: "Configurações",
         icon: <SlidersHorizontal className={ICON} />,
       },
+    ],
+  },
+  {
+    label: "Plataforma",
+    items: [
       { href: "/super-admin/usuarios", label: "Usuários", icon: <Users className={ICON} /> },
       { href: "/super-admin/auditoria", label: "Auditoria", icon: <ScrollText className={ICON} /> },
     ],

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { List, Pencil } from "lucide-react";
 import { Input, Select } from "@/components/ui/field";
 
 const OTHER = "__outro__";
@@ -53,12 +53,16 @@ export function CatalogSelect({
           autoFocus
           onChange={(event) => onChange(event.target.value)}
         />
+        {/* mesmo peso visual do lápis que trouxe até aqui: um "lista" escrito
+            solto ao lado do campo lê como sobra de rascunho */}
         <button
           type="button"
+          aria-label="Voltar para a lista"
+          title="Voltar para a lista"
           onClick={() => setTyping(false)}
-          className="shrink-0 text-sm text-muted underline-offset-2 hover:text-text hover:underline"
+          className="shrink-0 text-faint transition-colors hover:text-text"
         >
-          lista
+          <List className="h-6 w-6" />
         </button>
       </div>
     );

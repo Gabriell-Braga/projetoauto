@@ -29,6 +29,14 @@ const ICON = "h-3.5 w-3.5";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const context = await requireTenantPage();
 
+  /**
+   * A navegação é agrupada pelo que a pessoa está fazendo, não pelo que a
+   * funcionalidade é tecnicamente.
+   *
+   * "Portais" fica em Estoque porque é onde o estoque é publicado, e
+   * "Mensagens" fica em Comercial porque é ferramenta de quem atende — mesmo
+   * sendo, no fundo, uma tela de configuração.
+   */
   const operation = [
     {
       href: "/admin",
@@ -36,13 +44,27 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       icon: <LayoutDashboard className={ICON} />,
       exact: true,
     },
+  ];
+
+  const stock = [
     ...(can(context.role, "vehicles:read")
-      ? [{ href: "/admin/estoque", label: "Estoque", icon: <Car className={ICON} /> }]
+      ? [
+          { href: "/admin/estoque", label: "Veículos", icon: <Car className={ICON} /> },
+          { href: "/admin/portais", label: "Portais", icon: <Radio className={ICON} /> },
+        ]
       : []),
+  ];
+
+  const commercial = [
     ...(can(context.role, "leads:read")
       ? [
           { href: "/admin/leads", label: "Leads", icon: <MessagesSquare className={ICON} /> },
           { href: "/admin/funil", label: "Funil", icon: <KanbanSquare className={ICON} /> },
+          {
+            href: "/admin/mensagens",
+            label: "Mensagens",
+            icon: <MessageSquareQuote className={ICON} />,
+          },
         ]
       : []),
     ...(can(context.role, "financings:read")
@@ -63,33 +85,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     ...(can(context.role, "site:read")
       ? [{ href: "/admin/site", label: "Site", icon: <Palette className={ICON} /> }]
       : []),
-    ...(can(context.role, "leads:read")
-      ? [
-          {
-            href: "/admin/mensagens",
-            label: "Mensagens",
-            icon: <MessageSquareQuote className={ICON} />,
-          },
-        ]
-      : []),
     ...(can(context.role, "users:read")
       ? [{ href: "/admin/usuarios", label: "Usuários", icon: <Users className={ICON} /> }]
       : []),
     ...(can(context.role, "stores:write")
       ? [{ href: "/admin/unidades", label: "Unidades", icon: <Building2 className={ICON} /> }]
       : []),
-    ...(can(context.role, "vehicles:read")
-      ? [{ href: "/admin/portais", label: "Portais", icon: <Radio className={ICON} /> }]
-      : []),
     ...(can(context.role, "api:manage")
       ? [{ href: "/admin/integracoes", label: "API e webhooks", icon: <Plug className={ICON} /> }]
       : []),
   ];
 
+  // seção sem item não vira título órfão
   const sections: NavSection[] = [
-    { items: operation },
+    { label: "Painel", items: operation },
+    ...(stock.length > 0 ? [{ label: "Estoque", items: stock }] : []),
+    ...(commercial.length > 0 ? [{ label: "Comercial", items: commercial }] : []),
     ...(settings.length > 0 ? [{ label: "Configuração", items: settings }] : []),
   ];
+
 
   const banner = (
     <>

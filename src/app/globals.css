@@ -131,10 +131,12 @@
     color: var(--text-faint);
   }
 
-  /* barra de rolagem discreta, no tom da superfície */
+  /* Barra de rolagem discreta.
+     Usa o token próprio, não --border-strong: no C4MP a borda forte é o
+     #11111C da marca, e a barra ficava um traço preto atravessando a tela. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
+    scrollbar-color: var(--scrollbar) transparent;
   }
 
   ::-webkit-scrollbar {
@@ -147,7 +149,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: var(--border-strong);
+    background-color: var(--scrollbar);
     border: 3px solid transparent;
     background-clip: content-box;
     border-radius: 999px;

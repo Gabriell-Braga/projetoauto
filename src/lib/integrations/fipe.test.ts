@@ -119,3 +119,22 @@ describe("ano zero-quilômetro da FIPE", () => {
     expect(isZeroKm(2026)).toBe(false);
   });
 });
+
+describe("rótulo do ano na lista", () => {
+  it("traduz o código 32000 para zero km", async () => {
+    const { formatFipeYearLabel } = await import("./fipe");
+    // "32000 Flex" na lista lê como um ano absurdo
+    expect(formatFipeYearLabel("32000 Flex")).toBe("Zero km · Flex");
+  });
+
+  it("deixa ano normal como está", async () => {
+    const { formatFipeYearLabel } = await import("./fipe");
+    expect(formatFipeYearLabel("2026 Flex")).toBe("2026 Flex");
+    expect(formatFipeYearLabel("1998 Gasolina")).toBe("1998 Gasolina");
+  });
+
+  it("aguenta zero km sem combustível informado", async () => {
+    const { formatFipeYearLabel } = await import("./fipe");
+    expect(formatFipeYearLabel("32000")).toBe("Zero km");
+  });
+});

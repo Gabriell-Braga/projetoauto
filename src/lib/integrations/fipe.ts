@@ -98,3 +98,18 @@ export function normalizeFipeYear(anoModelo: number, currentYear: number): numbe
 export function isZeroKm(anoModelo: number): boolean {
   return anoModelo >= FIPE_ZERO_KM_YEAR;
 }
+
+/**
+ * Rótulo do ano como a pessoa deve ler.
+ *
+ * A API devolve "32000 Flex" para veículo zero-quilômetro. O código serve para
+ * a consulta, mas na lista lê-se como um ano absurdo — e quem escolhe não tem
+ * como saber que aquilo significa "novo".
+ */
+export function formatFipeYearLabel(nome: string): string {
+  const [year, ...rest] = nome.trim().split(/\s+/);
+  if (Number(year) < FIPE_ZERO_KM_YEAR) return nome;
+
+  const fuel = rest.join(" ");
+  return fuel ? `Zero km · ${fuel}` : "Zero km";
+}

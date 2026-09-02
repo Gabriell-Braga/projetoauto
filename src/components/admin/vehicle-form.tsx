@@ -23,7 +23,12 @@ import { useFipe, type FipeQuote } from "@/components/admin/use-fipe";
 import { CatalogSelect } from "@/components/admin/catalog-select";
 import { CurrencyInput, IntegerInput } from "@/components/ui/number-field";
 import { centsToCurrencyInput, parseCurrencyToCents } from "@/lib/format/number-input";
-import { normalizeFipeYear, priceGapPercent, priceVerdict } from "@/lib/integrations/fipe";
+import {
+  formatFipeYearLabel,
+  normalizeFipeYear,
+  priceGapPercent,
+  priceVerdict,
+} from "@/lib/integrations/fipe";
 import { apiDelete, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
 
@@ -395,7 +400,7 @@ export function VehicleForm({
                 </option>
                 {fipe.years.map((year) => (
                   <option key={year.codigo} value={year.codigo}>
-                    {year.nome}
+                    {formatFipeYearLabel(year.nome)}
                   </option>
                 ))}
               </Select>

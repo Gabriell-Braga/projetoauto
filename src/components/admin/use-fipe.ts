@@ -1,22 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { apiGet } from "@/lib/client/api";
+import {
+  fetchBrands,
+  fetchModels,
+  fetchQuote,
+  fetchYears,
+  type FipeBrand,
+  type FipeModel,
+  type FipeQuote,
+  type FipeYear,
+} from "@/lib/client/fipe-client";
 import { joinFipeModel, splitFipeModel } from "@/lib/integrations/fipe";
 
-type Brand = { codigo: string; nome: string };
-type Model = { codigo: number; nome: string };
-type Year = { codigo: string; nome: string };
+type Brand = FipeBrand;
+type Model = FipeModel;
+type Year = FipeYear;
 
-export type FipeQuote = {
-  marca: string;
-  modelo: string;
-  anoModelo: number;
-  combustivel: string;
-  codigoFipe: string;
-  mesReferencia: string;
-  valorCents: number;
-};
+export type { FipeQuote };
 
 /** Marcas de acento, removidas antes de comparar. */
 const ACCENTS = new RegExp("[\\u0300-\\u036f]", "g");
@@ -36,8 +37,12 @@ function same(a: string, b: string): boolean {
  * Perguntar duas vezes a mesma coisa é o que faz a pessoa ignorar a ferramenta
  * e digitar tudo na mão.
  *
- * Falha em silêncio de propósito: FIPE fora do ar deixa as listas vazias e o
- * cadastro segue normal. O carro é da revenda, não da tabela.
+ * A consulta sai do NAVEGADOR, não do servidor: a API limita por IP, e o IP de
+ * saída do Cloudflare Workers é compartilhado e já vinha estourado. Cada
+ * revenda usando o próprio IP resolve o problema por inteiro.
+ *
+ * Falha sem travar: FIPE fora do ar deixa as listas vazias, o aviso aparece e o
+ * cadastro segue na mão. O carro é da revenda, não da tabela.
  */
 export function useFipe(brand: string, model: string, version: string) {
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -55,13 +60,15 @@ export function useFipe(brand: string, model: string, version: string) {
 
   useEffect(() => {
     let active = true;
-    apiGet<{ marcas: Brand[] }>("/api/admin/fipe?etapa=marcas").then((result) => {
-      if (!active) return;
-      setLoadingBrands(false);
-      if (result.ok) setBrands(result.data.marcas);
+    fetchBrands()
+      .then((list) => {
+        if (!active) return;
+        setBrands(list);
+        setFailure(null);
+      })
       // o motivo importa: cota esgotada tem conserto diferente de fora do ar
-      else setFailure(result.error);
-    });
+      .catch((error: Error) => active && setFailure(error.message))
+      .finally(() => active && setLoadingBrands(false));
     return () => {
       active = false;
     };
@@ -74,14 +81,14 @@ export function useFipe(brand: string, model: string, version: string) {
     }
     let active = true;
     setLoadingModels(true);
-    apiGet<{ modelos: Model[] }>(
-      `/api/admin/fipe?etapa=modelos&marca=${encodeURIComponent(brandCode)}`,
-    ).then((result) => {
-      if (!active) return;
-      setLoadingModels(false);
-      if (result.ok) setModels(result.data.modelos);
-      else setFailure(result.error);
-    });
+    fetchModels(brandCode)
+      .then((list) => {
+        if (!active) return;
+        setModels(list);
+        setFailure(null);
+      })
+      .catch((error: Error) => active && setFailure(error.message))
+      .finally(() => active && setLoadingModels(false));
     return () => {
       active = false;
     };
@@ -94,25 +101,30 @@ export function useFipe(brand: string, model: string, version: string) {
     }
     let active = true;
     setLoadingYears(true);
-    apiGet<{ anos: Year[] }>(
-      `/api/admin/fipe?etapa=anos&marca=${encodeURIComponent(brandCode)}&modelo=${modelCode}`,
-    ).then((result) => {
-      if (!active) return;
-      setLoadingYears(false);
-      if (result.ok) setYears(result.data.anos);
-    });
+    fetchYears(brandCode, String(modelCode))
+      .then((list) => {
+        if (!active) return;
+        setYears(list);
+        setFailure(null);
+      })
+      .catch((error: Error) => active && setFailure(error.message))
+      .finally(() => active && setLoadingYears(false));
     return () => {
       active = false;
     };
   }, [brandCode, modelCode]);
 
-  const fetchQuote = useCallback(
+  const quoteFor = useCallback(
     async (yearCode: string): Promise<FipeQuote | null> => {
       if (!brandCode || !modelCode) return null;
-      const result = await apiGet<FipeQuote>(
-        `/api/admin/fipe?etapa=preco&marca=${encodeURIComponent(brandCode)}&modelo=${modelCode}&ano=${encodeURIComponent(yearCode)}`,
-      );
-      return result.ok ? result.data : null;
+      try {
+        const quote = await fetchQuote(brandCode, String(modelCode), yearCode);
+        setFailure(null);
+        return quote;
+      } catch (error) {
+        setFailure((error as Error).message);
+        return null;
+      }
     },
     [brandCode, modelCode],
   );
@@ -137,6 +149,6 @@ export function useFipe(brand: string, model: string, version: string) {
     /** A marca digitada existe na tabela? Sem isso não há o que consultar. */
     brandRecognized: Boolean(brandCode),
     modelRecognized: Boolean(modelCode),
-    fetchQuote,
+    fetchQuote: quoteFor,
   };
 }

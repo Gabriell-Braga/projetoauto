@@ -101,13 +101,25 @@ export const FEATURES: FeatureDefinition[] = [
     status: "pronto",
     kind: "boolean",
   },
+  /*
+   * Um número por revenda, não uma cota.
+   *
+   * Era vendido como quantidade — o plano Rede dizia três números — e a
+   * implementação nunca entregou isso: `whatsapp_connections` tem o
+   * `tenant_id` como chave primária, então a segunda conexão nem cabe no
+   * banco. A cota também nunca foi conferida em lugar nenhum: o guard só
+   * pergunta se a funcionalidade está ligada.
+   *
+   * Vender três e entregar um é pior que entregar um: ninguém receberia erro,
+   * a revenda só descobriria tentando. Agora a promessa é a que o sistema
+   * cumpre.
+   */
   {
     key: "whatsapp_integrado",
     label: "WhatsApp integrado",
     group: "Comercial",
     status: "pronto",
-    kind: "number",
-    unit: "números",
+    kind: "boolean",
   },
   {
     key: "historico_conversas",
@@ -166,6 +178,23 @@ export const FEATURES: FeatureDefinition[] = [
 ];
 
 export const FEATURE_KEYS = FEATURES.map((feature) => feature.key);
+
+/**
+ * Uma funcionalidade está ligada?
+ *
+ * Mora aqui, e não em cada tela, porque plano antigo guarda o valor no formato
+ * de antes: `whatsapp_integrado` já foi quantidade e hoje é sim/não, e existem
+ * planos gravados com `3`. Tela e guard precisam concordar sobre o que `3`
+ * quer dizer — se discordarem, a tela mostra desligado, alguém salva sem
+ * perceber e a revenda perde o WhatsApp sem que ninguém tenha pedido.
+ */
+export function isFeatureOn(value: unknown): boolean {
+  if (value === undefined || value === null) return false;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value > 0;
+  if (typeof value === "string") return value !== "";
+  return false;
+}
 
 export function getFeature(key: string): FeatureDefinition | undefined {
   return FEATURES.find((feature) => feature.key === key);

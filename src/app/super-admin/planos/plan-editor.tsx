@@ -14,6 +14,7 @@ import {
   FEATURE_GROUPS,
   FEATURES,
   LIMITS,
+  isFeatureOn,
   unreadyFeatures,
   type FeatureDefinition,
 } from "@/lib/plans/catalog";
@@ -387,7 +388,7 @@ function FeatureControl({
         <label className="flex items-start gap-2 text-[13px] text-text">
           <Checkbox
             className="mt-0.5"
-            checked={value === true}
+            checked={isFeatureOn(value)}
             onChange={(event) => onChange(event.target.checked)}
           />
           <span>

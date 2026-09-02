@@ -1,6 +1,7 @@
 import {
   FALLBACK_LIMITS,
   getFeature,
+  isFeatureOn,
   type LimitKey,
   type PlanFeatures,
   type PlanLimits,
@@ -75,11 +76,7 @@ export function remaining(
 }
 
 export function hasFeature(entitlements: Entitlements, key: string): boolean {
-  const value = entitlements.features[key];
-  if (value === undefined || value === null) return false;
-  if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value > 0;
-  return value !== "";
+  return isFeatureOn(entitlements.features[key]);
 }
 
 /** Nível contratado de uma funcionalidade em degraus (básico/completo/…). */

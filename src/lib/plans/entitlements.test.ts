@@ -15,7 +15,12 @@ const START = buildEntitlements({
   id: "p1",
   name: "Start",
   limits: { maxVehicles: 50, maxUsers: 2, maxStores: 1 },
-  features: { gestao_estoque: true, crm_leads: "basico", whatsapp_integrado: 0, suporte: "digital" },
+  features: {
+    gestao_estoque: true,
+    crm_leads: "basico",
+    whatsapp_integrado: false,
+    suporte: "digital",
+  },
 });
 
 const REDE = buildEntitlements({
@@ -25,7 +30,7 @@ const REDE = buildEntitlements({
   features: {
     gestao_estoque: true,
     crm_leads: "completo",
-    whatsapp_integrado: 3,
+    whatsapp_integrado: true,
     dashboards: "avancado",
     gestao_multiunidade: true,
     suporte: "prioritario",
@@ -86,9 +91,33 @@ describe("funcionalidades", () => {
     expect(hasFeature(START, "nao_existe")).toBe(false);
   });
 
-  it("degrau zero conta como desligado", () => {
+  it("desligada é desligada", () => {
     expect(hasFeature(START, "whatsapp_integrado")).toBe(false);
     expect(hasFeature(REDE, "whatsapp_integrado")).toBe(true);
+  });
+
+  /**
+   * Plano gravado antes de `whatsapp_integrado` virar sim/não guarda um número.
+   *
+   * Se a leitura mudasse junto com o catálogo, essas revendas perderiam o
+   * WhatsApp na virada — sem erro, sem aviso, sem ninguém ter pedido.
+   */
+  it("plano antigo com quantidade continua valendo", () => {
+    const legado = buildEntitlements({
+      id: "p0",
+      name: "Rede antigo",
+      limits: {},
+      features: { whatsapp_integrado: 3 },
+    });
+    expect(hasFeature(legado, "whatsapp_integrado")).toBe(true);
+
+    const zerado = buildEntitlements({
+      id: "p0",
+      name: "Start antigo",
+      limits: {},
+      features: { whatsapp_integrado: 0 },
+    });
+    expect(hasFeature(zerado, "whatsapp_integrado")).toBe(false);
   });
 
   it("lê o degrau contratado", () => {
@@ -104,8 +133,16 @@ describe("funcionalidades", () => {
   });
 
   it("lê quantidade contratada", () => {
+    // nenhuma funcionalidade é quantidade hoje; a leitura segue de pé para os
+    // planos gravados quando o WhatsApp ainda era cota
     expect(featureQuota(START, "whatsapp_integrado")).toBe(0);
-    expect(featureQuota(REDE, "whatsapp_integrado")).toBe(3);
+    expect(featureQuota(REDE, "whatsapp_integrado")).toBe(1);
+    expect(
+      featureQuota(
+        buildEntitlements({ id: "p0", name: "antigo", limits: {}, features: { x: 3 } }),
+        "x",
+      ),
+    ).toBe(3);
   });
 });
 

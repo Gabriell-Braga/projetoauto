@@ -135,6 +135,28 @@
     color: var(--text);
   }
 
+  /*
+   * Mãozinha em tudo que é clicável.
+   *
+   * O navegador dá `cursor: default` a `<button>` — só o link nasce com a
+   * mãozinha. O Tailwind 3 corrigia isso no preflight e o 4 tirou a regra, o
+   * que deixou o painel inteiro sem o único aviso de que algo responde ao
+   * clique: botão de card, aba, cabeçalho de accordion, gatilho de select.
+   *
+   * `:not(:disabled)` porque os componentes já pedem `cursor: not-allowed` no
+   * estado desabilitado, e essa resposta é mais útil que a mãozinha.
+   */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  summary,
+  /* caixa de seleção e o rótulo que a envolve — clicar no texto marca a caixa */
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  label:has(input[type="checkbox"]:not(:disabled)),
+  label:has(input[type="radio"]:not(:disabled)) {
+    cursor: pointer;
+  }
+
   :focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;

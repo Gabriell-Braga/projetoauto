@@ -41,6 +41,19 @@ describe("escala de densidade", () => {
     expect(rule?.slice(0, rule.indexOf("}"))).toContain("font-size: 16px;");
   });
 
+  /**
+   * O Tailwind 3 punha a mãozinha em `<button>` pelo preflight e o 4 tirou a
+   * regra. Sem ela o painel inteiro fica sem o único sinal de que algo é
+   * clicável, e a falha é silenciosa: nada quebra, o botão só deixa de
+   * parecer botão. Voltou como regra nossa — e volta a sumir no dia em que
+   * alguém mexer no preflight, então fica travada aqui.
+   */
+  it("botão continua com a mãozinha", () => {
+    const globals = read("src/app/globals.css");
+    expect(globals).toMatch(/button:not\(:disabled\)/);
+    expect(globals).toMatch(/cursor: pointer;/);
+  });
+
   it("mantém os quatro níveis de raio, na ordem card > interno > tag", () => {
     const tokens = read("src/app/design-tokens.css");
     const px = (name: string) => {

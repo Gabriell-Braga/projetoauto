@@ -13,35 +13,100 @@ import { formatDateTime } from "@/lib/utils";
 export const metadata: Metadata = { title: "Auditoria" };
 export const dynamic = "force-dynamic";
 
+/**
+ * Nome de cada ação em português.
+ *
+ * A auditoria é lida por gente, não por quem escreveu o código: "auth.login"
+ * e "portal.connect" só fazem sentido para quem conhece a chave. Ação sem
+ * tradução aqui aparece crua na tela, então toda ação nova precisa de uma
+ * linha — é o preço de a tela ser legível.
+ */
 const ACTION_LABELS: Record<string, string> = {
-  "auth.login": "Login",
-  "auth.logout": "Logout",
+  // acesso
+  "auth.login": "Entrou no sistema",
+  "auth.logout": "Saiu do sistema",
   "auth.change_password": "Senha alterada",
-  "platform.bootstrap": "Bootstrap da plataforma",
-  "platform.user.create": "Super-admin criado",
+  "auth.forgot_password": "Recuperação de senha pedida",
+  "auth.reset_password": "Senha recuperada por link",
   "platform.impersonate.start": "Entrou na revenda",
   "platform.impersonate.stop": "Saiu da revenda",
+
+  // plataforma
+  "platform.bootstrap": "Plataforma iniciada",
+  "platform.user.create": "Super-admin criado",
+  "platform.settings.update": "Configurações da plataforma alteradas",
+
+  // revendas
   "tenant.create": "Revenda criada",
   "tenant.update": "Revenda atualizada",
   "tenant.delete": "Revenda excluída",
   "tenant.user.create": "Usuário da revenda criado",
+
+  // pessoas
   "user.create": "Usuário criado",
   "user.update": "Usuário atualizado",
   "user.reset_password": "Senha redefinida",
+
+  // cobrança
   "billing.update": "Financeiro atualizado",
   "billing.payment": "Pagamento registrado",
+  "billing.auto_status": "Situação alterada pela régua de cobrança",
+  "billing.gateway_event": "Aviso do gateway processado",
+  "billing.subscription.create": "Plano contratado",
+  "billing.subscription.cancel": "Assinatura cancelada",
+  "billing.payment.receive_in_cash": "Baixa manual de pagamento",
+  "gateway.webhook.resume": "Fila do gateway religada",
+
+  // planos
+  "plan.create": "Plano criado",
+  "plan.update": "Plano atualizado",
+  "plan.delete": "Plano excluído",
+  "coupon.create": "Cupom criado",
+  "coupon.update": "Cupom atualizado",
+  "coupon.delete": "Cupom excluído",
+  "coupon.deactivate": "Cupom desativado",
+
+  // estoque
   "vehicle.create": "Veículo cadastrado",
   "vehicle.update": "Veículo atualizado",
   "vehicle.delete": "Veículo excluído",
   "vehicle.photo.upload": "Foto enviada",
   "vehicle.photo.delete": "Foto removida",
+
+  // comercial
   "lead.update": "Lead atualizado",
+  "lead.routing.update": "Distribuição de leads alterada",
+  "stage.create": "Etapa do funil criada",
+  "stage.update": "Etapa do funil atualizada",
+  "stage.delete": "Etapa do funil excluída",
+  "financing.create": "Financiamento registrado",
+  "financing.update": "Financiamento atualizado",
+  "financing.delete": "Financiamento excluído",
+  "template.create": "Modelo de mensagem criado",
+  "template.update": "Modelo de mensagem atualizado",
+  "template.delete": "Modelo de mensagem excluído",
+
+  // site e unidades
   "site.update": "Site atualizado",
   "site.logo.update": "Logo atualizada",
   "site.logo.delete": "Logo removida",
   "site.banner.create": "Banner criado",
   "site.banner.update": "Banner atualizado",
   "site.banner.delete": "Banner removido",
+  "store.create": "Unidade criada",
+  "store.update": "Unidade atualizada",
+  "store.delete": "Unidade excluída",
+
+  // integrações
+  "api_key.create": "Chave de API criada",
+  "api_key.revoke": "Chave de API revogada",
+  "webhook.create": "Webhook criado",
+  "webhook.update": "Webhook atualizado",
+  "webhook.delete": "Webhook removido",
+  "portal.connect": "Portal conectado",
+  "portal.disconnect": "Portal desconectado",
+  "whatsapp.connect": "WhatsApp conectado",
+  "whatsapp.disconnect": "WhatsApp desconectado",
 };
 
 export default async function AuditPage({
@@ -113,7 +178,7 @@ export default async function AuditPage({
                     <span className="text-text">{ACTION_LABELS[item.action] ?? item.action}</span>
                     {item.impersonated ? (
                       <Badge tone="warning" className="ml-2">
-                        impersonation
+                        em nome da revenda
                       </Badge>
                     ) : null}
                   </Td>

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { SelectMenu, type SelectOption } from "./select-menu";
 
 /**
  * Campo do C4MP: 56px de altura, raio interno de 24px, fundo branco.
@@ -33,31 +34,99 @@ export const Textarea = React.forwardRef<
 Textarea.displayName = "Textarea";
 
 /**
- * Seta desenhada por nós, recuada 24px como o texto.
+ * Select com lista própria, mantendo a API do nativo.
  *
- * A seta nativa encosta na borda, e com raio de 24px ela fica visualmente
- * dentro da curva — parece defeito de alinhamento. `appearance-none` tira a
- * nativa e devolve o controle da posição.
+ * As telas continuam escrevendo `<Select value onChange><option/></Select>` —
+ * as opções são lidas dos filhos e o onChange recebe algo com `target.value`.
+ * Foram dezenas de usos: trocar a assinatura significaria reescrever todos, e
+ * cada reescrita é uma chance de errar um campo em silêncio.
+ *
+ * Modo não-controlado continua existindo porque metade dos filtros usa
+ * `defaultValue` + `name` dentro de formulário por GET.
  */
-const SELECT_ARROW = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`;
+type SelectProps = Omit<
+  React.SelectHTMLAttributes<HTMLSelectElement>,
+  "onChange" | "value" | "defaultValue"
+> & {
+  value?: string;
+  defaultValue?: string;
+  onChange?: (event: { target: { value: string; name?: string } }) => void;
+};
 
-export const Select = React.forwardRef<
-  HTMLSelectElement,
-  React.SelectHTMLAttributes<HTMLSelectElement>
->(({ className, style, ...props }, ref) => (
-  <select
-    ref={ref}
-    className={cn(baseField, "h-14 appearance-none pr-14", className)}
-    style={{
-      backgroundImage: SELECT_ARROW,
-      backgroundRepeat: "no-repeat",
-      backgroundPosition: "right 24px center",
-      ...style,
-    }}
-    {...props}
-  />
-));
-Select.displayName = "Select";
+function readOptions(children: React.ReactNode): SelectOption[] {
+  const options: SelectOption[] = [];
+
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return;
+
+    // <optgroup> vira separador achatado: a lista já agrupa por ordem
+    if (child.type === "optgroup") {
+      const group = child.props as { children?: React.ReactNode };
+      options.push(...readOptions(group.children));
+      return;
+    }
+    if (child.type !== "option") return;
+
+    const option = child.props as {
+      value?: string | number;
+      children?: React.ReactNode;
+      disabled?: boolean;
+    };
+    const value = option.value === undefined ? "" : String(option.value);
+    const label =
+      typeof option.children === "string" || typeof option.children === "number"
+        ? String(option.children)
+        : value;
+
+    options.push({ value, label, disabled: option.disabled });
+  });
+
+  return options;
+}
+
+export function Select({
+  id,
+  name,
+  value,
+  defaultValue,
+  onChange,
+  disabled,
+  className,
+  children,
+  "aria-invalid": ariaInvalid,
+}: SelectProps) {
+  const options = React.useMemo(() => readOptions(children), [children]);
+
+  const controlled = value !== undefined;
+  const [internal, setInternal] = React.useState(defaultValue ?? "");
+  const current = controlled ? String(value) : internal;
+
+  /**
+   * A opção de valor vazio serve de placeholder E continua na lista.
+   *
+   * Ela é o convite ("Escolha a marca") em uns campos e uma escolha de verdade
+   * em outros ("Não informado"). Tirá-la da lista deixaria a pessoa sem como
+   * voltar atrás depois de escolher — o campo viraria uma porta de mão única.
+   */
+  const placeholder = options.find((option) => option.value === "")?.label;
+
+  return (
+    <SelectMenu
+      id={id}
+      name={name}
+      value={current}
+      options={options}
+      placeholder={placeholder ?? "Selecione"}
+      disabled={disabled}
+      className={className}
+      aria-invalid={ariaInvalid === true || ariaInvalid === "true"}
+      onSelect={(next) => {
+        if (!controlled) setInternal(next);
+        onChange?.({ target: { value: next, name } });
+      }}
+    />
+  );
+}
 
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return <label className={cn("label-instrument mb-2 block text-text", className)} {...props} />;

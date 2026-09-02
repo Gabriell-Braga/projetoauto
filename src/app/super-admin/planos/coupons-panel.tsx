@@ -13,6 +13,8 @@ import { useConfirm } from "@/components/ui/confirm";
 import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPatch, apiPost, fieldErrorsFrom, type FieldErrors } from "@/lib/client/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { CurrencyInput, IntegerInput } from "@/components/ui/number-field";
+import { centsToCurrencyInput, parseCurrencyToCents } from "@/lib/format/number-input";
 import type { PlanRow } from "./plan-editor";
 
 export type CouponRow = {
@@ -313,12 +315,20 @@ function CouponEditor({
             htmlFor="coupon-value"
             error={errors.discountValue}
           >
-            <Input
-              id="coupon-value"
-              inputMode="decimal"
-              value={valueText}
-              onChange={(event) => setValueText(event.target.value)}
-            />
+            {/* percentual e valor sao numeros diferentes: um nao tem centavos */}
+            {draft.discountType === "PERCENTAGE" ? (
+              <IntegerInput
+                id="coupon-value"
+                value={Number(valueText.replace(/[^0-9]/g, "")) || 0}
+                onChangeNumber={(next) => setValueText(String(next))}
+              />
+            ) : (
+              <CurrencyInput
+                id="coupon-value"
+                valueCents={parseCurrencyToCents(valueText)}
+                onChangeCents={(cents) => setValueText(centsToCurrencyInput(cents))}
+              />
+            )}
           </FormField>
 
           <FormField

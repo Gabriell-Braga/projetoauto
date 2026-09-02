@@ -11,7 +11,10 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return (
     <div
       data-theme-transition
-      className={cn("rounded-card border border-border bg-surface", className)}
+      // overflow-hidden porque o raio de 40px não recorta sozinho: cabeçalho
+      // de tabela e fundo de linha em hover pintam retângulos que passam por
+      // fora da curva, e o card parece vazar
+      className={cn("overflow-hidden rounded-card border border-border bg-surface", className)}
       {...props}
     />
   );
@@ -22,7 +25,7 @@ export function CardDark({ className, ...props }: React.HTMLAttributes<HTMLDivEl
   return (
     <div
       data-theme-transition
-      className={cn("rounded-card bg-brand-dark p-8 text-inverse", className)}
+      className={cn("overflow-hidden rounded-card bg-brand-dark p-8 text-inverse", className)}
       {...props}
     />
   );

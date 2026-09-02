@@ -10,6 +10,7 @@ import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { BILLING_STATUS_LABELS } from "@/lib/catalog/labels";
 import { apiPatch, apiPost } from "@/lib/client/api";
+import { CurrencyInput } from "@/components/ui/number-field";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import type { BillingStatus } from "@/db/schema";
 
@@ -62,6 +63,17 @@ export function BillingPanel({
   const [savingSettings, setSavingSettings] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
 
+  /**
+   * Os dois campos de dinheiro saíram do FormData e viraram estado.
+   *
+   * O formulário lia o texto e fazia `replace(",", ".")` para converter — que
+   * funciona em "1500,00" e produz NaN em "1.500,00", zerando a mensalidade em
+   * silêncio. Com o valor em centavos no estado, não há conversão frágil no
+   * caminho.
+   */
+  const [amountCents, setAmountCents] = useState(billing?.amountCents ?? 0);
+  const [paymentCents, setPaymentCents] = useState(billing?.amountCents ?? 0);
+
   async function handleSettings(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSavingSettings(true);
@@ -73,7 +85,7 @@ export function BillingPanel({
       status: String(form.get("status") ?? ""),
       dueDay: Number(form.get("dueDay") ?? 10),
       graceDays: Number(form.get("graceDays") ?? 5),
-      amountCents: Math.round(Number(String(form.get("amount") ?? "0").replace(",", ".")) * 100),
+      amountCents,
       currentDueDate: dueDateValue ? new Date(`${dueDateValue}T12:00:00Z`).toISOString() : null,
       note: String(form.get("note") ?? ""),
     });
@@ -94,9 +106,7 @@ export function BillingPanel({
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const result = await apiPost(`/api/super-admin/tenants/${tenantId}/billing`, {
-      amountCents: Math.round(
-        Number(String(form.get("paymentAmount") ?? "0").replace(",", ".")) * 100,
-      ),
+      amountCents: paymentCents,
       referenceMonth: String(form.get("referenceMonth") ?? currentMonth()),
       note: String(form.get("paymentNote") ?? ""),
       markAsPaid: form.get("markAsPaid") === "on",
@@ -158,11 +168,10 @@ export function BillingPanel({
                 </FormField>
 
                 <FormField label="Mensalidade (R$)" htmlFor="amount">
-                  <Input
+                  <CurrencyInput
                     id="amount"
-                    name="amount"
-                    inputMode="decimal"
-                    defaultValue={((billing?.amountCents ?? 0) / 100).toFixed(2)}
+                    valueCents={amountCents}
+                    onChangeCents={setAmountCents}
                   />
                 </FormField>
 
@@ -225,11 +234,10 @@ export function BillingPanel({
             <form onSubmit={handlePayment}>
               <div className="grid gap-x-4 sm:grid-cols-2">
                 <FormField label="Valor recebido (R$)" htmlFor="paymentAmount">
-                  <Input
+                  <CurrencyInput
                     id="paymentAmount"
-                    name="paymentAmount"
-                    inputMode="decimal"
-                    defaultValue={((billing?.amountCents ?? 0) / 100).toFixed(2)}
+                    valueCents={paymentCents}
+                    onChangeCents={setPaymentCents}
                     required
                   />
                 </FormField>

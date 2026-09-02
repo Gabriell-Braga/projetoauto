@@ -9,6 +9,7 @@ import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/fi
 import { PasswordInput, PasswordRequirements } from "@/components/ui/password-input";
 import { useToast } from "@/components/ui/toast";
 import { apiPost, errorMessageFrom, fieldErrorsFrom } from "@/lib/client/api";
+import { CurrencyInput } from "@/components/ui/number-field";
 import { DEFAULT_TEMPLATE_ID } from "@/templates/manifests";
 import { slugify } from "@/lib/utils";
 
@@ -16,6 +17,9 @@ export function NewTenantForm() {
   const router = useRouter();
   const toast = useToast();
   const [saving, setSaving] = useState(false);
+  // em centavos: o texto do campo passava por replace(",", "."), que vira NaN
+  // em "1.500,00" e gravaria mensalidade zero sem ninguém ver
+  const [amountCents, setAmountCents] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [name, setName] = useState("");
@@ -50,7 +54,7 @@ export function NewTenantForm() {
       addressCity: String(form.get("addressCity") ?? ""),
       addressState: String(form.get("addressState") ?? ""),
       dueDay: Number(form.get("dueDay") ?? 10),
-      amountCents: Math.round(Number(String(form.get("amount") ?? "0").replace(",", ".")) * 100),
+      amountCents,
       ...(withAdmin
         ? {
             adminName: String(form.get("adminName") ?? ""),
@@ -169,7 +173,11 @@ export function NewTenantForm() {
         <CardContent>
           <div className="grid gap-x-4 sm:grid-cols-3">
             <FormField label="Mensalidade (R$)" htmlFor="amount">
-              <Input id="amount" name="amount" inputMode="decimal" defaultValue="0" />
+              <CurrencyInput
+                id="amount"
+                valueCents={amountCents}
+                onChangeCents={setAmountCents}
+              />
             </FormField>
             <FormField label="Dia do vencimento" htmlFor="dueDay">
               <Select id="dueDay" name="dueDay" defaultValue="10">

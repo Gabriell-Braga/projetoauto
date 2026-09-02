@@ -38,7 +38,7 @@ export function Accordion({
   return (
     <section
       data-theme-transition
-      className={cn("rounded-card border border-border bg-surface", className)}
+      className={cn("overflow-hidden rounded-card border border-border bg-surface", className)}
     >
       <h3>
         <button

@@ -9,7 +9,7 @@ export type TabItem = { key: string; label: string; href: string };
  */
 export function Tabs({ items, active }: { items: TabItem[]; active: string }) {
   return (
-    <nav className="mb-5 flex gap-0.5 border-b border-border">
+    <nav className="mb-4 flex gap-0.5 border-b border-border">
       {items.map((item) => {
         const selected = item.key === active;
         return (
@@ -18,7 +18,7 @@ export function Tabs({ items, active }: { items: TabItem[]; active: string }) {
             href={item.href}
             aria-current={selected ? "page" : undefined}
             className={cn(
-              "-mb-px border-b-2 px-4 py-3 text-base transition-colors duration-200 ease-out",
+              "-mb-px border-b-2 px-3.5 py-2.5 text-sm transition-colors duration-200 ease-out",
               selected
                 ? "border-b-accent font-medium text-text"
                 : "border-b-transparent text-muted hover:text-text",

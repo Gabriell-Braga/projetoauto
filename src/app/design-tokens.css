@@ -154,24 +154,33 @@
    Medidas — iguais nos dois temas
    ========================================================================= */
 :root {
-  /* raio: quatro níveis, e só eles. Raio aleatório quebra a assinatura. */
-  --radius-card: 40px;
-  --radius-inner: 24px;
-  --radius-tag: 16px;
+  /*
+   * Raio: quatro níveis, e só eles. Raio aleatório quebra a assinatura.
+   *
+   * A escala do C4MP (40/24/16) foi desenhada para página de marca, onde cada
+   * bloco ocupa a tela inteira. No painel, um card de 40px de raio come os
+   * quatro cantos de um bloco que às vezes tem 120px de altura, e a curva
+   * passa a disputar espaço com o conteúdo. Os níveis caem juntos, na mesma
+   * proporção: o card continua sendo o mais arredondado, a tag o menos, e o
+   * botão continua pílula.
+   */
+  --radius-card: 22px;
+  --radius-inner: 14px;
+  --radius-tag: 10px;
   --radius-pill: 9999px;
 
   /* espaçamento */
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-6: 16px;
+  --space-8: 24px;
 
   /* layout */
-  --container-max: 1232px;
-  --sidebar-w: 264px;
-  --topbar-h: 72px;
+  --container-max: 1440px;
+  --sidebar-w: 228px;
+  --topbar-h: 56px;
   /* linha de tabela: alta o bastante para respirar sem virar lista de cards */
-  --row-h: 64px;
+  --row-h: 44px;
 
   /* tipografia */
   --font-ui: var(--font-montserrat), system-ui, -apple-system, sans-serif;

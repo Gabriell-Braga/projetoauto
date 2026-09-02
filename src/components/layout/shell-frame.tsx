@@ -53,11 +53,11 @@ export function ShellFrame({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const nav = (
-    <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4">
+    <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-2.5 py-3">
       {sections.map((section, index) => (
         <div key={section.label ?? index} className="flex flex-col gap-0.5">
           {section.label ? (
-            <p className="label-instrument px-4 pb-2 text-faint">{section.label}</p>
+            <p className="label-instrument px-3 pb-1 text-faint">{section.label}</p>
           ) : null}
           {section.items.map((item) => (
             <NavLink key={item.href} {...item} onNavigate={() => setDrawerOpen(false)} />
@@ -71,16 +71,16 @@ export function ShellFrame({
     <Link
       href={homeHref}
       onClick={() => setDrawerOpen(false)}
-      className="flex h-[var(--topbar-h)] shrink-0 items-center border-b border-border px-6"
+      className="flex h-[var(--topbar-h)] shrink-0 items-center border-b border-border px-4"
     >
-      <span className="font-display text-base font-bold leading-none tracking-tight text-text">
+      <span className="font-display text-sm font-bold leading-none tracking-tight text-text">
         {wordmark}
       </span>
     </Link>
   );
 
   return (
-    <div className="flex min-h-screen bg-bg">
+    <div data-density="compact" className="flex min-h-screen bg-bg">
       <Suspense fallback={null}>
         <RouteProgress />
       </Suspense>
@@ -95,7 +95,7 @@ export function ShellFrame({
       >
         {brand}
         {nav}
-        <div className="shrink-0 border-t border-border px-4 py-2.5">
+        <div className="shrink-0 border-t border-border px-3 py-2">
           <p className="label-instrument text-faint">{contextLabel}</p>
         </div>
       </aside>
@@ -121,14 +121,14 @@ export function ShellFrame({
         {/* ------------------------------------------------ topbar */}
         <header
           data-theme-transition
-          className="sticky top-0 z-30 flex h-[var(--topbar-h)] shrink-0 items-center gap-4 border-b border-border bg-surface px-4 sm:px-6"
+          className="sticky top-0 z-30 flex h-[var(--topbar-h)] shrink-0 items-center gap-3 border-b border-border bg-surface px-3 sm:px-4"
         >
           <button
             type="button"
             aria-label="Abrir navegação"
             onClick={() => setDrawerOpen(true)}
             className={cn(
-              "grid h-11 w-11 shrink-0 place-items-center rounded-tag text-muted",
+              "grid h-9 w-9 shrink-0 place-items-center rounded-tag text-muted",
               "transition-colors hover:bg-surface-2 hover:text-text md:hidden",
             )}
           >
@@ -136,7 +136,7 @@ export function ShellFrame({
           </button>
 
           <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate font-display text-base font-medium text-text">
+            <span className="truncate font-display text-sm font-medium text-text">
               {contextLabel}
             </span>
             <Suspense fallback={null}>
@@ -157,7 +157,7 @@ export function ShellFrame({
 
         {banner}
 
-        <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6">{children}</main>
+        <main className="flex-1 px-3 py-4 sm:px-5 sm:py-5">{children}</main>
       </div>
     </div>
   );

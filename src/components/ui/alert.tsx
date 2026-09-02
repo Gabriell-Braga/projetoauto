@@ -28,7 +28,7 @@ export function Alert({
     <div
       role="status"
       className={cn(
-        "rounded-inner border px-6 py-4 text-base leading-relaxed",
+        "rounded-inner border px-4 py-3 text-sm leading-relaxed",
         TONES[tone],
         className,
       )}

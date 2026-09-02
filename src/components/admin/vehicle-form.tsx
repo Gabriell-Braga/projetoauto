@@ -314,6 +314,7 @@ export function VehicleForm({
     router.refresh();
   }
 
+  const yearsPending = !values.yearManufacture && !values.yearModel;
   const optionCount = values.options.length;
   const hasDescription = values.description.trim().length > 0;
 
@@ -402,7 +403,15 @@ export function VehicleForm({
             />
           </FormField>
 
-          <FormField label="Ano de fabricação" htmlFor="yearManufacture">
+          {/*
+            `|| ""` porque zero aqui quer dizer "ainda não sei": mostrar "0"
+            no campo seria pior que mostrar nada.
+          */}
+          <FormField
+            label="Ano de fabricação"
+            htmlFor="yearManufacture"
+            hint={yearsPending ? "A consulta FIPE preenche" : "Pode diferir do ano do modelo"}
+          >
             <Input
               id="yearManufacture"
               type="number"
@@ -410,12 +419,16 @@ export function VehicleForm({
               min={1950}
               max={CURRENT_YEAR + 2}
               disabled={readOnly}
-              value={values.yearManufacture}
+              value={values.yearManufacture || ""}
               onChange={(event) => update("yearManufacture", Number(event.target.value))}
             />
           </FormField>
 
-          <FormField label="Ano do modelo" htmlFor="yearModel">
+          <FormField
+            label="Ano do modelo"
+            htmlFor="yearModel"
+            hint={yearsPending ? "A consulta FIPE preenche" : undefined}
+          >
             <Input
               id="yearModel"
               type="number"
@@ -423,7 +436,7 @@ export function VehicleForm({
               min={1950}
               max={CURRENT_YEAR + 2}
               disabled={readOnly}
-              value={values.yearModel}
+              value={values.yearModel || ""}
               onChange={(event) => update("yearModel", Number(event.target.value))}
             />
           </FormField>
@@ -483,8 +496,8 @@ export function VehicleForm({
         {/* a trava precisa de saída visível: o que veio do nome do modelo é
             dedução, e quem cadastra está olhando para o carro */}
         {fipeLocked.size > 0 && !readOnly ? (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-inner border border-border bg-surface-2 px-6 py-4">
-            <p className="text-base text-muted">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-inner border border-border bg-surface-2 px-4 py-3">
+            <p className="text-sm text-muted">
               {fipeLocked.size} campo(s) preenchidos pela tabela FIPE.
             </p>
             <Button

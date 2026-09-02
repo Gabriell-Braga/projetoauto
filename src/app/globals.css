@@ -79,7 +79,7 @@
     background-color: var(--bg);
     color: var(--text);
     font-family: var(--font-ui);
-    /* 16px é o corpo do C4MP; a densidade vem do espaçamento, não da fonte */
+    /* 16px é o corpo do C4MP, e é o que o site público da revenda usa */
     font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -97,15 +97,29 @@
     letter-spacing: -0.01em;
   }
 
-  /* escala do documento: 60 / 36 / 16 / 14 */
+  /* escala do documento: 24 / 18 / 14 / 12 */
   h1 {
-    font-size: 36px;
-    line-height: 1.2;
+    font-size: 24px;
+    line-height: 1.25;
   }
 
   h2 {
-    font-size: 24px;
+    font-size: 18px;
     line-height: 1.3;
+  }
+
+  /*
+   * Densidade do painel.
+   *
+   * O site público da revenda é peça de marca e fica em 16px. O painel é
+   * ferramenta de trabalho: a pessoa passa o dia nele, comparando linhas de
+   * estoque e preenchendo formulário, e cada pixel de corpo de texto vira
+   * meia linha a menos na tabela. 14px é o corpo dos painéis densos e é o
+   * que as classes `text-sm` do kit assumem — o atributo existe para o texto
+   * que não tem classe própria herdar a mesma escala.
+   */
+  [data-density="compact"] {
+    font-size: 14px;
   }
 
   /* só background e borda animam na troca de tema — nada além disso */
@@ -174,8 +188,8 @@
      Sem caixa alta: o C4MP pede para evitar excesso de maiúsculas, e um painel
      inteiro em caixa alta cansa antes de ajudar. */
   .label-instrument {
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 12px;
+    line-height: 1.4;
     font-weight: 500;
     letter-spacing: 0;
   }

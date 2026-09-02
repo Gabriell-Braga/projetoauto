@@ -7,17 +7,20 @@ import { cn } from "@/lib/utils";
 
 export type SelectOption = { value: string; label: string; disabled?: boolean };
 
+/** Teto da lista — o mesmo valor de `max-h-64`, usado para escolher o lado. */
+const MENU_MAX_H = 256;
+
 /**
  * Lista de opções própria, no lugar do dropdown do sistema operacional.
  *
  * O menu nativo é desenhado pelo sistema: fonte, cores e cantos vêm do
- * Windows ou do macOS, e num painel inteiro em Montserrat com raio de 24px ele
- * aparece como um corpo estranho.
+ * Windows ou do macOS, e num painel inteiro em Montserrat, com o raio do
+ * sistema, ele aparece como um corpo estranho.
  *
  * Duas decisões que o desenho impõe:
  *
  * 1. O painel é renderizado em portal, com posição fixa. Card e accordion
- *    recortam o próprio conteúdo para respeitar o raio de 40px, e um menu
+ *    recortam o próprio conteúdo para respeitar o raio do card, e um menu
  *    dentro deles seria cortado na primeira opção.
  *
  * 2. Um campo oculto acompanha o valor. Metade dos selects do painel é
@@ -49,6 +52,7 @@ export function SelectMenu({
   const [open, setOpen] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(-1);
   const [rect, setRect] = React.useState<DOMRect | null>(null);
+  const [above, setAbove] = React.useState(false);
 
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const listRef = React.useRef<HTMLUListElement>(null);
@@ -61,14 +65,23 @@ export function SelectMenu({
     [options],
   );
 
-  const place = React.useCallback(() => {
-    const element = triggerRef.current;
-    if (element) setRect(element.getBoundingClientRect());
-  }, []);
-
+  /**
+   * A direção é decidida uma vez, na abertura, e não muda mais.
+   *
+   * Recalcular a cada quadro faria o menu virar de lado no meio da rolagem,
+   * saltando de baixo do campo para cima dele — e a opção sob o cursor troca
+   * junto.
+   */
   function openMenu() {
     if (disabled) return;
-    place();
+
+    const element = triggerRef.current;
+    if (element) {
+      const box = element.getBoundingClientRect();
+      setRect(box);
+      setAbove(window.innerHeight - box.bottom < MENU_MAX_H && box.top > MENU_MAX_H);
+    }
+
     setActiveIndex(options.findIndex((option) => option.value === value));
     setOpen(true);
   }
@@ -87,21 +100,48 @@ export function SelectMenu({
   }
 
   /**
-   * Rolagem e redimensionamento fecham o menu.
+   * Rolagem acompanha o gatilho em vez de fechar o menu.
    *
-   * Ele é posicionado por coordenada da tela; reposicionar a cada quadro de
-   * rolagem custa caro e ainda assim treme. Fechar é honesto: o gatilho saiu
-   * do lugar que a pessoa olhava.
+   * Fechar em qualquer rolagem parecia simples e quebrava o caso mais comum:
+   * a lista de modelos da FIPE tem quinhentas linhas, e rolar dentro dela
+   * dispara um evento de rolagem como qualquer outro — o menu fechava no
+   * primeiro giro da roda. O ouvinte é de captura, então ele vê inclusive a
+   * rolagem da própria lista; ela é ignorada, porque não move o gatilho.
+   *
+   * Para a rolagem de fora, reposicionar é melhor que fechar: um quadro por
+   * vez, com o cálculo preso ao rAF para não medir o layout várias vezes no
+   * mesmo quadro. Só quando o gatilho sai inteiro da tela o menu fecha — aí
+   * ele apontaria para um campo que a pessoa não vê mais.
    */
   React.useEffect(() => {
     if (!open) return;
 
-    const onScroll = () => closeMenu(false);
-    window.addEventListener("scroll", onScroll, true);
-    window.addEventListener("resize", onScroll);
+    let frame = 0;
+
+    function follow(event: Event) {
+      if (event.type === "scroll" && listRef.current?.contains(event.target as Node)) return;
+      if (frame) return;
+
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const element = triggerRef.current;
+        if (!element) return;
+
+        const next = element.getBoundingClientRect();
+        if (next.bottom < 0 || next.top > window.innerHeight) {
+          closeMenu(false);
+          return;
+        }
+        setRect(next);
+      });
+    }
+
+    window.addEventListener("scroll", follow, true);
+    window.addEventListener("resize", follow);
     return () => {
-      window.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", follow, true);
+      window.removeEventListener("resize", follow);
     };
   }, [open]);
 
@@ -210,8 +250,8 @@ export function SelectMenu({
         onClick={() => (open ? closeMenu() : openMenu())}
         onKeyDown={onKeyDown}
         className={cn(
-          "flex h-14 w-full items-center justify-between gap-4 rounded-inner border border-border",
-          "bg-surface px-6 text-left text-base text-text transition-colors duration-200 ease-out",
+          "flex h-10 w-full items-center justify-between gap-2 rounded-inner border border-border",
+          "bg-surface px-3.5 text-left text-sm text-text transition-colors duration-200 ease-out",
           "hover:border-border-strong focus-visible:border-accent",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
           "disabled:cursor-not-allowed disabled:opacity-60",
@@ -226,7 +266,7 @@ export function SelectMenu({
         </span>
         <ChevronDown
           className={cn(
-            "h-6 w-6 shrink-0 text-faint transition-transform duration-200 ease-out",
+            "h-4 w-4 shrink-0 text-faint transition-transform duration-200 ease-out",
             open && "rotate-180",
           )}
         />
@@ -244,15 +284,16 @@ export function SelectMenu({
                 position: "fixed",
                 left: rect.left,
                 width: rect.width,
-                // abre para cima quando não há espaço embaixo
-                ...(window.innerHeight - rect.bottom < 280 && rect.top > 280
-                  ? { bottom: window.innerHeight - rect.top + 8 }
-                  : { top: rect.bottom + 8 }),
+                ...(above
+                  ? { bottom: window.innerHeight - rect.top + 4 }
+                  : { top: rect.bottom + 4 }),
               }}
-              className="z-50 max-h-72 overflow-y-auto rounded-inner border border-border bg-surface py-2 shadow-[var(--shadow-menu)]"
+              // overscroll-contain: chegar ao fim da lista não repassa a
+              // rolagem para a página atrás dela
+              className="z-50 max-h-64 overflow-y-auto overscroll-contain rounded-inner border border-border bg-surface py-1.5 shadow-[var(--shadow-menu)]"
             >
               {options.length === 0 ? (
-                <li className="px-6 py-3 text-base text-faint">Nada para escolher</li>
+                <li className="px-3.5 py-2 text-sm text-faint">Nada para escolher</li>
               ) : (
                 options.map((option, index) => {
                   const active = index === activeIndex;
@@ -268,14 +309,14 @@ export function SelectMenu({
                       onMouseEnter={() => !option.disabled && setActiveIndex(index)}
                       onClick={() => choose(index)}
                       className={cn(
-                        "flex cursor-pointer items-center justify-between gap-4 px-6 py-3 text-base",
+                        "flex cursor-pointer items-center justify-between gap-3 px-3.5 py-2 text-sm",
                         option.disabled && "cursor-not-allowed opacity-40",
                         active && !option.disabled && "bg-surface-2",
                         chosen ? "text-accent-text" : "text-text",
                       )}
                     >
                       <span className="min-w-0">{option.label}</span>
-                      {chosen ? <Check className="h-5 w-5 shrink-0" /> : null}
+                      {chosen ? <Check className="h-4 w-4 shrink-0" /> : null}
                     </li>
                   );
                 })

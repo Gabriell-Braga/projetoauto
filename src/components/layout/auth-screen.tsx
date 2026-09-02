@@ -16,7 +16,11 @@ export function AuthScreen({
   footer?: React.ReactNode;
 }) {
   return (
-    <main className="flex min-h-screen flex-col bg-bg px-6 py-8 sm:px-10">
+    // mesma escala do painel: o formulário aqui usa os mesmos campos
+    <main
+      data-density="compact"
+      className="flex min-h-screen flex-col bg-bg px-6 py-8 sm:px-10"
+    >
       <header>
         <Link
           href="/login"
@@ -31,7 +35,7 @@ export function AuthScreen({
           <p className="label-instrument text-accent-text">{eyebrow}</p>
           <h1 className="mt-2 text-[22px] leading-tight text-text">{title}</h1>
           {description ? (
-            <p className="mt-2 text-base leading-relaxed text-muted">{description}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{description}</p>
           ) : null}
 
           <div className="mt-7">{children}</div>

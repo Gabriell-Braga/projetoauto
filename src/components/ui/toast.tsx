@@ -94,7 +94,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
     >
       <Icon aria-hidden="true" className={cn("mt-0.5 h-4 w-4 shrink-0", color)} />
       <div className="min-w-0 flex-1">
-        <p className="text-base font-medium leading-snug text-text">{toast.title}</p>
+        <p className="text-sm font-medium leading-snug text-text">{toast.title}</p>
         {toast.description ? (
           <p className="mt-0.5 text-xs leading-snug text-muted">{toast.description}</p>
         ) : null}

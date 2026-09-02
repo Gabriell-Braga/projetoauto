@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
     <div className="w-full overflow-x-auto">
-      <table className={cn("w-full border-collapse text-base", className)} {...props} />
+      <table className={cn("w-full border-collapse text-sm", className)} {...props} />
     </div>
   );
 }
@@ -33,7 +33,7 @@ export function Th({
   return (
     <th
       className={cn(
-        "label-instrument whitespace-nowrap px-6 py-4 font-medium",
+        "label-instrument whitespace-nowrap px-4 py-2.5 font-medium",
         numeric && "text-right",
         className,
       )}
@@ -62,7 +62,7 @@ export function Td({
   return (
     <td
       className={cn(
-        "h-[var(--row-h)] px-6 py-4 align-middle text-text",
+        "h-[var(--row-h)] px-4 py-2.5 align-middle text-text",
         numeric && "text-right tnum",
         className,
       )}
@@ -81,9 +81,9 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 px-8 py-20 text-center">
-      <p className="font-display text-lg font-semibold text-text">{title}</p>
-      {description ? <p className="max-w-md text-base text-muted">{description}</p> : null}
+    <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
+      <p className="font-display text-base font-semibold text-text">{title}</p>
+      {description ? <p className="max-w-md text-sm text-muted">{description}</p> : null}
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );

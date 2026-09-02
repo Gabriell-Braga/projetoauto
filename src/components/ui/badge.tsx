@@ -33,8 +33,8 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 whitespace-nowrap rounded-tag border px-3 py-1",
-        "text-sm font-medium",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-tag border px-2 py-0.5",
+        "text-xs font-medium",
         style.chip,
         className,
       )}
@@ -61,8 +61,8 @@ export function BadgeSoft({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 whitespace-nowrap rounded-tag px-3 py-1",
-        "text-sm font-medium",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-tag px-2 py-0.5",
+        "text-xs font-medium",
         style.chip.replace(/border-\S+/g, ""),
         className,
       )}

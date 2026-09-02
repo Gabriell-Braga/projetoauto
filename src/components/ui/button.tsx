@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  */
 const buttonVariants = cva(
   [
-    "relative inline-flex items-center justify-center gap-3 rounded-full font-medium",
+    "relative inline-flex items-center justify-center gap-2 rounded-full font-medium",
     "whitespace-nowrap transition-colors duration-200 ease-out",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
     "disabled:pointer-events-none disabled:opacity-50",
@@ -28,10 +28,10 @@ const buttonVariants = cva(
         outlineDanger: "border border-danger/40 text-danger hover:bg-danger-soft",
       },
       size: {
-        sm: "h-9 px-4 text-sm gap-2",
-        md: "h-11 px-5 text-base",
-        lg: "h-[52px] px-[18px] text-base",
-        icon: "h-11 w-11",
+        sm: "h-8 px-3.5 text-xs gap-1.5",
+        md: "h-9 px-4 text-sm",
+        lg: "h-11 px-5 text-sm",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },
@@ -59,7 +59,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           <Spinner />
         </span>
       ) : null}
-      <span className={cn("inline-flex items-center gap-2", loading && "invisible")}>
+      <span className={cn("inline-flex items-center gap-1.5", loading && "invisible")}>
         {children}
       </span>
     </button>

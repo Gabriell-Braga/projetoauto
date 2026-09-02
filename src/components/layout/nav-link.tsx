@@ -29,7 +29,7 @@ export function NavLink({
       // superfície arredondada em vez da barra lateral: o C4MP marca seleção
       // por bloco, e a barra de 2px era assinatura do sistema anterior
       className={cn(
-        "flex h-11 items-center gap-3 rounded-tag px-4 text-base transition-colors duration-200 ease-out",
+        "flex h-9 items-center gap-2.5 rounded-tag px-3 text-sm transition-colors duration-200 ease-out",
         active
           ? "bg-accent-soft font-medium text-accent-text"
           : "text-muted hover:bg-surface-2 hover:text-text",

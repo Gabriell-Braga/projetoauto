@@ -47,23 +47,23 @@ export function Accordion({
           aria-controls={contentId}
           onClick={() => setOpen((current) => !current)}
           className={cn(
-            "flex w-full items-center justify-between gap-4 px-8 py-6 text-left",
+            "flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
             open && "border-b border-border",
           )}
         >
           <span className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="font-display text-lg font-semibold text-text">{title}</span>
+            <span className="font-display text-base font-semibold text-text">{title}</span>
             {badge}
           </span>
 
           <span className="flex shrink-0 items-center gap-2">
             {!open && summary ? (
-              <span className="hidden text-sm text-muted sm:inline">{summary}</span>
+              <span className="hidden text-xs text-muted sm:inline">{summary}</span>
             ) : null}
             <ChevronDown
               className={cn(
-                "h-6 w-6 text-faint transition-transform duration-200 ease-out",
+                "h-5 w-5 text-faint transition-transform duration-200 ease-out",
                 open && "rotate-180",
               )}
             />
@@ -71,7 +71,7 @@ export function Accordion({
         </button>
       </h3>
 
-      <div id={contentId} hidden={!open} className="px-8 py-6">
+      <div id={contentId} hidden={!open} className="px-5 py-4">
         {children}
       </div>
     </section>

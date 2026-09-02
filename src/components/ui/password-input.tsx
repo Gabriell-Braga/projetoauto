@@ -24,7 +24,7 @@ export const PasswordInput = React.forwardRef<
         ref={ref}
         type={visible ? "text" : "password"}
         className={cn(
-          "h-14 w-full rounded-inner border border-border bg-surface pl-6 pr-14 text-base text-text",
+          "h-10 w-full rounded-inner border border-border bg-surface pl-3.5 pr-11 text-sm text-text",
           "transition-colors hover:border-border-strong",
           "focus:border-accent focus:bg-surface focus:outline-none",
           "disabled:cursor-not-allowed disabled:opacity-60",
@@ -42,7 +42,7 @@ export const PasswordInput = React.forwardRef<
         onClick={() => setVisible((value) => !value)}
         disabled={props.disabled}
         className={cn(
-          "absolute right-1 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-sm",
+          "absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-sm",
           "text-faint transition-colors hover:bg-surface-3 hover:text-text",
           "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent",
           "disabled:pointer-events-none disabled:opacity-40",

@@ -18,7 +18,7 @@ export function Tabs({ items, active }: { items: TabItem[]; active: string }) {
             href={item.href}
             aria-current={selected ? "page" : undefined}
             className={cn(
-              "-mb-px border-b-2 px-3 py-2 text-[13px] transition-colors",
+              "-mb-px border-b-2 px-4 py-3 text-base transition-colors duration-200 ease-out",
               selected
                 ? "border-b-accent font-medium text-text"
                 : "border-b-transparent text-muted hover:text-text",

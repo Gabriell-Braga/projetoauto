@@ -26,14 +26,16 @@ export function NavLink({
       href={href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
+      // superfície arredondada em vez da barra lateral: o C4MP marca seleção
+      // por bloco, e a barra de 2px era assinatura do sistema anterior
       className={cn(
-        "flex h-8 items-center gap-2.5 border-l-2 pl-3 pr-2 text-[13px] transition-colors",
+        "flex h-11 items-center gap-3 rounded-tag px-4 text-base transition-colors duration-200 ease-out",
         active
-          ? "border-l-accent font-medium text-text"
-          : "border-l-transparent text-muted hover:bg-surface-2 hover:text-text",
+          ? "bg-accent-soft font-medium text-accent-text"
+          : "text-muted hover:bg-surface-2 hover:text-text",
       )}
     >
-      <span className={cn("shrink-0", active ? "text-accent" : "text-faint")}>{icon}</span>
+      <span className={cn("shrink-0", active ? "text-accent-text" : "text-faint")}>{icon}</span>
       <span className="truncate">{label}</span>
     </Link>
   );

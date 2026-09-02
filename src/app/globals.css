@@ -31,19 +31,30 @@
   --color-danger-soft: var(--danger-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-inverse: var(--text-inverse);
+  --color-brand-dark: var(--c4mp-dark);
+  --color-brand-secondary: var(--c4mp-secondary);
 
-  /* radius único: 6px em tudo. As chaves maiores existem só para as telas
-     legadas (rounded-lg/xl/2xl) já caírem no valor certo durante a migração. */
-  --radius-sm: var(--radius-tight);
-  --radius-DEFAULT: var(--radius);
-  --radius-md: var(--radius);
-  --radius-lg: var(--radius);
-  --radius-xl: var(--radius);
-  --radius-2xl: var(--radius);
-  --radius-3xl: var(--radius);
+  /* Quatro níveis, e só eles — raio é assinatura do sistema.
+     `rounded` cai no nível interno (24px), que é o certo para a maioria dos
+     elementos; card e tag têm nome próprio, e botão usa pill. */
+  --radius-sm: var(--radius-tag);
+  --radius-DEFAULT: var(--radius-inner);
+  --radius-md: var(--radius-inner);
+  --radius-lg: var(--radius-inner);
+  --radius-xl: var(--radius-inner);
+  --radius-2xl: var(--radius-inner);
+  --radius-3xl: var(--radius-inner);
+  --radius-card: var(--radius-card);
+  --radius-inner: var(--radius-inner);
+  --radius-tag: var(--radius-tag);
 
   --font-sans: var(--font-ui);
   --font-display: var(--font-head);
+
+  --container-c4mp: var(--container-max);
 }
 
 /* ============================================================================
@@ -68,8 +79,9 @@
     background-color: var(--bg);
     color: var(--text);
     font-family: var(--font-ui);
-    font-size: 14px;
-    line-height: 1.45;
+    /* 16px é o corpo do C4MP; a densidade vem do espaçamento, não da fonte */
+    font-size: 16px;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     /* números tabulares em toda a UI: preços, km, anos, contadores */
     font-variant-numeric: tabular-nums;
@@ -83,6 +95,17 @@
     font-family: var(--font-head);
     font-weight: 600;
     letter-spacing: -0.01em;
+  }
+
+  /* escala do documento: 60 / 36 / 16 / 14 */
+  h1 {
+    font-size: 36px;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 24px;
+    line-height: 1.3;
   }
 
   /* só background e borda animam na troca de tema — nada além disso */
@@ -101,7 +124,7 @@
   :focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-tag);
   }
 
   ::placeholder {
@@ -145,16 +168,17 @@
    Utilitários do sistema
    ========================================================================= */
 @layer utilities {
-  /* rótulo de instrumento: caixa alta, 11px, tracking aberto */
+  /* Rótulo de campo e de métrica.
+     Sem caixa alta: o C4MP pede para evitar excesso de maiúsculas, e um painel
+     inteiro em caixa alta cansa antes de ajudar. */
   .label-instrument {
-    font-size: var(--label-size);
-    line-height: 1.2;
-    letter-spacing: var(--label-tracking);
-    text-transform: uppercase;
+    font-size: 14px;
+    line-height: 1.5;
     font-weight: 500;
+    letter-spacing: 0;
   }
 
-  /* número de odômetro: display, tabular, apertado */
+  /* Métrica em destaque: dado é elemento visual de primeira classe. */
   .odometer {
     font-family: var(--font-head);
     font-variant-numeric: tabular-nums;
@@ -198,5 +222,16 @@
     100% {
       transform: translateX(100%);
     }
+  }
+}
+
+/* ============================================================================
+   Destaque de marca
+   Gradiente é recurso de destaque, nunca decoração — e nunca como fundo de
+   página inteira.
+   ========================================================================= */
+@layer utilities {
+  .bg-brand-gradient {
+    background: var(--gradient-accent);
   }
 }

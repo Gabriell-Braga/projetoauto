@@ -1,150 +1,182 @@
 /* ============================================================================
-   COCKPIT — design system dos painéis
-   Fonte única da verdade. Nenhum componente pode usar cor literal:
-   tudo referencia as variáveis semânticas daqui.
+   C4MP — design system
+   Fonte única da verdade. Nenhum componente usa cor literal: tudo referencia
+   as variáveis semânticas daqui.
 
-   Os dois temas são de primeira classe. A troca acontece pela classe
-   `light` / `dark` no <html>; sem classe, vale a preferência do sistema.
+   O sistema é claro por definição. O tema escuro deriva do próprio C4MP, que
+   define #11111C como sua superfície escura de contraste — assim o painel
+   continua funcionando à noite sem inventar uma paleta paralela.
    ========================================================================= */
 
 :root,
 :root.light {
   color-scheme: light;
 
-  /* superfícies ------------------------------------------------------- */
-  --bg: #f6f6f4; /* off-white levemente quente, nunca branco puro */
+  /* marca -------------------------------------------------------------- */
+  --c4mp-primary: #694ae5;
+  --c4mp-secondary: #9191e2;
+  --c4mp-dark: #11111c;
+
+  /* superfícies -------------------------------------------------------- */
+  --bg: #fafafa;
   --surface: #ffffff;
-  --surface-2: #efefec;
-  --surface-3: #e6e6e1; /* hover sobre surface-2 */
-  --border: #ddddd8;
-  --border-strong: #c9c9c2; /* divisores de seção e bordas de input em foco */
+  --surface-2: #f3f4f6;
+  --surface-3: #e9ebef; /* hover sobre surface-2 */
+  --border: #e5e7eb;
+  --border-strong: #11111c;
 
   /* texto -------------------------------------------------------------- */
-  --text: #17181a;
-  --text-muted: #6b6f76;
-  --text-faint: #9a9ea5; /* placeholders e legendas */
+  --text: #11111c;
+  --text-muted: rgba(0, 0, 0, 0.6);
+  --text-faint: rgba(0, 0, 0, 0.4);
+  --text-inverse: #ffffff;
 
-  /* accent — âmbar de painel de instrumentos, usado com parcimônia ----- */
-  --accent: #d98e12;
-  --accent-hover: #c07d0c;
-  /* texto sobre o accent (AA) */
-  --accent-contrast: #17181a;
-  /* âmbar escurecido para quando o accent for TEXTO sobre --bg/--surface:
-     #d98e12 em branco dá 2.7:1 e reprovaria em AA */
-  --accent-text: #8a5a00;
-  --accent-soft: rgba(217, 142, 18, 0.14);
-  --accent-line: rgba(217, 142, 18, 0.35);
+  /* ação --------------------------------------------------------------- */
+  --accent: var(--c4mp-primary);
+  --accent-hover: #5a3ed1;
+  --accent-contrast: #ffffff;
+  /* roxo como TEXTO sobre superfície clara: 5.8:1, passa em AA */
+  --accent-text: var(--c4mp-primary);
+  --accent-soft: rgba(105, 74, 229, 0.08);
+  --accent-line: rgba(105, 74, 229, 0.28);
 
-  /* estados ------------------------------------------------------------ */
-  --positive: #1f9d62;
-  --positive-soft: rgba(31, 157, 98, 0.14);
-  --danger: #d64540;
+  /* estados — semântica padrão, conforme o documento ------------------- */
+  --positive: #16a34a;
+  --positive-line: #22c55e;
+  --positive-soft: #f0fdf4;
+  --danger: #dc2626;
+  --danger-line: #ef4444;
+  --danger-soft: #fef2f2;
   --danger-contrast: #ffffff;
-  --danger-soft: rgba(214, 69, 64, 0.12);
-  --warning: #d98e12;
-  --warning-soft: rgba(217, 142, 18, 0.14);
+  --warning: #d97706;
+  --warning-line: #f59e0b;
+  --warning-soft: #fffbeb;
+  --info: #2563eb;
+  --info-line: #3b82f6;
+  --info-soft: #eff6ff;
 
   /* utilitários -------------------------------------------------------- */
-  --focus: var(--accent);
+  --focus: var(--c4mp-primary);
   --skeleton: var(--surface-2);
-  --overlay: rgba(23, 24, 26, 0.45);
-  --shadow-menu: 0 8px 24px -12px rgba(23, 24, 26, 0.25);
+  --overlay: rgba(17, 17, 28, 0.45);
+  /* superfícies quase planas: borda e contraste antes de sombra */
+  --shadow-menu: 0 8px 32px rgba(17, 17, 28, 0.06);
+  --gradient-accent: linear-gradient(135deg, #694ae5, #9191e2);
 }
 
-/* Sem classe explícita, segue o sistema. ---------------------------------- */
+/* ----------------------------------------------------------------------------
+   Tema escuro derivado.
+
+   O C4MP não publica uma paleta escura completa, mas define #11111C como sua
+   superfície escura. Ela vira o card, e o fundo desce um degrau para o card
+   continuar se destacando.
+
+   O roxo puro sobre fundo escuro dá 3.4:1 e reprovaria em AA como texto, então
+   o texto roxo passa a usar o lavanda da própria identidade.
+   -------------------------------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
     color-scheme: dark;
 
-    --bg: #0a0b0d;
-    --surface: #121417;
-    --surface-2: #1a1d21;
-    --surface-3: #22262b;
-    --border: #26292e;
-    --border-strong: #34383e;
+    --bg: #08080f;
+    --surface: #11111c;
+    --surface-2: #1a1a28;
+    --surface-3: #232334;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.24);
 
-    --text: #e8eaed;
-    --text-muted: #8b9096;
-    --text-faint: #6a6f76;
+    --text: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.62);
+    --text-faint: rgba(255, 255, 255, 0.42);
+    --text-inverse: #11111c;
 
-    --accent: #f5a623;
-    --accent-hover: #ffb43c;
-    --accent-contrast: #0a0b0d;
-    --accent-text: #f5a623;
-    --accent-soft: rgba(245, 166, 35, 0.14);
-    --accent-line: rgba(245, 166, 35, 0.4);
+    --accent-hover: #7b5eef;
+    --accent-text: var(--c4mp-secondary);
+    --accent-soft: rgba(105, 74, 229, 0.18);
+    --accent-line: rgba(145, 145, 226, 0.4);
 
-    --positive: #3dd68c;
-    --positive-soft: rgba(61, 214, 140, 0.14);
-    --danger: #f0564a;
-    --danger-contrast: #ffffff;
-  --danger-soft: rgba(240, 86, 74, 0.14);
-    --warning: #f5a623;
-    --warning-soft: rgba(245, 166, 35, 0.14);
+    --positive: #4ade80;
+    --positive-soft: rgba(34, 197, 94, 0.14);
+    --danger: #f87171;
+    --danger-contrast: #11111c;
+    --danger-soft: rgba(239, 68, 68, 0.14);
+    --warning: #fbbf24;
+    --warning-soft: rgba(245, 158, 11, 0.14);
+    --info: #60a5fa;
+    --info-soft: rgba(59, 130, 246, 0.14);
 
-    --focus: var(--accent);
     --skeleton: var(--surface-2);
     --overlay: rgba(0, 0, 0, 0.6);
-    --shadow-menu: 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+    --shadow-menu: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
 }
 
-/* Escolha manual vence a preferência do sistema. ------------------------- */
+/* Escolha explícita do escuro vence a preferência do sistema. --------------- */
 :root.dark {
   color-scheme: dark;
 
-  --bg: #0a0b0d;
-  --surface: #121417;
-  --surface-2: #1a1d21;
-  --surface-3: #22262b;
-  --border: #26292e;
-  --border-strong: #34383e;
+  --bg: #08080f;
+  --surface: #11111c;
+  --surface-2: #1a1a28;
+  --surface-3: #232334;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.24);
 
-  --text: #e8eaed;
-  --text-muted: #8b9096;
-  --text-faint: #6a6f76;
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.62);
+  --text-faint: rgba(255, 255, 255, 0.42);
+  --text-inverse: #11111c;
 
-  --accent: #f5a623;
-  --accent-hover: #ffb43c;
-  --accent-contrast: #0a0b0d;
-  --accent-text: #f5a623;
-  --accent-soft: rgba(245, 166, 35, 0.14);
-  --accent-line: rgba(245, 166, 35, 0.4);
+  --accent-hover: #7b5eef;
+  --accent-text: var(--c4mp-secondary);
+  --accent-soft: rgba(105, 74, 229, 0.18);
+  --accent-line: rgba(145, 145, 226, 0.4);
 
-  --positive: #3dd68c;
-  --positive-soft: rgba(61, 214, 140, 0.14);
-  --danger: #f0564a;
-  --danger-contrast: #ffffff;
-  --danger-soft: rgba(240, 86, 74, 0.14);
-  --warning: #f5a623;
-  --warning-soft: rgba(245, 166, 35, 0.14);
+  --positive: #4ade80;
+  --positive-soft: rgba(34, 197, 94, 0.14);
+  --danger: #f87171;
+  --danger-contrast: #11111c;
+  --danger-soft: rgba(239, 68, 68, 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --info: #60a5fa;
+  --info-soft: rgba(59, 130, 246, 0.14);
 
-  --focus: var(--accent);
   --skeleton: var(--surface-2);
   --overlay: rgba(0, 0, 0, 0.6);
-  --shadow-menu: 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+  --shadow-menu: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* ============================================================================
-   Forma, ritmo e tipografia — iguais nos dois temas
+   Medidas — iguais nos dois temas
    ========================================================================= */
-
 :root {
-  --radius: 6px;
-  --radius-tight: 4px;
+  /* raio: quatro níveis, e só eles. Raio aleatório quebra a assinatura. */
+  --radius-card: 40px;
+  --radius-inner: 24px;
+  --radius-tag: 16px;
+  --radius-pill: 9999px;
 
-  --sidebar-w: 240px;
-  --topbar-h: 52px;
-  --row-h: 46px;
+  /* espaçamento */
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
 
-  /* as variáveis --font-space-grotesk/--font-inter vêm do next/font (self-hosted) */
-  --font-head: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-ui: var(--font-inter), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    Roboto, sans-serif;
+  /* layout */
+  --container-max: 1232px;
+  --sidebar-w: 264px;
+  --topbar-h: 72px;
+  /* linha de tabela: alta o bastante para respirar sem virar lista de cards */
+  --row-h: 64px;
 
-  /* rótulos de instrumento: 11px, caixa alta, tracking aberto */
-  --label-size: 11px;
-  --label-tracking: 0.05em;
+  /* tipografia */
+  --font-ui: var(--font-montserrat), system-ui, -apple-system, sans-serif;
+  --font-head: var(--font-montserrat), system-ui, -apple-system, sans-serif;
 
-  --transition-theme: 150ms ease;
+  /* movimento: curto e discreto */
+  --transition-theme: 200ms ease-out;
+  --motion-fast: 150ms;
+  --motion-default: 200ms;
+  --motion-slow: 250ms;
 }

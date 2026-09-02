@@ -125,7 +125,7 @@ export function Dialog({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          "relative w-full rounded border border-border bg-surface",
+          "relative w-full rounded-card border border-border bg-surface",
           WIDTHS[size],
           DIALOG_LAYOUT.panel,
         )}
@@ -133,16 +133,16 @@ export function Dialog({
       >
         <div
           className={cn(
-            "flex items-start justify-between gap-3 border-b border-border px-4 py-3",
+            "flex items-start justify-between gap-4 border-b border-border px-8 py-6",
             DIALOG_LAYOUT.header,
           )}
         >
           <div className="min-w-0">
-            <h2 id={titleId} className="font-display text-[15px] font-semibold text-text">
+            <h2 id={titleId} className="font-display text-lg font-semibold text-text">
               {title}
             </h2>
             {description ? (
-              <p id={descriptionId} className="mt-1 text-xs leading-relaxed text-muted">
+              <p id={descriptionId} className="mt-2 text-sm leading-relaxed text-muted">
                 {description}
               </p>
             ) : null}
@@ -161,13 +161,13 @@ export function Dialog({
         </div>
 
         {children ? (
-          <div className={cn("px-4 py-4", DIALOG_LAYOUT.body)}>{children}</div>
+          <div className={cn("px-8 py-6", DIALOG_LAYOUT.body)}>{children}</div>
         ) : null}
 
         {footer ? (
           <div
             className={cn(
-              "flex items-center justify-end gap-2 border-t border-border px-4 py-3",
+              "flex items-center justify-end gap-4 border-t border-border px-8 py-6",
               DIALOG_LAYOUT.footer,
             )}
           >

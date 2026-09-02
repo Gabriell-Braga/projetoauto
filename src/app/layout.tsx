@@ -1,22 +1,21 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { ConfirmProvider } from "@/components/ui/confirm";
 import { ToastProvider } from "@/components/ui/toast";
 import { THEME_COOKIE, isThemePreference, themeClassName } from "@/lib/theme";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
+/**
+ * Montserrat em toda a interface.
+ *
+ * Apenas os quatro pesos que o sistema usa: o documento pede no máximo três
+ * pesos por tela, e carregar o que não se usa custa banda sem devolver nada.
+ */
+const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-space-grotesk",
+  variable: "--font-montserrat",
   display: "swap",
 });
 
@@ -40,7 +39,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html
       lang="pt-BR"
-      className={`${themeClass} ${inter.variable} ${spaceGrotesk.variable}`.trim()}
+      className={`${themeClass} ${montserrat.variable}`.trim()}
       data-base-path={basePath || undefined}
       suppressHydrationWarning
     >

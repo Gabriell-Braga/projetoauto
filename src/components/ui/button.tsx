@@ -3,17 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Spinner } from "./spinner";
 import { cn } from "@/lib/utils";
 
+/**
+ * Botão em formato pill, conforme a assinatura do sistema.
+ *
+ * O gap de 16px entre rótulo e ícone e a altura de 52px vêm do documento; os
+ * tamanhos menores existem para ações dentro de tabela, onde 52px empurraria
+ * a linha para fora de qualquer leitura.
+ */
 const buttonVariants = cva(
   [
-    "relative inline-flex items-center justify-center gap-2 rounded font-medium",
-    "whitespace-nowrap transition-colors",
+    "relative inline-flex items-center justify-center gap-3 rounded-full font-medium",
+    "whitespace-nowrap transition-colors duration-200 ease-out",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
     "disabled:pointer-events-none disabled:opacity-50",
   ].join(" "),
   {
     variants: {
       variant: {
-        // o âmbar é a única ação primária da tela — usar com parcimônia
+        // o roxo é a única ação primária do bloco — nunca dois na mesma área
         primary: "bg-accent text-accent-contrast hover:bg-accent-hover",
         secondary: "border border-border bg-surface text-text hover:bg-surface-2",
         ghost: "text-muted hover:bg-surface-2 hover:text-text",
@@ -21,10 +28,10 @@ const buttonVariants = cva(
         outlineDanger: "border border-danger/40 text-danger hover:bg-danger-soft",
       },
       size: {
-        sm: "h-7 px-2.5 text-xs",
-        md: "h-9 px-3.5 text-[13px]",
-        lg: "h-10 px-4 text-sm",
-        icon: "h-8 w-8",
+        sm: "h-9 px-4 text-sm gap-2",
+        md: "h-11 px-5 text-base",
+        lg: "h-[52px] px-[18px] text-base",
+        icon: "h-11 w-11",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },

@@ -70,18 +70,20 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("mb-5 flex flex-wrap items-start justify-between gap-3", className)}>
+    // 32px até o conteúdo: o espaço em branco é o que separa os blocos aqui,
+    // não uma régua ou uma borda
+    <div className={cn("mb-8 flex flex-wrap items-start justify-between gap-4", className)}>
       <div className="min-w-0">
-        {eyebrow ? <p className="label-instrument mb-1 text-accent-text">{eyebrow}</p> : null}
-        <h1 className="text-[20px] leading-tight text-text">{title}</h1>
-        {description ? <p className="mt-1 text-[13px] text-muted">{description}</p> : null}
+        {eyebrow ? <p className="label-instrument mb-2 text-accent-text">{eyebrow}</p> : null}
+        <h1 className="text-[36px] font-semibold leading-tight text-text">{title}</h1>
+        {description ? <p className="mt-2 text-base text-muted">{description}</p> : null}
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 items-center gap-4">{actions}</div> : null}
     </div>
   );
 }
 
 /** Faixa de seção dentro da página, para separar blocos sem virar card. */
 export function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="label-instrument mb-2.5 text-faint">{children}</p>;
+  return <p className="label-instrument mb-4 text-faint">{children}</p>;
 }

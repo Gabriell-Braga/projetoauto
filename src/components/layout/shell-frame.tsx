@@ -53,11 +53,11 @@ export function ShellFrame({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const nav = (
-    <nav className="flex flex-1 flex-col gap-5 overflow-y-auto py-3">
+    <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4">
       {sections.map((section, index) => (
         <div key={section.label ?? index} className="flex flex-col gap-0.5">
           {section.label ? (
-            <p className="label-instrument px-3 pb-1.5 text-faint">{section.label}</p>
+            <p className="label-instrument px-4 pb-2 text-faint">{section.label}</p>
           ) : null}
           {section.items.map((item) => (
             <NavLink key={item.href} {...item} onNavigate={() => setDrawerOpen(false)} />
@@ -71,9 +71,9 @@ export function ShellFrame({
     <Link
       href={homeHref}
       onClick={() => setDrawerOpen(false)}
-      className="flex h-[var(--topbar-h)] shrink-0 items-center border-b border-border px-4"
+      className="flex h-[var(--topbar-h)] shrink-0 items-center border-b border-border px-6"
     >
-      <span className="font-display text-[13px] font-bold uppercase leading-none tracking-[0.16em] text-text">
+      <span className="font-display text-base font-bold leading-none tracking-tight text-text">
         {wordmark}
       </span>
     </Link>
@@ -121,14 +121,14 @@ export function ShellFrame({
         {/* ------------------------------------------------ topbar */}
         <header
           data-theme-transition
-          className="sticky top-0 z-30 flex h-[var(--topbar-h)] shrink-0 items-center gap-3 border-b border-border bg-surface px-3 sm:px-4"
+          className="sticky top-0 z-30 flex h-[var(--topbar-h)] shrink-0 items-center gap-4 border-b border-border bg-surface px-4 sm:px-6"
         >
           <button
             type="button"
             aria-label="Abrir navegação"
             onClick={() => setDrawerOpen(true)}
             className={cn(
-              "grid h-8 w-8 shrink-0 place-items-center rounded text-muted",
+              "grid h-11 w-11 shrink-0 place-items-center rounded-tag text-muted",
               "transition-colors hover:bg-surface-2 hover:text-text md:hidden",
             )}
           >
@@ -136,7 +136,7 @@ export function ShellFrame({
           </button>
 
           <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate font-display text-[13px] font-medium text-text">
+            <span className="truncate font-display text-base font-medium text-text">
               {contextLabel}
             </span>
             <Suspense fallback={null}>

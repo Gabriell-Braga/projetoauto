@@ -20,7 +20,7 @@ export function AuthScreen({
       <header>
         <Link
           href="/login"
-          className="font-display text-[13px] font-bold uppercase leading-none tracking-[0.18em] text-text"
+          className="font-display text-lg font-bold leading-none tracking-tight text-text"
         >
           {WORDMARK}
         </Link>
@@ -31,7 +31,7 @@ export function AuthScreen({
           <p className="label-instrument text-accent-text">{eyebrow}</p>
           <h1 className="mt-2 text-[22px] leading-tight text-text">{title}</h1>
           {description ? (
-            <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{description}</p>
+            <p className="mt-2 text-base leading-relaxed text-muted">{description}</p>
           ) : null}
 
           <div className="mt-7">{children}</div>

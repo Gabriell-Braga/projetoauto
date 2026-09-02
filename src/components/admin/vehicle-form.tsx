@@ -21,7 +21,9 @@ import { useConfirm } from "@/components/ui/confirm";
 import { PhotoManager, type PhotoItem } from "@/components/admin/photo-manager";
 import { useFipe, type FipeQuote } from "@/components/admin/use-fipe";
 import { CatalogSelect } from "@/components/admin/catalog-select";
-import { priceGapPercent, priceVerdict } from "@/lib/integrations/fipe";
+import { CurrencyInput, IntegerInput } from "@/components/ui/number-field";
+import { centsToCurrencyInput, parseCurrencyToCents } from "@/lib/format/number-input";
+import { normalizeFipeYear, priceGapPercent, priceVerdict } from "@/lib/integrations/fipe";
 import { apiDelete, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
 
@@ -175,8 +177,10 @@ export function VehicleForm({
   function applyFipe(result: FipeQuote) {
     setValues((current) => ({
       ...current,
-      yearModel: result.anoModelo,
-      yearManufacture: current.yearManufacture || result.anoModelo,
+      // 32000 é como a FIPE diz "zero km"; vira o ano corrente
+      yearModel: normalizeFipeYear(result.anoModelo, CURRENT_YEAR),
+      yearManufacture:
+        current.yearManufacture || normalizeFipeYear(result.anoModelo, CURRENT_YEAR),
       fipeCode: result.codigoFipe,
       fipePriceCents: result.valorCents,
       fipeReference: result.mesReferencia,
@@ -399,13 +403,11 @@ export function VehicleForm({
           ) : null}
 
           <FormField label="Quilometragem" htmlFor="mileageKm" hint="Em km rodados">
-            <Input
+            <IntegerInput
               id="mileageKm"
-              type="number"
-              min={0}
               disabled={readOnly}
               value={values.mileageKm}
-              onChange={(event) => update("mileageKm", Number(event.target.value))}
+              onChangeNumber={(next) => update("mileageKm", next)}
             />
           </FormField>
         </div>
@@ -514,12 +516,11 @@ export function VehicleForm({
       <Accordion title="Preço e publicação" summary="Valor e onde o anúncio aparece">
         <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
           <FormField label="Preço (R$)" htmlFor="price" hint={fipeHint}>
-            <Input
+            <CurrencyInput
               id="price"
-              inputMode="decimal"
               disabled={readOnly || values.priceOnRequest}
-              value={priceText}
-              onChange={(event) => setPriceText(event.target.value)}
+              valueCents={parseCurrencyToCents(priceText)}
+              onChangeCents={(cents) => setPriceText(centsToCurrencyInput(cents))}
             />
           </FormField>
 

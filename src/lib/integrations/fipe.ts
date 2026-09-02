@@ -81,3 +81,20 @@ export function splitFipeModel(fullName: string): { model: string; version: stri
 export function joinFipeModel(model: string, version: string): string {
   return [model.trim(), version.trim()].filter(Boolean).join(" ");
 }
+
+/**
+ * A FIPE usa o ano 32000 para dizer "zero quilômetro".
+ *
+ * Copiado direto para o campo, vira um veículo ano 32000 no estoque — e a
+ * validação recusa na hora de salvar, sem a pessoa entender o que fez de
+ * errado. Zero-km vira o ano corrente, que é o que ele é na prática.
+ */
+export const FIPE_ZERO_KM_YEAR = 32000;
+
+export function normalizeFipeYear(anoModelo: number, currentYear: number): number {
+  return anoModelo >= FIPE_ZERO_KM_YEAR ? currentYear : anoModelo;
+}
+
+export function isZeroKm(anoModelo: number): boolean {
+  return anoModelo >= FIPE_ZERO_KM_YEAR;
+}

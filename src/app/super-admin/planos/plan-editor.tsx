@@ -8,6 +8,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { Checkbox, FormField, Input, Select, Textarea } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { apiPatch, apiPost, fieldErrorsFrom, type FieldErrors } from "@/lib/client/api";
+import { CurrencyInput } from "@/components/ui/number-field";
+import { centsToCurrencyInput, parseCurrencyToCents } from "@/lib/format/number-input";
 import {
   FEATURE_GROUPS,
   FEATURES,
@@ -59,11 +61,7 @@ function emptyPlan(): PlanRow {
   };
 }
 
-/** Converte "1.234,50" ou "1234.5" em centavos. */
-function toCents(value: string): number {
-  const normalized = value.replace(/\./g, "").replace(",", ".").trim();
-  return Math.round((Number(normalized) || 0) * 100);
-}
+const toCents = parseCurrencyToCents;
 
 export function PlanEditor({
   plan,
@@ -78,7 +76,7 @@ export function PlanEditor({
   const isNew = !plan;
   const [draft, setDraft] = useState<PlanRow>(plan ?? emptyPlan());
   const [priceText, setPriceText] = useState(
-    plan ? (plan.priceCents / 100).toFixed(2).replace(".", ",") : "0,00",
+    plan ? centsToCurrencyInput(plan.priceCents) : "0,00",
   );
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -209,11 +207,10 @@ export function PlanEditor({
 
         <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-4">
           <FormField label="Preço (R$)" htmlFor="plan-price" error={errors.priceCents}>
-            <Input
+            <CurrencyInput
               id="plan-price"
-              inputMode="decimal"
-              value={priceText}
-              onChange={(event) => setPriceText(event.target.value)}
+              valueCents={toCents(priceText)}
+              onChangeCents={(cents) => setPriceText(centsToCurrencyInput(cents))}
             />
           </FormField>
 

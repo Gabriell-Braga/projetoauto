@@ -99,3 +99,23 @@ describe("separação de modelo e versão da FIPE", () => {
     expect(joinFipeModel("", "LT 1.0")).toBe("LT 1.0");
   });
 });
+
+describe("ano zero-quilômetro da FIPE", () => {
+  it("traduz 32000 para o ano corrente", async () => {
+    const { normalizeFipeYear } = await import("./fipe");
+    // 32000 e o campo do formulario recusa; o carro e novo, nao de outro milenio
+    expect(normalizeFipeYear(32000, 2026)).toBe(2026);
+  });
+
+  it("deixa ano normal intacto", async () => {
+    const { normalizeFipeYear } = await import("./fipe");
+    expect(normalizeFipeYear(2022, 2026)).toBe(2022);
+    expect(normalizeFipeYear(1998, 2026)).toBe(1998);
+  });
+
+  it("reconhece o zero-km", async () => {
+    const { isZeroKm } = await import("./fipe");
+    expect(isZeroKm(32000)).toBe(true);
+    expect(isZeroKm(2026)).toBe(false);
+  });
+});

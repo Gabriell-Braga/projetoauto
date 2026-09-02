@@ -15,6 +15,8 @@ import { FINANCING_STATUS, type FinancingStatus } from "@/db/schema";
 import { FINANCING_STATUS_LABELS } from "@/lib/catalog/labels";
 import { apiDelete, apiPatch, apiPost, fieldErrorsFrom, type FieldErrors } from "@/lib/client/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { CurrencyInput, IntegerInput } from "@/components/ui/number-field";
+import { centsToCurrencyInput, parseCurrencyToCents } from "@/lib/format/number-input";
 
 export type FinancingRow = {
   id: string;
@@ -41,13 +43,8 @@ const TONES: Record<FinancingStatus, BadgeTone> = {
   cancelado: "neutral",
 };
 
-function toCents(value: string): number {
-  return Math.round((Number(value.replace(/\./g, "").replace(",", ".")) || 0) * 100);
-}
-
-function toInput(cents: number): string {
-  return (cents / 100).toFixed(2).replace(".", ",");
-}
+const toCents = parseCurrencyToCents;
+const toInput = centsToCurrencyInput;
 
 function emptyRow(): FinancingRow {
   return {
@@ -322,39 +319,31 @@ function FinancingEditor({
 
         <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-4">
           <FormField label="Preço (R$)" htmlFor="fin-price" error={errors.vehiclePriceCents}>
-            <Input
+            <CurrencyInput
               id="fin-price"
-              inputMode="decimal"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
+              valueCents={toCents(price)}
+              onChangeCents={(cents) => setPrice(toInput(cents))}
             />
           </FormField>
           <FormField label="Entrada (R$)" htmlFor="fin-down">
-            <Input
+            <CurrencyInput
               id="fin-down"
-              inputMode="decimal"
-              value={down}
-              onChange={(event) => setDown(event.target.value)}
+              valueCents={toCents(down)}
+              onChangeCents={(cents) => setDown(toInput(cents))}
             />
           </FormField>
           <FormField label="Parcelas" htmlFor="fin-installments">
-            <Input
+            <IntegerInput
               id="fin-installments"
-              type="number"
-              min={0}
-              max={120}
               value={draft.installments}
-              onChange={(event) =>
-                setDraft({ ...draft, installments: Number(event.target.value) })
-              }
+              onChangeNumber={(next) => setDraft({ ...draft, installments: next })}
             />
           </FormField>
           <FormField label="Valor da parcela (R$)" htmlFor="fin-installment">
-            <Input
+            <CurrencyInput
               id="fin-installment"
-              inputMode="decimal"
-              value={installment}
-              onChange={(event) => setInstallment(event.target.value)}
+              valueCents={toCents(installment)}
+              onChangeCents={(cents) => setInstallment(toInput(cents))}
             />
           </FormField>
         </div>

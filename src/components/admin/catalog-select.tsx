@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { List, Pencil } from "lucide-react";
+import { List } from "lucide-react";
 import { Input, Select } from "@/components/ui/field";
 
 const OTHER = "__outro__";
@@ -13,11 +13,9 @@ const OTHER = "__outro__";
  * "Volkswagen" e "volks" no mesmo estoque, e o filtro do site passa a mostrar
  * três marcas onde existe uma.
  *
- * A saída fica DENTRO da lista, como "Outro (digitar)". A versão anterior
- * trocava sozinha para campo de texto quando não havia opções — e como lista
- * vazia também é o estado de "ainda carregando" e de "escolha a marca
- * primeiro", o campo anunciava catálogo indisponível quando nada havia
- * falhado. Agora o select é sempre o select, e quem decide digitar é a pessoa.
+ * A saída fica DENTRO da lista, como "Outro (digitar)" — um caminho só. O
+ * botão de lápis ao lado do campo era um segundo caminho para a mesma coisa,
+ * e ocupava espaço em todos os campos para atender um caso raro.
  *
  * O valor atual sempre entra na lista, mesmo fora do catálogo. Sem isso, abrir
  * um veículo antigo e salvar apagaria o que estava lá, sem ninguém ver.
@@ -69,38 +67,26 @@ export function CatalogSelect({
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <Select
-        id={id}
-        value={value}
-        disabled={disabled || loading}
-        onChange={(event) => {
-          if (event.target.value === OTHER) {
-            setTyping(true);
-            onChange("");
-            return;
-          }
-          onChange(event.target.value);
-        }}
-      >
-        <option value="">{loading ? "Carregando..." : placeholder}</option>
-        {known.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-        <option value={OTHER}>Outro (digitar)</option>
-      </Select>
-      <button
-        type="button"
-        aria-label="Digitar em vez de escolher"
-        title="Digitar"
-        disabled={disabled}
-        onClick={() => setTyping(true)}
-        className="shrink-0 text-faint transition-colors hover:text-text disabled:opacity-40"
-      >
-        <Pencil className="h-6 w-6" />
-      </button>
-    </div>
+    <Select
+      id={id}
+      value={value}
+      disabled={disabled || loading}
+      onChange={(event) => {
+        if (event.target.value === OTHER) {
+          setTyping(true);
+          onChange("");
+          return;
+        }
+        onChange(event.target.value);
+      }}
+    >
+      <option value="">{loading ? "Carregando..." : placeholder}</option>
+      {known.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+      <option value={OTHER}>Outro (digitar)</option>
+    </Select>
   );
 }

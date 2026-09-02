@@ -29,6 +29,8 @@ import {
   priceGapPercent,
   priceVerdict,
 } from "@/lib/integrations/fipe";
+import { inferSpecs } from "@/lib/integrations/fipe-specs";
+import { formatCurrency } from "@/lib/utils";
 import { apiDelete, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
 
@@ -150,7 +152,7 @@ export function VehicleForm({
     const gap = priceGapPercent(inputToCents(priceText), values.fipePriceCents);
     const verdict = priceVerdict(gap);
     if (gap === null || verdict === null) {
-      return `FIPE ${centsToInput(values.fipePriceCents)}`;
+      return `FIPE ${formatCurrency(values.fipePriceCents)}`;
     }
 
     const distance = `${Math.abs(gap).toFixed(1).replace(".", ",")}%`;
@@ -179,9 +181,22 @@ export function VehicleForm({
     if (quote) applyFipe(quote);
   }
 
+  /**
+   * Preenche a ficha com o que a consulta permite deduzir.
+   *
+   * Só campo VAZIO é tocado. O nome do modelo da FIPE carrega câmbio,
+   * carroceria e portas, mas isso é leitura de texto — palpite fundamentado, e
+   * palpite não sobrescreve o que a pessoa já respondeu.
+   */
   function applyFipe(result: FipeQuote) {
+    const specs = inferSpecs(result.modelo, result.combustivel);
+
     setValues((current) => ({
       ...current,
+      transmission: current.transmission || specs.transmission || "",
+      fuel: current.fuel || specs.fuel || "",
+      bodyType: current.bodyType || specs.bodyType || "",
+      doors: current.doors || (specs.doors ? String(specs.doors) : ""),
       // 32000 é como a FIPE diz "zero km"; vira o ano corrente
       yearModel: normalizeFipeYear(result.anoModelo, CURRENT_YEAR),
       yearManufacture:

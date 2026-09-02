@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Building2,
+  Calculator,
   Car,
   Handshake,
   KanbanSquare,
@@ -51,6 +52,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       ? [
           { href: "/admin/estoque", label: "Veículos", icon: <Car className={ICON} /> },
           { href: "/admin/portais", label: "Portais", icon: <Radio className={ICON} /> },
+        ]
+      : []),
+    // avaliação fica em Estoque, não em Comercial: o assunto dela é um carro
+    // entrando no pátio, e é onde a pessoa vai procurar
+    ...(can(context.role, "appraisals:read")
+      ? [
+          {
+            href: "/admin/avaliacoes",
+            label: "Avaliações",
+            icon: <Calculator className={ICON} />,
+          },
         ]
       : []),
   ];

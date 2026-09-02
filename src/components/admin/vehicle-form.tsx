@@ -51,10 +51,13 @@ export function VehicleForm({
   initial,
   readOnly,
   photos = [],
+  appraisalId,
 }: {
   initial: VehicleFormValues;
   readOnly?: boolean;
   photos?: PhotoItem[];
+  /** Avaliação que originou esta ficha, quando veio de lá. */
+  appraisalId?: string;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -303,6 +306,23 @@ export function VehicleForm({
       return;
     }
 
+    const vehicleId = target ?? result.data.id;
+
+    /*
+     * Fecha o laço com a avaliação.
+     *
+     * Sem isso não há como perguntar depois quanto custou o carro que está à
+     * venda — a avaliação é o único lugar onde o preço de compra existe. A
+     * falha aqui não desfaz o cadastro: o veículo está salvo, e refazer o
+     * vínculo é um clique, enquanto perder a ficha seria perder o trabalho.
+     */
+    if (appraisalId) {
+      const link = await apiPost(`/api/admin/appraisals/${appraisalId}/vehicle`, { vehicleId });
+      if (!link.ok) {
+        toast.error("Veículo salvo, mas não liguei à avaliação", link.error);
+      }
+    }
+
     // salvo: as fotos deixaram de ser provisórias, o aviso de saída sai de cena
     setDraftId(null);
     toast.success(
@@ -310,7 +330,7 @@ export function VehicleForm({
         ? "Veículo cadastrado com as fotos."
         : "Veículo cadastrado. Você pode adicionar fotos a qualquer momento.",
     );
-    router.push(`/admin/estoque/${target ?? result.data.id}`);
+    router.push(`/admin/estoque/${vehicleId}`);
     router.refresh();
   }
 

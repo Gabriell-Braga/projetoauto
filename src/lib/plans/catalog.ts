@@ -52,8 +52,7 @@ export const FEATURES: FeatureDefinition[] = [
     key: "avaliacao_veiculos",
     label: "Avaliação de veículos",
     group: "Estoque",
-    status: "depende_de_fornecedor",
-    note: "Precisa de fonte de preço de mercado.",
+    status: "pronto",
     kind: "boolean",
   },
   {

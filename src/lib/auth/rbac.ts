@@ -25,6 +25,8 @@ export const PERMISSIONS = [
   "tenant:settings",
   "financings:read",
   "financings:write",
+  "appraisals:read",
+  "appraisals:write",
   "stores:write",
   "reports:read",
   "api:manage",
@@ -38,6 +40,7 @@ const TENANT_READ: Permission[] = [
   "site:read",
   "users:read",
   "financings:read",
+  "appraisals:read",
 ];
 
 export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
@@ -50,6 +53,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "users:write",
     "tenant:settings",
     "financings:write",
+    "appraisals:write",
     "stores:write",
     "reports:read",
     "api:manage",
@@ -62,8 +66,16 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "site:read",
     "financings:read",
     "financings:write",
+    "appraisals:read",
+    "appraisals:write",
   ],
-  visualizador: ["vehicles:read", "leads:read", "site:read", "financings:read"],
+  visualizador: [
+    "vehicles:read",
+    "leads:read",
+    "site:read",
+    "financings:read",
+    "appraisals:read",
+  ],
 };
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -122,6 +134,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   "tenant:settings": "Configurações da revenda",
   "financings:read": "Ver financiamentos",
   "financings:write": "Lançar financiamentos",
+  "appraisals:read": "Ver avaliações",
+  "appraisals:write": "Avaliar veículos",
   "stores:write": "Gerenciar unidades",
   "reports:read": "Ver relatórios",
   "api:manage": "Gerenciar API e webhooks",

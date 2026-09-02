@@ -1,4 +1,5 @@
 import type {
+  AppraisalStatus,
   BillingStatus,
   BodyType,
   FinancingStatus,
@@ -83,6 +84,14 @@ export const FINANCING_STATUS_LABELS: Record<FinancingStatus, string> = {
   recusado: "Recusado",
   contratado: "Contratado",
   cancelado: "Cancelado",
+};
+
+export const APPRAISAL_STATUS_LABELS: Record<AppraisalStatus, string> = {
+  rascunho: "Rascunho",
+  enviada: "Oferta enviada",
+  aceita: "Aceita",
+  recusada: "Recusada",
+  expirada: "Expirada",
 };
 
 export const DISTRIBUTION_MODE_LABELS: Record<string, string> = {

@@ -1,0 +1,41 @@
+CREATE TABLE `vehicle_appraisals` (
+	`id` text PRIMARY KEY NOT NULL,
+	`tenant_id` text NOT NULL,
+	`lead_id` text,
+	`customer_name` text NOT NULL,
+	`customer_phone` text,
+	`store_id` text,
+	`brand` text NOT NULL,
+	`model` text NOT NULL,
+	`version` text,
+	`year_manufacture` integer DEFAULT 0 NOT NULL,
+	`year_model` integer DEFAULT 0 NOT NULL,
+	`mileage_km` integer DEFAULT 0 NOT NULL,
+	`color` text,
+	`license_plate_end` text,
+	`fipe_code` text,
+	`fipe_price_cents` integer DEFAULT 0 NOT NULL,
+	`fipe_reference` text,
+	`condition_cents` integer DEFAULT 0 NOT NULL,
+	`repairs_cents` integer DEFAULT 0 NOT NULL,
+	`debts_cents` integer DEFAULT 0 NOT NULL,
+	`market_adjust_cents` integer DEFAULT 0 NOT NULL,
+	`suggested_cents` integer DEFAULT 0 NOT NULL,
+	`offer_cents` integer DEFAULT 0 NOT NULL,
+	`target_sale_cents` integer DEFAULT 0 NOT NULL,
+	`status` text DEFAULT 'rascunho' NOT NULL,
+	`valid_until` integer,
+	`notes` text,
+	`vehicle_id` text,
+	`created_by_user_id` text,
+	`decided_at` integer,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`lead_id`) REFERENCES `leads`(`id`) ON UPDATE no action ON DELETE set null,
+	FOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null
+);
+--> statement-breakpoint
+CREATE INDEX `vehicle_appraisals_tenant_status_idx` ON `vehicle_appraisals` (`tenant_id`,`status`,`created_at`);
+--> statement-breakpoint
+CREATE INDEX `vehicle_appraisals_lead_idx` ON `vehicle_appraisals` (`lead_id`);

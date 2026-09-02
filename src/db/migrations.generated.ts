@@ -150,5 +150,13 @@ export const MIGRATIONS: BundledMigration[] = [
       "ALTER TABLE `lead_events` ADD `external_id` text;",
       "CREATE INDEX `lead_events_direction_idx` ON `lead_events` (`lead_id`,`direction`,`created_at`);"
     ]
+  },
+  {
+    "tag": "0010_vehicle_appraisals",
+    "statements": [
+      "CREATE TABLE `vehicle_appraisals` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`lead_id` text,\n\t`customer_name` text NOT NULL,\n\t`customer_phone` text,\n\t`store_id` text,\n\t`brand` text NOT NULL,\n\t`model` text NOT NULL,\n\t`version` text,\n\t`year_manufacture` integer DEFAULT 0 NOT NULL,\n\t`year_model` integer DEFAULT 0 NOT NULL,\n\t`mileage_km` integer DEFAULT 0 NOT NULL,\n\t`color` text,\n\t`license_plate_end` text,\n\t`fipe_code` text,\n\t`fipe_price_cents` integer DEFAULT 0 NOT NULL,\n\t`fipe_reference` text,\n\t`condition_cents` integer DEFAULT 0 NOT NULL,\n\t`repairs_cents` integer DEFAULT 0 NOT NULL,\n\t`debts_cents` integer DEFAULT 0 NOT NULL,\n\t`market_adjust_cents` integer DEFAULT 0 NOT NULL,\n\t`suggested_cents` integer DEFAULT 0 NOT NULL,\n\t`offer_cents` integer DEFAULT 0 NOT NULL,\n\t`target_sale_cents` integer DEFAULT 0 NOT NULL,\n\t`status` text DEFAULT 'rascunho' NOT NULL,\n\t`valid_until` integer,\n\t`notes` text,\n\t`vehicle_id` text,\n\t`created_by_user_id` text,\n\t`decided_at` integer,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`lead_id`) REFERENCES `leads`(`id`) ON UPDATE no action ON DELETE set null,\n\tFOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE INDEX `vehicle_appraisals_tenant_status_idx` ON `vehicle_appraisals` (`tenant_id`,`status`,`created_at`);",
+      "CREATE INDEX `vehicle_appraisals_lead_idx` ON `vehicle_appraisals` (`lead_id`);"
+    ]
   }
 ];

@@ -2,13 +2,24 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Search } from "lucide-react";
+import { filterOptions, fold } from "@/lib/format/option-filter";
 import { cn } from "@/lib/utils";
 
 export type SelectOption = { value: string; label: string; disabled?: boolean };
 
-/** Teto da lista — o mesmo valor de `max-h-64`, usado para escolher o lado. */
-const MENU_MAX_H = 256;
+/** Teto do painel aberto, usado para escolher o lado da abertura. */
+const MENU_MAX_H = 300;
+
+/**
+ * A partir daqui a lista ganha campo de busca.
+ *
+ * Abaixo disso a busca atrapalha: numa lista de quatro situações de anúncio
+ * ela rouba a primeira linha do painel e ainda pede um alvo a mais para quem
+ * só queria ver as opções. Acima, procurar com o olho custa mais que digitar
+ * — a lista de marcas da FIPE passa de noventa, e a de modelos, de quinhentas.
+ */
+const SEARCH_FROM = 8;
 
 /**
  * Lista de opções própria, no lugar do dropdown do sistema operacional.
@@ -17,7 +28,7 @@ const MENU_MAX_H = 256;
  * Windows ou do macOS, e num painel inteiro em Montserrat, com o raio do
  * sistema, ele aparece como um corpo estranho.
  *
- * Duas decisões que o desenho impõe:
+ * Três decisões que o desenho impõe:
  *
  * 1. O painel é renderizado em portal, com posição fixa. Card e accordion
  *    recortam o próprio conteúdo para respeitar o raio do card, e um menu
@@ -27,6 +38,9 @@ const MENU_MAX_H = 256;
  *    não-controlada e vai dentro de formulário de verdade — filtro por GET,
  *    cadastro por FormData. Sem o campo oculto, esses formulários enviariam
  *    o filtro vazio.
+ *
+ * 3. Lista longa abre com campo de busca. O nativo só oferece o salto por
+ *    letra, que exige acertar o começo do nome e não avisa que existe.
  */
 export function SelectMenu({
   id,
@@ -53,16 +67,23 @@ export function SelectMenu({
   const [activeIndex, setActiveIndex] = React.useState(-1);
   const [rect, setRect] = React.useState<DOMRect | null>(null);
   const [above, setAbove] = React.useState(false);
+  const [query, setQuery] = React.useState("");
 
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const panelRef = React.useRef<HTMLDivElement>(null);
   const listRef = React.useRef<HTMLUListElement>(null);
+  const searchRef = React.useRef<HTMLInputElement>(null);
   const typeahead = React.useRef({ term: "", at: 0 });
   const listId = React.useId();
 
+  const searchable = options.length >= SEARCH_FROM;
+
+  const visible = React.useMemo(() => filterOptions(options, query), [options, query]);
+
   const selected = options.find((option) => option.value === value);
-  const selectable = React.useCallback(
-    (index: number) => options[index] && !options[index].disabled,
-    [options],
+  const firstSelectable = React.useCallback(
+    (list: SelectOption[]) => list.findIndex((option) => !option.disabled),
+    [],
   );
 
   /**
@@ -82,6 +103,7 @@ export function SelectMenu({
       setAbove(window.innerHeight - box.bottom < MENU_MAX_H && box.top > MENU_MAX_H);
     }
 
+    setQuery("");
     setActiveIndex(options.findIndex((option) => option.value === value));
     setOpen(true);
   }
@@ -89,14 +111,40 @@ export function SelectMenu({
   function closeMenu(returnFocus = true) {
     setOpen(false);
     setActiveIndex(-1);
+    setQuery("");
     if (returnFocus) triggerRef.current?.focus();
   }
 
   function choose(index: number) {
-    const option = options[index];
+    const option = visible[index];
     if (!option || option.disabled) return;
     onSelect(option.value);
     closeMenu();
+  }
+
+  // o foco vai para a busca; sem isso a pessoa abre a lista, digita e nada
+  // acontece — o que lê como campo travado, não como campo sem foco
+  React.useEffect(() => {
+    if (open && searchable) searchRef.current?.focus();
+  }, [open, searchable]);
+
+  /**
+   * Filtrar move a marcação para o primeiro resultado.
+   *
+   * Sem isso ela fica onde estava — às vezes num item que o filtro acabou de
+   * esconder — e Enter escolhe algo que não está na tela. Fica no evento, e
+   * não num efeito: `options` chega novo a cada render do pai, e um efeito
+   * que dependesse dele rodaria a cada render, desfazendo a marcação que o
+   * mouse acabou de pôr.
+   */
+  function search(next: string) {
+    setQuery(next);
+    const list = filterOptions(options, next);
+    setActiveIndex(
+      next.trim()
+        ? firstSelectable(list)
+        : list.findIndex((option) => option.value === value),
+    );
   }
 
   /**
@@ -106,7 +154,7 @@ export function SelectMenu({
    * a lista de modelos da FIPE tem quinhentas linhas, e rolar dentro dela
    * dispara um evento de rolagem como qualquer outro — o menu fechava no
    * primeiro giro da roda. O ouvinte é de captura, então ele vê inclusive a
-   * rolagem da própria lista; ela é ignorada, porque não move o gatilho.
+   * rolagem de dentro do painel; ela é ignorada, porque não move o gatilho.
    *
    * Para a rolagem de fora, reposicionar é melhor que fechar: um quadro por
    * vez, com o cálculo preso ao rAF para não medir o layout várias vezes no
@@ -119,7 +167,7 @@ export function SelectMenu({
     let frame = 0;
 
     function follow(event: Event) {
-      if (event.type === "scroll" && listRef.current?.contains(event.target as Node)) return;
+      if (event.type === "scroll" && panelRef.current?.contains(event.target as Node)) return;
       if (frame) return;
 
       frame = requestAnimationFrame(() => {
@@ -150,15 +198,14 @@ export function SelectMenu({
 
     function onPointerDown(event: MouseEvent) {
       const target = event.target as Node;
-      if (triggerRef.current?.contains(target) || listRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target) || panelRef.current?.contains(target)) return;
       closeMenu(false);
     }
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [open]);
 
-  // mantém a opção ativa visível quando a lista é longa (modelos da FIPE
-  // passam de quinhentos)
+  // mantém a opção ativa visível quando a lista é longa
   React.useEffect(() => {
     if (!open || activeIndex < 0) return;
     listRef.current
@@ -168,24 +215,25 @@ export function SelectMenu({
 
   function step(direction: 1 | -1) {
     setActiveIndex((current) => {
+      if (visible.length === 0) return -1;
       let next = current;
-      for (let i = 0; i < options.length; i++) {
-        next = (next + direction + options.length) % options.length;
-        if (selectable(next)) return next;
+      for (let i = 0; i < visible.length; i++) {
+        next = (next + direction + visible.length) % visible.length;
+        if (!visible[next]?.disabled) return next;
       }
       return current;
     });
   }
 
-  /** Digitar uma letra pula para a opção — o nativo faz isso e some sem aviso. */
+  /** Salto por letra, para as listas curtas que não têm campo de busca. */
   function jumpTo(letter: string) {
     const now = Date.now();
     const state = typeahead.current;
     state.term = now - state.at > 800 ? letter : state.term + letter;
     state.at = now;
 
-    const index = options.findIndex(
-      (option) => !option.disabled && option.label.toLowerCase().startsWith(state.term),
+    const index = visible.findIndex(
+      (option) => !option.disabled && fold(option.label).startsWith(state.term),
     );
     if (index >= 0) setActiveIndex(index);
   }
@@ -213,15 +261,24 @@ export function SelectMenu({
         step(-1);
         break;
       case "Home":
-        event.preventDefault();
-        setActiveIndex(options.findIndex((option) => !option.disabled));
-        break;
       case "End":
+        // com campo de busca, essas teclas pertencem ao cursor do texto
+        if (searchable) break;
         event.preventDefault();
-        setActiveIndex(options.map((option) => !option.disabled).lastIndexOf(true));
+        setActiveIndex(
+          event.key === "Home"
+            ? firstSelectable(visible)
+            : visible.map((option) => !option.disabled).lastIndexOf(true),
+        );
         break;
       case "Enter":
+        event.preventDefault();
+        choose(activeIndex);
+        break;
       case " ":
+        // espaço faz parte do que se digita na busca; só vira "escolher" nas
+        // listas curtas, onde não há onde digitar
+        if (searchable) break;
         event.preventDefault();
         choose(activeIndex);
         break;
@@ -229,7 +286,7 @@ export function SelectMenu({
         closeMenu(false);
         break;
       default:
-        if (event.key.length === 1) jumpTo(event.key.toLowerCase());
+        if (!searchable && event.key.length === 1) jumpTo(fold(event.key));
     }
   }
 
@@ -274,12 +331,8 @@ export function SelectMenu({
 
       {open && rect
         ? createPortal(
-            <ul
-              ref={listRef}
-              id={listId}
-              role="listbox"
-              aria-activedescendant={activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
-              tabIndex={-1}
+            <div
+              ref={panelRef}
               style={{
                 position: "fixed",
                 left: rect.left,
@@ -288,40 +341,73 @@ export function SelectMenu({
                   ? { bottom: window.innerHeight - rect.top + 4 }
                   : { top: rect.bottom + 4 }),
               }}
-              // overscroll-contain: chegar ao fim da lista não repassa a
-              // rolagem para a página atrás dela
-              className="z-50 max-h-64 overflow-y-auto overscroll-contain rounded-inner border border-border bg-surface py-1.5 shadow-[var(--shadow-menu)]"
+              className="z-50 overflow-hidden rounded-inner border border-border bg-surface shadow-[var(--shadow-menu)]"
             >
-              {options.length === 0 ? (
-                <li className="px-3.5 py-2 text-sm text-faint">Nada para escolher</li>
-              ) : (
-                options.map((option, index) => {
-                  const active = index === activeIndex;
-                  const chosen = option.value === value;
-                  return (
-                    <li
-                      key={option.value + index}
-                      id={`${listId}-${index}`}
-                      role="option"
-                      aria-selected={chosen}
-                      aria-disabled={option.disabled}
-                      data-index={index}
-                      onMouseEnter={() => !option.disabled && setActiveIndex(index)}
-                      onClick={() => choose(index)}
-                      className={cn(
-                        "flex cursor-pointer items-center justify-between gap-3 px-3.5 py-2 text-sm",
-                        option.disabled && "cursor-not-allowed opacity-40",
-                        active && !option.disabled && "bg-surface-2",
-                        chosen ? "text-accent-text" : "text-text",
-                      )}
-                    >
-                      <span className="min-w-0">{option.label}</span>
-                      {chosen ? <Check className="h-4 w-4 shrink-0" /> : null}
-                    </li>
-                  );
-                })
-              )}
-            </ul>,
+              {searchable ? (
+                <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+                  <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-faint" />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={query}
+                    onChange={(event) => search(event.target.value)}
+                    onKeyDown={onKeyDown}
+                    placeholder="Filtrar"
+                    aria-label="Filtrar opções"
+                    aria-controls={listId}
+                    aria-activedescendant={
+                      activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined
+                    }
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="h-6 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint"
+                  />
+                </div>
+              ) : null}
+
+              <ul
+                ref={listRef}
+                id={listId}
+                role="listbox"
+                aria-activedescendant={activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
+                tabIndex={-1}
+                // overscroll-contain: chegar ao fim da lista não repassa a
+                // rolagem para a página atrás dela
+                className="max-h-60 overflow-y-auto overscroll-contain py-1.5"
+              >
+                {visible.length === 0 ? (
+                  <li className="px-3.5 py-2 text-sm text-faint">
+                    {query ? "Nada encontrado" : "Nada para escolher"}
+                  </li>
+                ) : (
+                  visible.map((option, index) => {
+                    const active = index === activeIndex;
+                    const chosen = option.value === value;
+                    return (
+                      <li
+                        key={option.value + index}
+                        id={`${listId}-${index}`}
+                        role="option"
+                        aria-selected={chosen}
+                        aria-disabled={option.disabled}
+                        data-index={index}
+                        onMouseEnter={() => !option.disabled && setActiveIndex(index)}
+                        onClick={() => choose(index)}
+                        className={cn(
+                          "flex cursor-pointer items-center justify-between gap-3 px-3.5 py-2 text-sm",
+                          option.disabled && "cursor-not-allowed opacity-40",
+                          active && !option.disabled && "bg-surface-2",
+                          chosen ? "text-accent-text" : "text-text",
+                        )}
+                      >
+                        <span className="min-w-0">{option.label}</span>
+                        {chosen ? <Check className="h-4 w-4 shrink-0" /> : null}
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+            </div>,
             document.body,
           )
         : null}

@@ -259,7 +259,7 @@ function ConnectDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
         </div>
       }
     >
-      <form id="whatsapp-form" onSubmit={handleSubmit} noValidate>
+      <form id="whatsapp-form" onSubmit={handleSubmit} noValidate autoComplete="off">
         <div className="grid gap-x-4 sm:grid-cols-2">
           <FormField
             label="Phone Number ID"
@@ -269,6 +269,9 @@ function ConnectDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
           >
             <Input
               id="wa-phone-id"
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
               value={values.phoneNumberId}
               onChange={(event) => set("phoneNumberId", event.target.value)}
             />
@@ -281,6 +284,9 @@ function ConnectDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
           >
             <Input
               id="wa-waba"
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
               value={values.wabaId}
               onChange={(event) => set("wabaId", event.target.value)}
             />
@@ -289,6 +295,9 @@ function ConnectDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
           <FormField label="Número exibido" htmlFor="wa-display" hint="Só para aparecer na tela.">
             <Input
               id="wa-display"
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
               value={values.displayPhone}
               onChange={(event) => set("displayPhone", event.target.value)}
               placeholder="+55 31 99999-8888"
@@ -305,7 +314,12 @@ function ConnectDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
           <Input
             id="wa-token"
             type="password"
-            autoComplete="off"
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            data-1p-ignore
+            data-lpignore="true"
             value={values.accessToken}
             onChange={(event) => set("accessToken", event.target.value)}
           />
@@ -320,7 +334,12 @@ function ConnectDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
           <Input
             id="wa-secret"
             type="password"
-            autoComplete="off"
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            data-1p-ignore
+            data-lpignore="true"
             value={values.appSecret}
             onChange={(event) => set("appSecret", event.target.value)}
           />
@@ -334,7 +353,12 @@ function ConnectDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
         >
           <Input
             id="wa-verify"
-            autoComplete="off"
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            data-1p-ignore
+            data-lpignore="true"
             value={values.verifyToken}
             onChange={(event) => set("verifyToken", event.target.value)}
           />

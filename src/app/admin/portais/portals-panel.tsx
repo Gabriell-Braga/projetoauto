@@ -257,13 +257,18 @@ function ConnectDialog({
         </div>
       }
     >
-      <form id="connect-form" onSubmit={handleSubmit} noValidate>
+      <form id="connect-form" onSubmit={handleSubmit} noValidate autoComplete="off">
         {portal.fields.map((field) => (
           <FormField key={field.key} label={field.label} htmlFor={`field-${field.key}`} hint={field.hint}>
             <Input
               id={`field-${field.key}`}
               type={field.secret ? "password" : "text"}
-              autoComplete="off"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              data-1p-ignore
+              data-lpignore="true"
               value={values[field.key] ?? ""}
               onChange={(event) =>
                 setValues((current) => ({ ...current, [field.key]: event.target.value }))

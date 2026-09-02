@@ -1,3 +1,8 @@
+"use client";
+
+// O Select passou a ter estado proprio, entao o arquivo inteiro vira modulo de
+// cliente: quatro paginas renderizam esses campos do servidor, e hook em
+// componente de servidor quebra so na hora do acesso — o build passa.
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { SelectMenu, type SelectOption } from "./select-menu";

@@ -30,6 +30,7 @@ import {
   priceVerdict,
 } from "@/lib/integrations/fipe";
 import { inferSpecs } from "@/lib/integrations/fipe-specs";
+import { isZeroKm } from "@/lib/integrations/fipe";
 import { formatCurrency } from "@/lib/utils";
 import { apiDelete, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
@@ -64,6 +65,17 @@ export function VehicleForm({
   const [priceText, setPriceText] = useState(centsToInput(initial.priceCents));
   const [fipeYear, setFipeYear] = useState("");
   const [loadingQuote, setLoadingQuote] = useState(false);
+
+  /**
+   * Campos que a consulta preencheu e que ficam travados.
+   *
+   * Evita que alguém altere sem querer um dado que veio da tabela — mas a
+   * trava tem saída, porque câmbio, carroceria e portas saem de leitura do
+   * nome do modelo. Palpite travado vira dado errado permanente, e quem
+   * cadastra é quem está olhando para o carro.
+   */
+  const [fipeLocked, setFipeLocked] = useState<Set<string>>(new Set());
+  const locked = (field: string) => fipeLocked.has(field);
   const [saving, setSaving] = useState(false);
 
   /**
@@ -190,21 +202,48 @@ export function VehicleForm({
    */
   function applyFipe(result: FipeQuote) {
     const specs = inferSpecs(result.modelo, result.combustivel);
+    const zeroKm = isZeroKm(result.anoModelo);
+    const filled = new Set<string>();
 
-    setValues((current) => ({
-      ...current,
-      transmission: current.transmission || specs.transmission || "",
-      fuel: current.fuel || specs.fuel || "",
-      bodyType: current.bodyType || specs.bodyType || "",
-      doors: current.doors || (specs.doors ? String(specs.doors) : ""),
+    setValues((current) => {
+      const next = { ...current };
+
+      // só campo vazio é preenchido — e só o que foi preenchido trava
+      if (!current.transmission && specs.transmission) {
+        next.transmission = specs.transmission;
+        filled.add("transmission");
+      }
+      if (!current.fuel && specs.fuel) {
+        next.fuel = specs.fuel;
+        filled.add("fuel");
+      }
+      if (!current.bodyType && specs.bodyType) {
+        next.bodyType = specs.bodyType;
+        filled.add("bodyType");
+      }
+      if (!current.doors && specs.doors) {
+        next.doors = String(specs.doors);
+        filled.add("doors");
+      }
+
       // 32000 é como a FIPE diz "zero km"; vira o ano corrente
-      yearModel: normalizeFipeYear(result.anoModelo, CURRENT_YEAR),
-      yearManufacture:
-        current.yearManufacture || normalizeFipeYear(result.anoModelo, CURRENT_YEAR),
-      fipeCode: result.codigoFipe,
-      fipePriceCents: result.valorCents,
-      fipeReference: result.mesReferencia,
-    }));
+      next.yearModel = normalizeFipeYear(result.anoModelo, CURRENT_YEAR);
+      next.yearManufacture =
+        current.yearManufacture || normalizeFipeYear(result.anoModelo, CURRENT_YEAR);
+
+      // carro zero tem zero quilômetro: o campo perde a razão de existir
+      if (zeroKm) {
+        next.mileageKm = 0;
+        filled.add("mileageKm");
+      }
+
+      next.fipeCode = result.codigoFipe;
+      next.fipePriceCents = result.valorCents;
+      next.fipeReference = result.mesReferencia;
+      return next;
+    });
+
+    setFipeLocked(filled);
   }
 
   function toggleOption(optionKey: string) {
@@ -314,6 +353,7 @@ export function VehicleForm({
                 // trocar a marca invalida o que veio da anterior
                 setValues((current) => ({ ...current, brand: next, model: "", version: "" }));
                 setFipeYear("");
+                setFipeLocked(new Set());
               }}
             />
           </FormField>
@@ -333,6 +373,7 @@ export function VehicleForm({
               onChange={(next) => {
                 setValues((current) => ({ ...current, model: next, version: "" }));
                 setFipeYear("");
+                setFipeLocked(new Set());
               }}
             />
           </FormField>
@@ -356,6 +397,7 @@ export function VehicleForm({
               onChange={(next) => {
                 update("version", next);
                 setFipeYear("");
+                setFipeLocked(new Set());
               }}
             />
           </FormField>
@@ -422,10 +464,14 @@ export function VehicleForm({
             </FormField>
           ) : null}
 
-          <FormField label="Quilometragem" htmlFor="mileageKm" hint="Em km rodados">
+          <FormField
+            label="Quilometragem"
+            htmlFor="mileageKm"
+            hint={locked("mileageKm") ? "Zero km, pela tabela FIPE" : "Em km rodados"}
+          >
             <IntegerInput
               id="mileageKm"
-              disabled={readOnly}
+              disabled={readOnly || locked("mileageKm")}
               value={values.mileageKm}
               onChangeNumber={(next) => update("mileageKm", next)}
             />
@@ -434,11 +480,29 @@ export function VehicleForm({
       </Accordion>
 
       <Accordion title="Ficha técnica" summary="Câmbio, combustível e cor">
+        {/* a trava precisa de saída visível: o que veio do nome do modelo é
+            dedução, e quem cadastra está olhando para o carro */}
+        {fipeLocked.size > 0 && !readOnly ? (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-inner border border-border bg-surface-2 px-6 py-4">
+            <p className="text-base text-muted">
+              {fipeLocked.size} campo(s) preenchidos pela tabela FIPE.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setFipeLocked(new Set())}
+            >
+              Corrigir à mão
+            </Button>
+          </div>
+        ) : null}
+
         <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
           <FormField label="Câmbio" htmlFor="transmission">
             <Select
               id="transmission"
-              disabled={readOnly}
+              disabled={readOnly || locked("transmission")}
               value={values.transmission}
               onChange={(event) => update("transmission", event.target.value)}
             >
@@ -454,7 +518,7 @@ export function VehicleForm({
           <FormField label="Combustível" htmlFor="fuel">
             <Select
               id="fuel"
-              disabled={readOnly}
+              disabled={readOnly || locked("fuel")}
               value={values.fuel}
               onChange={(event) => update("fuel", event.target.value)}
             >
@@ -470,7 +534,7 @@ export function VehicleForm({
           <FormField label="Carroceria" htmlFor="bodyType">
             <Select
               id="bodyType"
-              disabled={readOnly}
+              disabled={readOnly || locked("bodyType")}
               value={values.bodyType}
               onChange={(event) => update("bodyType", event.target.value)}
             >
@@ -507,7 +571,7 @@ export function VehicleForm({
           <FormField label="Portas" htmlFor="doors">
             <Select
               id="doors"
-              disabled={readOnly}
+              disabled={readOnly || locked("doors")}
               value={values.doors}
               onChange={(event) => update("doors", event.target.value)}
             >
@@ -650,11 +714,15 @@ export function VehicleForm({
         onPhotosChange={setPhotoCount}
       />
 
+      {/*
+        Barra fixa no rodapé: o formulário é longo, e o botão de salvar no fim
+        da rolagem obriga a percorrer a página inteira para concluir.
+
+        Sair fica à esquerda e concluir à direita — a ação que avança mora no
+        canto para onde a leitura termina, e a que desiste fica longe dela.
+      */}
       {!readOnly ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="submit" loading={saving}>
-            {isEditing ? "Salvar alterações" : "Cadastrar veículo"}
-          </Button>
+        <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-4 rounded-card border border-border bg-surface px-6 py-4">
           {hasUnsavedPhotos ? (
             <Button
               type="button"
@@ -669,12 +737,18 @@ export function VehicleForm({
               Cancelar
             </Button>
           )}
-          {hasUnsavedPhotos ? (
-            <p className="text-xs text-warning">
-              {photoCount === 1 ? "1 foto enviada" : photoCount + " fotos enviadas"}. Salve o
-              veículo para não perdê-las.
-            </p>
-          ) : null}
+
+          <div className="flex flex-wrap items-center justify-end gap-4">
+            {hasUnsavedPhotos ? (
+              <p className="text-sm text-warning">
+                {photoCount === 1 ? "1 foto enviada" : photoCount + " fotos enviadas"}. Salve para
+                não perdê-las.
+              </p>
+            ) : null}
+            <Button type="submit" loading={saving}>
+              {isEditing ? "Salvar alterações" : "Cadastrar veículo"}
+            </Button>
+          </div>
         </div>
       ) : null}
     </form>

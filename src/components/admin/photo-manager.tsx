@@ -186,10 +186,7 @@ export function PhotoManager({
     <Card>
       <CardHeader>
         <CardTitle>Fotos</CardTitle>
-        <CardDescription>
-          A primeira foto é a capa. As imagens são reduzidas no seu navegador antes do envio, em
-          três tamanhos.
-        </CardDescription>
+        <CardDescription>A primeira foto é a capa.</CardDescription>
       </CardHeader>
       <CardContent>
         <input

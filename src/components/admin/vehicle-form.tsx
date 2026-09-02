@@ -314,7 +314,6 @@ export function VehicleForm({
     router.refresh();
   }
 
-  const yearsPending = !values.yearManufacture && !values.yearModel;
   const optionCount = values.options.length;
   const hasDescription = values.description.trim().length > 0;
 
@@ -338,11 +337,7 @@ export function VehicleForm({
         ) : null}
 
         <div className="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
-          <FormField
-            label="Marca"
-            htmlFor="brand"
-            hint={fipe.brandRecognized ? "Reconhecida na tabela FIPE" : undefined}
-          >
+          <FormField label="Marca" htmlFor="brand">
             <CatalogSelect
               id="brand"
               value={values.brand}
@@ -359,11 +354,7 @@ export function VehicleForm({
             />
           </FormField>
 
-          <FormField
-            label="Modelo"
-            htmlFor="model"
-            hint={fipe.modelRecognized ? "Reconhecido na tabela FIPE" : undefined}
-          >
+          <FormField label="Modelo" htmlFor="model">
             <CatalogSelect
               id="model"
               value={values.model}
@@ -379,15 +370,7 @@ export function VehicleForm({
             />
           </FormField>
 
-          <FormField
-            label="Versão"
-            htmlFor="version"
-            hint={
-              fipe.versions.length > 0
-                ? "Motor, acabamento e câmbio, como a FIPE registra"
-                : undefined
-            }
-          >
+          <FormField label="Versão" htmlFor="version">
             <CatalogSelect
               id="version"
               value={values.version}
@@ -407,11 +390,7 @@ export function VehicleForm({
             `|| ""` porque zero aqui quer dizer "ainda não sei": mostrar "0"
             no campo seria pior que mostrar nada.
           */}
-          <FormField
-            label="Ano de fabricação"
-            htmlFor="yearManufacture"
-            hint={yearsPending ? "A consulta FIPE preenche" : "Pode diferir do ano do modelo"}
-          >
+          <FormField label="Ano de fabricação" htmlFor="yearManufacture">
             <Input
               id="yearManufacture"
               type="number"
@@ -424,11 +403,7 @@ export function VehicleForm({
             />
           </FormField>
 
-          <FormField
-            label="Ano do modelo"
-            htmlFor="yearModel"
-            hint={yearsPending ? "A consulta FIPE preenche" : undefined}
-          >
+          <FormField label="Ano do modelo" htmlFor="yearModel">
             <Input
               id="yearModel"
               type="number"
@@ -480,7 +455,7 @@ export function VehicleForm({
           <FormField
             label="Quilometragem"
             htmlFor="mileageKm"
-            hint={locked("mileageKm") ? "Zero km, pela tabela FIPE" : "Em km rodados"}
+            hint={locked("mileageKm") ? "Zero km, pela tabela FIPE" : undefined}
           >
             <IntegerInput
               id="mileageKm"
@@ -597,7 +572,7 @@ export function VehicleForm({
             </Select>
           </FormField>
 
-          <FormField label="Final da placa" htmlFor="licensePlateEnd" hint="Apenas o último dígito">
+          <FormField label="Final da placa" htmlFor="licensePlateEnd">
             <Input
               id="licensePlateEnd"
               maxLength={1}
@@ -621,11 +596,7 @@ export function VehicleForm({
             />
           </FormField>
 
-          <FormField
-            label="Situação do anúncio"
-            htmlFor="status"
-            hint="Rascunho fica só aqui dentro"
-          >
+          <FormField label="Situação do anúncio" htmlFor="status">
             <Select
               id="status"
               disabled={readOnly}
@@ -702,12 +673,7 @@ export function VehicleForm({
         defaultOpen={hasDescription}
         summary={hasDescription ? "preenchida" : "vazia"}
       >
-        <FormField
-          label="Texto do anúncio"
-          htmlFor="description"
-          hint="Aparece na página do veículo e conta para a busca do Google"
-          className="mb-0"
-        >
+        <FormField label="Texto do anúncio" htmlFor="description" className="mb-0">
           <Textarea
             id="description"
             rows={6}

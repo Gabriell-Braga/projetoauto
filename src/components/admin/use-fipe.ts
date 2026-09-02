@@ -147,8 +147,6 @@ export function useFipe(brand: string, model: string, version: string) {
     loadingModels,
     loadingYears,
     /** A marca digitada existe na tabela? Sem isso não há o que consultar. */
-    brandRecognized: Boolean(brandCode),
-    modelRecognized: Boolean(modelCode),
     fetchQuote: quoteFor,
   };
 }

@@ -1,16 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="ProjetoAuto">
   <!--
-    Marca na identidade C4MP: roxo de ação como fundo, glifo branco.
+    Mesmo desenho de antes — mostrador, arco e ponteiro — nas cores do C4MP.
 
-    O tacômetro âmbar anterior era a assinatura do sistema antigo. Aqui a forma
-    é um carro reduzido ao essencial — quatro elementos sólidos, sem traço fino,
-    porque a favicon é lida a 16px e linha de 1px vira cinza sujo nesse tamanho.
+    O ladrilho usa o #11111C da identidade e o raio subiu de 6 para 9, para
+    acompanhar as superfícies mais arredondadas do sistema sem mexer na
+    composição.
 
-    Raio generoso no ladrilho para conversar com as superfícies do sistema.
+    O arco e o ponteiro usam o lavanda #9191E2, não o roxo principal: sobre o
+    fundo escuro o #694AE5 fica em 3.4:1 e vira um borrão a 16px, que é o
+    tamanho em que a favicon é realmente lida. O lavanda é da mesma família e
+    salta.
   -->
-  <rect width="32" height="32" rx="9" fill="#694AE5" />
-  <rect x="10.5" y="9.5" width="11" height="6.5" rx="2.4" fill="#FFFFFF" />
-  <rect x="5" y="14" width="22" height="7" rx="3" fill="#FFFFFF" />
-  <circle cx="10.5" cy="22" r="2.6" fill="#FFFFFF" />
-  <circle cx="21.5" cy="22" r="2.6" fill="#FFFFFF" />
+  <rect width="32" height="32" rx="9" fill="#11111C" />
+  <circle cx="16" cy="17" r="9.5" fill="none" stroke="#2E2E42" stroke-width="1.5" />
+  <path
+    d="M8.3 23.7A10.5 10.5 0 0 1 16 6.5"
+    fill="none"
+    stroke="#9191E2"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+  <line x1="16" y1="17" x2="21.5" y2="12.5" stroke="#9191E2" stroke-width="2" stroke-linecap="round" />
+  <circle cx="16" cy="17" r="1.8" fill="#9191E2" />
 </svg>

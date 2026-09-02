@@ -155,6 +155,14 @@ export function VehicleForm({
       : `${distance} abaixo da FIPE`;
   }, [priceText, values.fipePriceCents]);
 
+  /**
+   * Sem toast nos dois lados.
+   *
+   * O sucesso já aparece na dica do próprio campo, com valor e mês da
+   * referência; o erro já aparece no aviso do topo da seção. Avisar de novo
+   * seria a mesma informação em dois lugares, e toast que confirma o óbvio
+   * ensina a pessoa a ignorar os toasts que importam.
+   */
   async function pickFipeYear(yearCode: string) {
     setFipeYear(yearCode);
     if (!yearCode) return;
@@ -163,15 +171,7 @@ export function VehicleForm({
     const quote = await fipe.fetchQuote(yearCode);
     setLoadingQuote(false);
 
-    if (!quote) {
-      toast.error("Não consegui consultar a FIPE", "Preencha o preço na mão e siga.");
-      return;
-    }
-    applyFipe(quote);
-    toast.success(
-      "Referência da FIPE gravada",
-      `${quote.marca} ${quote.modelo}, ${quote.mesReferencia}.`,
-    );
+    if (quote) applyFipe(quote);
   }
 
   function applyFipe(result: FipeQuote) {

@@ -32,12 +32,20 @@ export const FEATURES: FeatureDefinition[] = [
   // ---------------------------------------------------------------- Estoque
   { key: "gestao_estoque", label: "Gestão de estoque", group: "Estoque", status: "pronto", kind: "boolean" },
   { key: "gerenciador_ofertas", label: "Gerenciador de ofertas", group: "Estoque", status: "pronto", kind: "boolean" },
+  /*
+   * A consulta por placa saiu de cena: as APIs do gênero são todas pagas por
+   * consulta, e o que elas devolvem — marca, modelo, versão, ano, combustível
+   * — a tabela FIPE já entrega de graça a partir da escolha na lista. Pagar
+   * por consulta para economizar três cliques não se paga.
+   *
+   * Com isso a funcionalidade deixou de depender de fornecedor: o
+   * preenchimento automático que está no ar é o da FIPE.
+   */
   {
     key: "preenchimento_automatico",
     label: "Preenchimento automático do veículo",
     group: "Estoque",
-    status: "depende_de_fornecedor",
-    note: "Precisa de API de consulta por placa/FIPE.",
+    status: "pronto",
     kind: "boolean",
   },
   {

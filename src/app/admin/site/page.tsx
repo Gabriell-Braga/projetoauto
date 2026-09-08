@@ -12,10 +12,12 @@ import { Tabs } from "@/components/ui/tabs";
 import { DEFAULT_THEME } from "@/templates/contract";
 import { listDomains } from "@/lib/services/domains";
 import { hostingReady } from "@/lib/integrations/vercel";
+import { getTemplate } from "@/templates/registry";
 import { ContactPanel } from "./contact-panel";
 import { ContentPanel } from "./content-panel";
 import { IdentityPanel } from "./identity-panel";
 import { DomainsPanel } from "./domains-panel";
+import { PagesPanel } from "./pages-panel";
 
 export const metadata: Metadata = { title: "Site" };
 export const dynamic = "force-dynamic";
@@ -24,6 +26,7 @@ const TABS = [
   { key: "identidade", label: "Identidade" },
   { key: "contato", label: "Contato" },
   { key: "conteudo", label: "Conteúdo" },
+  { key: "paginas", label: "Páginas" },
   { key: "dominio", label: "Domínio" },
 ] as const;
 
@@ -54,6 +57,8 @@ export default async function SitePage({
       : [];
 
   const domains = tab === "dominio" ? await listDomains(context.tenant.id) : [];
+
+  const template = getTemplate(context.tenant.templateId);
 
   const readOnly = !can(context.role, "site:write") || context.access !== "full";
 
@@ -114,6 +119,21 @@ export default async function SitePage({
             mapsUrl: site?.mapsUrl ?? "",
             businessHours: site?.businessHours ?? [],
             social: site?.social ?? {},
+          }}
+        />
+      ) : null}
+
+      {tab === "paginas" ? (
+        <PagesPanel
+          readOnly={readOnly}
+          hasFinancing={Boolean(template.Financing)}
+          hasSellCar={Boolean(template.SellCar)}
+          initial={{
+            stats: site?.stats ?? [],
+            downPaymentPercent: site?.financing?.downPaymentPercent ?? 20,
+            terms: site?.financing?.terms ?? [24, 36, 48, 60],
+            legalPrivacy: site?.legalPrivacy ?? "",
+            legalTerms: site?.legalTerms ?? "",
           }}
         />
       ) : null}

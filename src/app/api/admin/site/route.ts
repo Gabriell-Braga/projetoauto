@@ -29,6 +29,29 @@ export const PATCH = withApi(async (request: Request) => {
 
   const values: Record<string, unknown> = { ...siteFields };
   if (theme) values.theme = theme as TenantTheme;
+
+  /*
+   * A data do texto legal é carimbada na mudança, não a cada salvamento.
+   *
+   * "Atualizado em" é a única pista que o visitante tem de que o documento é
+   * recente; reescrevê-la porque alguém mexeu no telefone da loja no mesmo
+   * formulário faria a página anunciar uma revisão que não houve.
+   */
+  if (siteFields.legalPrivacy !== undefined || siteFields.legalTerms !== undefined) {
+    const atual = await db
+      .select({ privacy: tenantSites.legalPrivacy, terms: tenantSites.legalTerms })
+      .from(tenantSites)
+      .where(eq(tenantSites.tenantId, context.tenant.id))
+      .limit(1);
+
+    const mudou =
+      (siteFields.legalPrivacy !== undefined &&
+        siteFields.legalPrivacy !== (atual[0]?.privacy ?? undefined)) ||
+      (siteFields.legalTerms !== undefined &&
+        siteFields.legalTerms !== (atual[0]?.terms ?? undefined));
+
+    if (mudou) values.legalUpdatedAt = new Date();
+  }
   if (clearGtm) values.gtmCode = null;
   else if (gtmCode !== undefined) values.gtmCode = gtmCode.toUpperCase();
 

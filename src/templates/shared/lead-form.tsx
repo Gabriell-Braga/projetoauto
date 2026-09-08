@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { apiPost } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
+import { readUtm } from "./utm";
 
 /**
  * Formulário de lead compartilhado pelos templates.
@@ -49,11 +50,7 @@ export function LeadForm({
       email: String(form.get("email") ?? ""),
       message: String(form.get("message") ?? ""),
       website: String(form.get("website") ?? ""),
-      utm: {
-        referrer: typeof document !== "undefined" ? document.referrer : undefined,
-        page: typeof window !== "undefined" ? window.location.pathname : undefined,
-        ...readUtmFromUrl(),
-      },
+      utm: readUtm(),
     });
 
     setSending(false);
@@ -180,15 +177,4 @@ export function LeadForm({
       </p>
     </form>
   );
-}
-
-function readUtmFromUrl(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const params = new URLSearchParams(window.location.search);
-  const utm: Record<string, string> = {};
-  for (const key of ["source", "medium", "campaign", "term", "content"]) {
-    const value = params.get(`utm_${key}`);
-    if (value) utm[key] = value.slice(0, 120);
-  }
-  return utm;
 }

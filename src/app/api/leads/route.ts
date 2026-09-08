@@ -9,6 +9,7 @@ import { publicLeadSchema } from "@/lib/validation/leads";
 
 import { listStages, pickAssignee, recordLeadEvent } from "@/lib/services/crm";
 import { dispatchTenantEvent } from "@/lib/services/api-access";
+import { composeLeadMessage, createIntentRecord } from "@/lib/services/public-lead";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export const POST = withApi(async (request: Request) => {
   const db = await getDb();
   let vehicleLabel: string | null = null;
   let vehicleId: string | null = null;
+  let vehiclePriceCents = 0;
 
   if (input.vehicleId) {
     const found = await db
@@ -43,6 +45,7 @@ export const POST = withApi(async (request: Request) => {
         model: vehicles.model,
         version: vehicles.version,
         yearModel: vehicles.yearModel,
+        priceCents: vehicles.priceCents,
       })
       .from(vehicles)
       .where(
@@ -56,6 +59,7 @@ export const POST = withApi(async (request: Request) => {
 
     if (found[0]) {
       vehicleId = found[0].id;
+      vehiclePriceCents = found[0].priceCents;
       vehicleLabel = [found[0].brand, found[0].model, found[0].version, found[0].yearModel]
         .filter(Boolean)
         .join(" ");
@@ -77,7 +81,7 @@ export const POST = withApi(async (request: Request) => {
       name: input.name,
       phone: input.phone,
       email: input.email || null,
-      message: input.message || null,
+      message: composeLeadMessage(input),
       source: "form",
       status: "new",
       stageId: firstStage?.id ?? null,
@@ -95,6 +99,30 @@ export const POST = withApi(async (request: Request) => {
     body: vehicleLabel ? `Lead pelo site, sobre ${vehicleLabel}.` : "Lead pelo site.",
     metadata: { source: "form", stage: firstStage?.name ?? null },
   });
+
+  /*
+   * A ficha de trabalho que nasce junto: proposta de financiamento ou
+   * avaliação, conforme o formulário. Falhar aqui não pode desfazer o lead —
+   * ele já está salvo, e é ele que não pode se perder.
+   */
+  const intent = await createIntentRecord(tenant.id, input, {
+    id: vehicleId,
+    label: vehicleLabel,
+    priceCents: vehiclePriceCents,
+  }).catch(() => null);
+
+  if (intent) {
+    await recordLeadEvent({
+      tenantId: tenant.id,
+      leadId,
+      type: "note",
+      body:
+        intent.kind === "financing"
+          ? "Simulação de financiamento criada em rascunho a partir do site."
+          : "Avaliação criada em rascunho a partir do site.",
+      metadata: { [intent.kind]: intent.id },
+    });
+  }
 
   // avisa quem integrou, sem poder derrubar a captação do lead
   await dispatchTenantEvent(tenant.id, "lead.created", {

@@ -24,11 +24,19 @@ export const siteSettingsSchema = z.object({
   theme: optional(
     z.object({
       primary: optional(hexColor),
+      primaryHover: optional(hexColor),
       primaryForeground: optional(hexColor),
       accent: optional(hexColor),
+      text: optional(hexColor),
+      muted: optional(hexColor),
+      border: optional(hexColor),
+      background: optional(hexColor),
       surface: optional(hexColor),
+      success: optional(hexColor),
       fontHeading: optional(z.string().trim().max(120)),
       fontBody: optional(z.string().trim().max(120)),
+      // com unidade: "12" sozinho é ignorado pelo border-radius e o card sai quadrado
+      radius: optional(z.string().trim().regex(/^d{1,2}px$/, "Use algo como 12px")),
     }),
   ),
   phone: optional(z.string().trim().max(20)),
@@ -63,6 +71,32 @@ export const siteSettingsSchema = z.object({
   ),
   /** Envie explicitamente para limpar o código herdado do super-admin. */
   clearGtm: z.boolean().optional(),
+
+  /**
+   * Números de vitrine. Até três — a faixa do site tem três colunas, e a
+   * quarta entraria sobrando numa linha sozinha.
+   */
+  stats: optional(
+    z
+      .array(
+        z.object({
+          value: z.string().trim().max(20),
+          label: z.string().trim().max(40),
+        }),
+      )
+      .max(3),
+  ),
+
+  financing: optional(
+    z.object({
+      downPaymentPercent: z.coerce.number().int().min(0).max(90),
+      /** Prazos do seletor, em meses, sem repetir e em ordem. */
+      terms: z.array(z.coerce.number().int().min(1).max(120)).min(1).max(8),
+    }),
+  ),
+
+  legalPrivacy: optional(z.string().trim().max(50_000)),
+  legalTerms: optional(z.string().trim().max(50_000)),
 });
 
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;

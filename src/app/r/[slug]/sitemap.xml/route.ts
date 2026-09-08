@@ -4,6 +4,7 @@ import { vehicles, type VehicleStatus } from "@/db/schema";
 import { getOrigin } from "@/lib/seo/urls";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { getTenantCoreBySlug, isPublicSiteAvailable } from "@/lib/tenant/service";
+import { getTemplate } from "@/templates/registry";
 
 export const dynamic = "force-dynamic";
 
@@ -30,10 +31,31 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const origin = await getOrigin();
   const now = new Date().toISOString();
 
+  /*
+   * As páginas institucionais só entram quando o template escolhido as
+   * implementa — anunciar no sitemap uma URL que responde 404 é o jeito mais
+   * rápido de perder confiança do buscador.
+   *
+   * Privacidade e termos ficam de fora de propósito: são `noindex`, existem
+   * para quem procura por elas, e não disputam busca.
+   */
+  const template = getTemplate(tenant.templateId);
+  const opcionais = [
+    template.Financing ? { path: "/financiamento", priority: "0.6" } : null,
+    template.SellCar ? { path: "/venda-seu-carro", priority: "0.6" } : null,
+    template.About ? { path: "/sobre", priority: "0.4" } : null,
+  ].filter((item) => item !== null);
+
   const entries = [
     { loc: tenantPublicPath(slug), lastmod: now, priority: "1.0", changefreq: "daily" },
     { loc: tenantPublicPath(slug, "/estoque"), lastmod: now, priority: "0.9", changefreq: "daily" },
     { loc: tenantPublicPath(slug, "/contato"), lastmod: now, priority: "0.5", changefreq: "monthly" },
+    ...opcionais.map((item) => ({
+      loc: tenantPublicPath(slug, item.path),
+      lastmod: now,
+      priority: item.priority,
+      changefreq: "monthly",
+    })),
     ...rows.map((row) => ({
       loc: tenantPublicPath(slug, `/veiculo/${row.slug}`),
       lastmod: row.updatedAt.toISOString(),

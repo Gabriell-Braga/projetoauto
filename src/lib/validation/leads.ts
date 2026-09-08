@@ -28,6 +28,37 @@ export const publicLeadSchema = z.object({
       page: z.string().max(500).optional(),
     })
     .optional(),
+
+  /**
+   * De qual formulário o lead veio.
+   *
+   * Não é o canal — canal é `source`, e os três chegam por formulário. É a
+   * INTENÇÃO, e ela decide o que nasce junto do lead: uma simulação vira
+   * proposta de financiamento em rascunho, um "venda seu carro" vira
+   * avaliação em rascunho. Sem isso, o vendedor receberia três leads iguais e
+   * teria que redigitar no painel o que o cliente já digitou no site.
+   */
+  kind: z.enum(["contato", "financiamento", "venda"]).default("contato"),
+
+  /** Só quando `kind` é "financiamento". */
+  financing: z
+    .object({
+      downPaymentCents: z.number().int().min(0).max(1_000_000_000),
+      installments: z.number().int().min(1).max(120),
+    })
+    .optional(),
+
+  /** Só quando `kind` é "venda": o carro que o cliente quer vender. */
+  sellCar: z
+    .object({
+      brand: z.string().trim().min(1).max(60),
+      model: z.string().trim().min(1).max(80),
+      version: z.string().trim().max(120).optional(),
+      yearManufacture: z.coerce.number().int().min(1950).max(2100),
+      yearModel: z.coerce.number().int().min(1950).max(2100),
+      mileageKm: z.coerce.number().int().min(0).max(2_000_000),
+    })
+    .optional(),
 });
 
 export type PublicLeadInput = z.infer<typeof publicLeadSchema>;

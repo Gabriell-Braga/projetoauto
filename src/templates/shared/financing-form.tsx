@@ -30,20 +30,47 @@ export function FinancingForm({
   vehicles,
   defaults,
   preselectedVehicleId,
+  initialDownCents,
+  initialInstallments,
+  /**
+   * Modo curto, para a home.
+   *
+   * Mostra veiculo, entrada e prazo, e em vez de enviar leva para a pagina de
+   * financiamento com o que a pessoa escolheu na URL. Pedir nome e telefone na
+   * home cobraria o dado antes de a pessoa ter visto uma conta — e quem
+   * abandona ali nao volta.
+   */
+  continueHref,
   tone = "light",
 }: {
   tenantSlug: string;
   vehicles: FinancingVehicleOption[];
   defaults: { downPaymentPercent: number; terms: number[] };
   preselectedVehicleId?: string;
+  initialDownCents?: number;
+  initialInstallments?: number;
+  continueHref?: string;
   tone?: "light" | "dark";
 }) {
   const [vehicleId, setVehicleId] = useState(
     preselectedVehicleId ?? vehicles[0]?.id ?? "",
   );
-  const [downText, setDownText] = useState("");
-  const [installments, setInstallments] = useState(defaults.terms[0] ?? 48);
-  const [touchedDown, setTouchedDown] = useState(false);
+  const [downText, setDownText] = useState(
+    initialDownCents ? centsToText(initialDownCents) : "",
+  );
+  const [installments, setInstallments] = useState(
+    // prazo vindo da home so vale se ainda for oferecido
+    initialInstallments && defaults.terms.includes(initialInstallments)
+      ? initialInstallments
+      : (defaults.terms[0] ?? 48),
+  );
+  /*
+   * Entrada vinda da home ja conta como digitada.
+   *
+   * Sem isso, o percentual padrao recalcularia por cima do valor que a pessoa
+   * escolheu na tela anterior, e ela veria o proprio numero ser trocado.
+   */
+  const [touchedDown, setTouchedDown] = useState(Boolean(initialDownCents));
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -201,63 +228,102 @@ export function FinancingForm({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className={labelClass} htmlFor="fin-name">
-            Nome completo
-          </label>
-          <input id="fin-name" name="name" required className={fieldClass} />
+      {continueHref ? (
+        <a
+          href={continueUrl(continueHref, vehicleId, downCents, installments)}
+          className="inline-flex items-center justify-center rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-sm font-medium text-[var(--site-primary-foreground)] transition-colors hover:bg-[var(--site-primary-hover)]"
+        >
+          Continuar simulação
+        </a>
+      ) : null}
+
+      {/*
+        No modo curto o formulario para aqui.
+
+        Nome e telefone sao pedidos na pagina de financiamento, depois de a
+        pessoa ter visto a conta. Cobrar o dado antes disso e o que faz alguem
+        fechar a aba na home.
+      */}
+      {!continueHref ? (
+        <>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className={labelClass} htmlFor="fin-name">
+              Nome completo
+            </label>
+            <input id="fin-name" name="name" required className={fieldClass} />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="fin-phone">
+              WhatsApp
+            </label>
+            <input
+              id="fin-phone"
+              name="phone"
+              required
+              inputMode="tel"
+              className={fieldClass}
+              placeholder="(31) 99999-8888"
+            />
+          </div>
         </div>
+
         <div>
-          <label className={labelClass} htmlFor="fin-phone">
-            WhatsApp
+          <label className={labelClass} htmlFor="fin-email">
+            E-mail <span className="opacity-60">(opcional)</span>
           </label>
-          <input
-            id="fin-phone"
-            name="phone"
-            required
-            inputMode="tel"
-            className={fieldClass}
-            placeholder="(31) 99999-8888"
-          />
+          <input id="fin-email" name="email" type="email" className={fieldClass} />
         </div>
-      </div>
 
-      <div>
-        <label className={labelClass} htmlFor="fin-email">
-          E-mail <span className="opacity-60">(opcional)</span>
-        </label>
-        <input id="fin-email" name="email" type="email" className={fieldClass} />
-      </div>
+        <div>
+          <label className={labelClass} htmlFor="fin-message">
+            Observação <span className="opacity-60">(opcional)</span>
+          </label>
+          <textarea id="fin-message" name="message" rows={2} className={fieldClass} />
+        </div>
 
-      <div>
-        <label className={labelClass} htmlFor="fin-message">
-          Observação <span className="opacity-60">(opcional)</span>
-        </label>
-        <textarea id="fin-message" name="message" rows={2} className={fieldClass} />
-      </div>
+        {/* honeypot: some para gente, visível para robô */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="absolute h-0 w-0 overflow-hidden opacity-0"
+        />
 
-      {/* honeypot: some para gente, visível para robô */}
-      <input
-        type="text"
-        name="website"
-        tabIndex={-1}
-        autoComplete="off"
-        aria-hidden="true"
-        className="absolute h-0 w-0 overflow-hidden opacity-0"
-      />
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-      <button
-        type="submit"
-        disabled={sending || vehicles.length === 0}
-        className="rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-sm font-medium text-[var(--site-primary-foreground)] transition-colors hover:bg-[var(--site-primary-hover)] disabled:opacity-60"
-      >
-        {sending ? "Enviando…" : "Enviar simulação"}
-      </button>
+        <button
+          type="submit"
+          disabled={sending || vehicles.length === 0}
+          className="rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-sm font-medium text-[var(--site-primary-foreground)] transition-colors hover:bg-[var(--site-primary-hover)] disabled:opacity-60"
+        >
+          {sending ? "Enviando…" : "Enviar simulação"}
+        </button>
+        </>
+      ) : null}
     </form>
   );
+}
+
+/**
+ * Leva a escolha da home para a pagina de financiamento.
+ *
+ * Os tres valores viajam na URL, e nao em memoria: a pessoa pode abrir num
+ * aba nova, voltar, ou mandar o link — e a simulacao continua de onde parou.
+ */
+function continueUrl(
+  base: string,
+  vehicleId: string,
+  downCents: number,
+  installments: number,
+): string {
+  const params = new URLSearchParams();
+  if (vehicleId) params.set("veiculo", vehicleId);
+  if (downCents > 0) params.set("entrada", String(downCents));
+  params.set("prazo", String(installments));
+  return `${base}?${params.toString()}`;
 }
 
 /** "30.000,00" -> 3000000 centavos. Aceita o que a pessoa digitar. */

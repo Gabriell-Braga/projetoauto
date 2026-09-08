@@ -1,15 +1,14 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { loadPublicSite, PUBLIC_VEHICLE_STATUSES } from "@/lib/services/public-site";
-import { toVehicleCard } from "@/lib/services/site";
-import { listVehicles } from "@/lib/services/vehicles";
+import { loadPublicSite } from "@/lib/services/public-site";
+import { financingOptions } from "@/lib/services/financing-options";
 import { FinancingForm } from "@/templates/shared/financing-form";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ veiculo?: string }>;
+  searchParams: Promise<{ veiculo?: string; entrada?: string; prazo?: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -21,9 +20,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/** Centavos vindos da home; lixo na URL vira ausência, não zero. */
+function toCents(value: string | undefined): number | undefined {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : undefined;
+}
+
+function toMonths(value: string | undefined): number | undefined {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 120 ? parsed : undefined;
+}
+
 export default async function TenantFinancingPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { veiculo } = await searchParams;
+  const { veiculo, entrada, prazo } = await searchParams;
   const context = await loadPublicSite(slug);
 
   /*
@@ -34,15 +44,7 @@ export default async function TenantFinancingPage({ params, searchParams }: Prop
   const Financing = context.template.Financing;
   if (!Financing) notFound();
 
-  const stock = await listVehicles(context.tenantId, {
-    statuses: [...PUBLIC_VEHICLE_STATUSES],
-    sort: "preco-asc",
-    page: 1,
-    pageSize: 60,
-  });
-
-  // só entra no seletor o que tem preço: financiar "sob consulta" não existe
-  const vehicles = stock.items.map(toVehicleCard).filter((item) => !item.priceOnRequest);
+  const vehicles = await financingOptions(context.tenantId, veiculo);
 
   return (
     <Financing
@@ -53,13 +55,11 @@ export default async function TenantFinancingPage({ params, searchParams }: Prop
       simulatorForm={
         <FinancingForm
           tenantSlug={slug}
-          vehicles={vehicles.map((item) => ({
-            id: item.id,
-            label: `${item.title} ${item.yearLabel}`,
-            priceCents: item.priceCents,
-          }))}
+          vehicles={vehicles}
           defaults={context.site.financing}
           preselectedVehicleId={veiculo}
+          initialDownCents={toCents(entrada)}
+          initialInstallments={toMonths(prazo)}
         />
       }
     />

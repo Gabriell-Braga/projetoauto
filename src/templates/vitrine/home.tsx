@@ -12,7 +12,15 @@ import {
 } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
-export function Home({ site, links, featured, latest, facets, totalVehicles }: HomeProps) {
+export function Home({
+  site,
+  links,
+  featured,
+  latest,
+  facets,
+  totalVehicles,
+  financingForm,
+}: HomeProps) {
   const destaques = featured.length > 0 ? featured : latest;
   const atalhos = categoryShortcuts(facets, links);
 
@@ -203,13 +211,26 @@ export function Home({ site, links, featured, latest, facets, totalVehicles }: H
               className="text-lg font-semibold text-[var(--site-text)]"
               style={{ fontFamily: "var(--site-font-heading)" }}
             >
-              Como funciona a simulação
+              Faça uma simulação rápida
             </p>
-            <ol className="mt-4 space-y-3 text-sm text-[var(--site-muted)]">
-              <li>1. Escolha o veículo no estoque.</li>
-              <li>2. Informe quanto pretende dar de entrada.</li>
-              <li>3. Envie seus dados e a loja retorna com as condições.</li>
-            </ol>
+            <p className="mt-1 text-[13px] text-[var(--site-muted)]">
+              Escolha o veículo e a entrada. Você continua na próxima tela.
+            </p>
+
+            {/*
+              Sem estoque com preço não há o que simular, e um formulário vazio
+              na home só ocupa espaço prometendo uma conta impossível.
+            */}
+            {financingForm ? (
+              <div className="mt-5">{financingForm}</div>
+            ) : (
+              <ol className="mt-4 space-y-3 text-sm text-[var(--site-muted)]">
+                <li>1. Escolha o veículo no estoque.</li>
+                <li>2. Informe quanto pretende dar de entrada.</li>
+                <li>3. Envie seus dados e a loja retorna com as condições.</li>
+              </ol>
+            )}
+
             <p className="mt-5 border-t border-[var(--site-border)] pt-4 text-xs text-[var(--site-muted)]">
               O valor da parcela depende da análise de crédito e é informado pela loja.
             </p>
@@ -220,7 +241,9 @@ export function Home({ site, links, featured, latest, facets, totalVehicles }: H
       {/* --------------------------------------------------------- a loja */}
       <section className={`${SHELL} py-16`}>
         <div className="grid items-center gap-10 lg:grid-cols-2">
-          <div className="aspect-4/3 overflow-hidden rounded-[var(--site-radius)] bg-[var(--site-background)]">
+          {/* contorno: sem ele o espaco reservado some no fundo da secao e a
+              coluna parece um vao, nao uma foto que falta */}
+          <div className="aspect-4/3 overflow-hidden rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)]">
             {site.banners[0]?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

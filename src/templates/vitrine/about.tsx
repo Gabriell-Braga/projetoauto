@@ -89,7 +89,9 @@ export function About({ site, links, totalVehicles }: AboutProps) {
 
       <section className="border-y border-[var(--site-border)] bg-[var(--site-background)] py-14">
         <div className={`${SHELL} grid items-center gap-10 lg:grid-cols-2`}>
-          <div className="aspect-4/3 overflow-hidden rounded-[var(--site-radius)] bg-[var(--site-surface)]">
+          {/* contorno: sem ele o espaco reservado some no fundo da secao e a
+              coluna parece um vao, nao uma foto que falta */}
+          <div className="aspect-4/3 overflow-hidden rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)]">
             {site.banners[0]?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

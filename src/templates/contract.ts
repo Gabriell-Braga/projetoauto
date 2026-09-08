@@ -205,6 +205,15 @@ export type HomeProps = BaseTemplateProps & {
   latest: VehicleView[];
   facets: StockFacets;
   totalVehicles: number;
+  /**
+   * Simulação rápida para a home, já montada pelo app.
+   *
+   * Opcional porque os templates antigos não têm essa seção — eles ignoram a
+   * propriedade. Quem tem, recebe o formulário curto: veículo, entrada e
+   * prazo, que levam para a página de financiamento já preenchida. Repetir os
+   * campos de contato na home faria a pessoa preencher tudo duas vezes.
+   */
+  financingForm?: React.ReactNode;
 };
 
 export type ListingProps = BaseTemplateProps & {
@@ -233,10 +242,15 @@ export type ContactProps = BaseTemplateProps;
  * e escolhe a moldura.
  *
  * `vehicles` é a lista para o seletor "escolha o veículo" — a simulação parte
- * de um carro do estoque, não de um valor digitado do nada.
+ * de um carro do estoque, não de um valor digitado do nada. Vem no formato
+ * mínimo do seletor, e não como ficha completa: a página não desenha card
+ * nenhum, e pedir o objeto inteiro obrigaria a rota a carregar fotos e
+ * opcionais de sessenta veículos para preencher um `<select>`.
  */
+export type FinancingVehicleOption = { id: string; label: string; priceCents: number };
+
 export type FinancingProps = BaseTemplateProps & {
-  vehicles: VehicleView[];
+  vehicles: FinancingVehicleOption[];
   defaults: FinancingDefaults;
   simulatorForm: React.ReactNode;
 };

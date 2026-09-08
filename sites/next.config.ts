@@ -1,18 +1,13 @@
 import type { NextConfig } from "next";
+import { normalizePanelUrl } from "./src/lib/panel-url";
 
 /**
- * O endereço do painel. É de onde vêm os dados e as fotos.
- *
- * Sem ele o app não tem o que renderizar, então falha AQUI, no build, com o
- * nome da variável — e não em produção, com "fetch failed" em toda página.
+ * Falha AQUI, no build, com o nome da variável — e não em produção, com
+ * "fetch failed" em toda página. A normalização mora junto do resto do app
+ * para o `rewrites()` e as chamadas de dados nunca discordarem sobre qual é o
+ * endereço do painel.
  */
-const panelUrl = process.env.PANEL_URL;
-if (!panelUrl) {
-  throw new Error(
-    "PANEL_URL não está definida. É o endereço do painel (ex.: https://painel.exemplo.com), " +
-      "de onde este app lê os dados dos sites.",
-  );
-}
+const panelUrl = normalizePanelUrl(process.env.PANEL_URL);
 
 const nextConfig: NextConfig = {
   // o pacote dos templates é TypeScript cru, sem passo de build próprio

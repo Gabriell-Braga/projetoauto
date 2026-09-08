@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { siteWithLocalMedia, vehicleWithLocalMedia } from "./media";
+import { panelUrl } from "./panel-url";
 import type {
   AppliedFilters,
   SiteData,
@@ -15,8 +16,6 @@ import type {
  * aparecer um `import` de Drizzle nesta pasta, o desenho saiu do lugar.
  */
 
-const PANEL_URL = process.env.PANEL_URL ?? "";
-
 /**
  * Chave compartilhada, quando o painel exige uma.
  *
@@ -29,7 +28,7 @@ const SITES_API_KEY = process.env.SITES_API_KEY ?? "";
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: string };
 
 async function get<T>(path: string, revalidate: number): Promise<T | null> {
-  const response = await fetch(`${PANEL_URL}${path}`, {
+  const response = await fetch(`${panelUrl()}${path}`, {
     headers: SITES_API_KEY ? { "x-sites-key": SITES_API_KEY } : {},
     next: { revalidate },
   });

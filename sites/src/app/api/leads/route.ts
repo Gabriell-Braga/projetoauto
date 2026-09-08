@@ -1,3 +1,5 @@
+import { panelUrl } from "~/lib/panel-url";
+
 export const dynamic = "force-dynamic";
 
 /**
@@ -12,10 +14,9 @@ export const dynamic = "force-dynamic";
  * por aqui, o navegador só conversa com o domínio da loja.
  */
 export async function POST(request: Request) {
-  const panelUrl = process.env.PANEL_URL ?? "";
   const sitesKey = process.env.SITES_API_KEY ?? "";
 
-  const response = await fetch(`${panelUrl}/api/leads`, {
+  const response = await fetch(`${panelUrl()}/api/leads`, {
     method: "POST",
     headers: {
       "content-type": "application/json",

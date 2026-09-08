@@ -194,3 +194,8 @@ npm run preview
 - Rascunho não aparece no site público.
 - Fotos são servidas por `/api/media/...` (o bucket é privado).
 - `/r/<slug>/sitemap.xml` e `/r/<slug>/robots.txt` respondem com o domínio real.
+
+## Estado e proximos passos
+
+[docs/ESTADO.md](docs/ESTADO.md) descreve onde as coisas estao, por que estao
+assim e o que falta. Comece por la.

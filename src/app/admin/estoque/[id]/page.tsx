@@ -85,7 +85,7 @@ export default async function EditVehiclePage({ params }: Props) {
             bodyType: vehicle.bodyType ?? "",
             color: vehicle.color ?? "",
             doors: vehicle.doors ? String(vehicle.doors) : "",
-            licensePlateEnd: vehicle.licensePlateEnd ?? "",
+            licensePlate: vehicle.licensePlate ?? "",
             options: vehicle.options ?? [],
             description: vehicle.description ?? "",
             status: vehicle.status,

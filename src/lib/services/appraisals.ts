@@ -19,7 +19,7 @@ export type AppraisalInput = {
   yearModel: number;
   mileageKm: number;
   color?: string | null;
-  licensePlateEnd?: string | null;
+  licensePlate?: string | null;
 
   fipeCode?: string | null;
   fipePriceCents: number;

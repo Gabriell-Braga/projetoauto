@@ -42,7 +42,7 @@ export default async function NewVehiclePage({
     initial.yearModel = appraisal.yearModel;
     initial.mileageKm = appraisal.mileageKm;
     initial.color = appraisal.color ?? "";
-    initial.licensePlateEnd = appraisal.licensePlateEnd ?? "";
+    initial.licensePlate = appraisal.licensePlate ?? "";
     // o preço do anúncio é a venda pretendida na avaliação, não a oferta
     initial.priceCents = appraisal.targetSaleCents;
     initial.fipeCode = appraisal.fipeCode;

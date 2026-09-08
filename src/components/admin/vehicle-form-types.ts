@@ -13,7 +13,7 @@ export type VehicleFormValues = {
   bodyType: string;
   color: string;
   doors: string;
-  licensePlateEnd: string;
+  licensePlate: string;
   options: string[];
   description: string;
   status: string;

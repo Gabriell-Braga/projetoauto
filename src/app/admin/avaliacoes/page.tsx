@@ -45,7 +45,7 @@ export default async function AppraisalsPage() {
           yearModel: row.yearModel,
           mileageKm: row.mileageKm,
           color: row.color,
-          licensePlateEnd: row.licensePlateEnd,
+          licensePlate: row.licensePlate,
           fipeCode: row.fipeCode,
           fipePriceCents: row.fipePriceCents,
           fipeReference: row.fipeReference,

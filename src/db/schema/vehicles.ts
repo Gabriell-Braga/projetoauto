@@ -45,6 +45,21 @@ export const vehicles = sqliteTable(
     bodyType: text("body_type").$type<BodyType>(),
     color: text("color"),
     doors: integer("doors"),
+    /**
+     * Placa completa, normalizada: maiuscula, sem hifen.
+     *
+     * O site publico continua mostrando so o final — publicar a placa inteira
+     * identifica o veiculo para qualquer um. Aqui ela existe para a loja.
+     */
+    licensePlate: text("license_plate"),
+    /**
+     * O final digitado antes de a placa inteira passar a ser guardada.
+     *
+     * Fica de leitura apenas, e nao e mais escrito. Um digito nao reconstroi
+     * uma placa, entao apagar a coluna perderia a unica informacao que os
+     * veiculos antigos tem — a ficha publica deles continuaria mostrando o
+     * final gracas a ela.
+     */
     licensePlateEnd: text("license_plate_end"),
     /** Lista de opcionais (chaves do catálogo em src/lib/catalog/options.ts). */
     options: text("options", { mode: "json" }).$type<string[]>(),

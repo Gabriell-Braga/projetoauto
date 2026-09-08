@@ -45,7 +45,7 @@ export const POST = withApi(async (request: Request) => {
       bodyType: input.bodyType,
       color: input.color,
       doors: input.doors,
-      licensePlateEnd: input.licensePlateEnd,
+      licensePlate: input.licensePlate,
       options: input.options,
       description: input.description,
       status: input.status,

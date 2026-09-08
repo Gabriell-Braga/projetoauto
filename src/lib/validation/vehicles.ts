@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidPlate, normalizePlate } from "@/lib/format/plate";
 import { BODY_TYPES, FUELS, TRANSMISSIONS, VEHICLE_STATUS } from "@/db/schema";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -29,9 +30,20 @@ export const vehicleSchema = z.object({
   bodyType: z.preprocess(emptyToUndefined, z.enum(BODY_TYPES).optional()),
   color: z.preprocess(emptyToUndefined, z.string().trim().max(40).optional()),
   doors: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(6).optional()),
-  licensePlateEnd: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().max(1).regex(/^[0-9]$/, "Informe apenas o último dígito").optional(),
+  /*
+   * A placa e normalizada ANTES de validar: quem digita costuma pontuar
+   * ("ABC-1234") e alternar maiuscula. Recusar por causa do hifen seria
+   * cobrar da pessoa uma formatacao que o sistema sabe fazer sozinho.
+   */
+  licensePlate: z.preprocess(
+    (value) => {
+      const plate = normalizePlate(typeof value === "string" ? value : "");
+      return plate === "" ? undefined : plate;
+    },
+    z
+      .string()
+      .refine(isValidPlate, "Placa inválida. Use ABC1234 ou ABC1D23.")
+      .optional(),
   ),
   options: z.array(z.string().trim().max(60)).max(60).default([]),
   description: z.preprocess(emptyToUndefined, z.string().trim().max(5000).optional()),

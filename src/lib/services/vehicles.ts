@@ -37,6 +37,14 @@ export type VehicleListItem = {
    */
   transmission: Transmission | null;
   fuel: Fuel | null;
+  /**
+   * A placa completa, para a LISTA do painel.
+   *
+   * É o que separa dois carros iguais no pátio — mesmo modelo, mesmo ano,
+   * mesma cor. Não sai daqui para o site público: lá a ficha mostra só o
+   * final.
+   */
+  licensePlate: string | null;
   coverPhotoKey: string | null;
   photosCount: number;
   createdAt: Date;
@@ -57,6 +65,8 @@ const LIST_COLUMNS = {
   featured: vehicles.featured,
   transmission: vehicles.transmission,
   fuel: vehicles.fuel,
+  // a lista mostra a placa: e como a loja distingue dois carros iguais
+  licensePlate: vehicles.licensePlate,
   coverPhotoKey: vehicles.coverPhotoKey,
   photosCount: vehicles.photosCount,
   createdAt: vehicles.createdAt,

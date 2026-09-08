@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Input, Label, Select } from "@/components/ui/field";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { VEHICLE_STATUS, type VehicleStatus } from "@/db/schema";
+import { formatPlate } from "@/lib/format/plate";
 import { requireTenantPage } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/rbac";
 import { VEHICLE_STATUS_LABELS } from "@/lib/catalog/labels";
@@ -150,6 +151,17 @@ export default async function StockPage({
                         <div className="flex items-center gap-2">
                           {vehicle.version ? (
                             <p className="truncate text-xs text-faint">{vehicle.version}</p>
+                          ) : null}
+                          {/*
+                            A placa entra aqui porque e o que separa dois
+                            carros iguais no patio — mesmo modelo, mesmo ano,
+                            mesma cor. Em fonte de codigo, para nao competir
+                            com o nome do veiculo.
+                          */}
+                          {vehicle.licensePlate ? (
+                            <p className="whitespace-nowrap font-mono text-xs text-faint">
+                              {formatPlate(vehicle.licensePlate)}
+                            </p>
                           ) : null}
                           {vehicle.featured ? <Badge tone="info">Destaque</Badge> : null}
                         </div>

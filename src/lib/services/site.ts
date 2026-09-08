@@ -16,6 +16,7 @@ import {
   VEHICLE_STATUS_LABELS,
 } from "@/lib/catalog/labels";
 import { OPTION_LABELS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
+import { plateEnd } from "@/lib/format/plate";
 import { mediaUrl } from "@/lib/paths";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { buildSiteLinks as kitBuildSiteLinks } from "@projetoauto/site-kit/links";
@@ -262,7 +263,17 @@ export function toVehicleDetail(vehicle: Vehicle, photos: VehiclePhoto[]): Vehic
     bodyTypeLabel: vehicle.bodyType ? BODY_TYPE_LABELS[vehicle.bodyType] : null,
     color: vehicle.color,
     doors: vehicle.doors,
-    licensePlateEnd: vehicle.licensePlateEnd,
+    /*
+     * O site publico mostra so o FINAL da placa, mesmo com a placa inteira no
+     * banco. Publicar a placa completa identifica o veiculo para qualquer um
+     * que passe pela pagina; o final e o que interessa a quem compra, por
+     * causa do rodizio.
+     *
+     * A coluna antiga cobre os veiculos cadastrados antes de a placa inteira
+     * existir — eles so tem o digito, e sem isso a ficha deles perderia a
+     * informacao.
+     */
+    licensePlateEnd: plateEnd(vehicle.licensePlate) ?? vehicle.licensePlateEnd,
     options: optionKeys.map((key) => ({
       key,
       label: OPTION_LABELS[key] ?? humanizeOption(key),

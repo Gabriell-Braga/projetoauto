@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidPlate, normalizePlate } from "@/lib/format/plate";
 import { APPRAISAL_STATUS } from "@/db/schema";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -22,9 +23,16 @@ export const appraisalSchema = z.object({
   yearModel: z.coerce.number().int().min(MIN_YEAR, `Ano mínimo ${MIN_YEAR}`).max(CURRENT_YEAR + 2),
   mileageKm: z.coerce.number().int().min(0, "Quilometragem inválida").max(2_000_000),
   color: z.preprocess(emptyToNull, z.string().trim().max(40).nullable().optional()),
-  licensePlateEnd: z.preprocess(
-    emptyToNull,
-    z.string().trim().max(1).regex(/^[0-9]$/, "Informe apenas o último dígito").nullable().optional(),
+  licensePlate: z.preprocess(
+    (value) => {
+      const plate = normalizePlate(typeof value === "string" ? value : "");
+      return plate === "" ? null : plate;
+    },
+    z
+      .string()
+      .refine(isValidPlate, "Placa inválida. Use ABC1234 ou ABC1D23.")
+      .nullable()
+      .optional(),
   ),
 
   fipeCode: z.preprocess(emptyToNull, z.string().trim().max(20).nullable().optional()),

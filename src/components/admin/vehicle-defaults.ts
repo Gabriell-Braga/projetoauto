@@ -29,7 +29,7 @@ export function emptyVehicle(): VehicleFormValues {
     bodyType: "",
     color: "",
     doors: "",
-    licensePlateEnd: "",
+    licensePlate: "",
     options: [],
     description: "",
     status: "draft",

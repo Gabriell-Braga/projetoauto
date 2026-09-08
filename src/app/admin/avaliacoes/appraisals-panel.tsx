@@ -27,6 +27,7 @@ import {
   offerGapPercent,
   suggestedOffer,
 } from "@/lib/services/appraisals";
+import { PLATE_LENGTH, isValidPlate, normalizePlate } from "@/lib/format/plate";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/utils";
 
 export type AppraisalRow = {
@@ -40,7 +41,7 @@ export type AppraisalRow = {
   yearModel: number;
   mileageKm: number;
   color: string | null;
-  licensePlateEnd: string | null;
+  licensePlate: string | null;
   fipeCode: string | null;
   fipePriceCents: number;
   fipeReference: string | null;
@@ -80,7 +81,7 @@ function emptyRow(): AppraisalRow {
     yearModel: 0,
     mileageKm: 0,
     color: "",
-    licensePlateEnd: "",
+    licensePlate: "",
     fipeCode: null,
     fipePriceCents: 0,
     fipeReference: null,
@@ -323,6 +324,10 @@ function AppraisalEditor({
   const [loadingQuote, setLoadingQuote] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+
+  // só reclama com a placa completa; durante a digitação seria ruído
+  const placaInvalida =
+    (draft.licensePlate ?? "").length === PLATE_LENGTH && !isValidPlate(draft.licensePlate);
   /**
    * Enquanto ninguém mexeu na oferta, ela acompanha o sugerido.
    *
@@ -409,7 +414,7 @@ function AppraisalEditor({
       yearModel: draft.yearModel,
       mileageKm: draft.mileageKm,
       color: draft.color?.trim() || null,
-      licensePlateEnd: draft.licensePlateEnd?.trim() || null,
+      licensePlate: draft.licensePlate?.trim() || null,
       fipeCode: draft.fipeCode,
       fipePriceCents: draft.fipePriceCents,
       fipeReference: draft.fipeReference,
@@ -604,15 +609,22 @@ function AppraisalEditor({
             </Select>
           </FormField>
 
-          <FormField label="Final da placa" htmlFor="av-plate">
+          <FormField
+            label="Placa"
+            htmlFor="av-plate"
+            error={
+              placaInvalida ? "Placa inválida. Confira os 7 caracteres." : undefined
+            }
+          >
             <Input
               id="av-plate"
-              maxLength={1}
-              inputMode="numeric"
-              value={draft.licensePlateEnd ?? ""}
-              onChange={(event) =>
-                set("licensePlateEnd", event.target.value.replace(/\D/g, ""))
-              }
+              maxLength={PLATE_LENGTH}
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="ABC1D23"
+              value={draft.licensePlate ?? ""}
+              onChange={(event) => set("licensePlate", normalizePlate(event.target.value))}
             />
           </FormField>
         </div>

@@ -31,6 +31,7 @@ import {
 } from "@/lib/integrations/fipe";
 import { inferSpecs } from "@/lib/integrations/fipe-specs";
 import { isZeroKm } from "@/lib/integrations/fipe";
+import { PLATE_LENGTH, isValidPlate, normalizePlate } from "@/lib/format/plate";
 import { formatCurrency } from "@/lib/utils";
 import { apiDelete, apiPatch, apiPost } from "@/lib/client/api";
 import type { VehicleFormValues } from "./vehicle-form-types";
@@ -146,6 +147,16 @@ export function VehicleForm({
   function update<K extends keyof VehicleFormValues>(key: K, value: VehicleFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
   }
+
+  /*
+   * Só reclama da placa quando ela está completa.
+   *
+   * Validar a cada tecla deixaria o campo vermelho durante a digitação inteira
+   * — dizendo à pessoa algo que ela já sabe, e fazendo-a duvidar do que
+   * escreveu. Placa vazia também não é erro: o campo é opcional.
+   */
+  const placaInvalida =
+    values.licensePlate.length === PLATE_LENGTH && !isValidPlate(values.licensePlate);
 
   /**
    * Traz a FIPE para a ficha sem apagar o que a pessoa já preencheu.
@@ -278,7 +289,7 @@ export function VehicleForm({
       bodyType: values.bodyType,
       color: values.color,
       doors: values.doors,
-      licensePlateEnd: values.licensePlateEnd,
+      licensePlate: values.licensePlate,
       options: values.options,
       description: values.description,
       status: values.status,
@@ -592,14 +603,28 @@ export function VehicleForm({
             </Select>
           </FormField>
 
-          <FormField label="Final da placa" htmlFor="licensePlateEnd">
+          {/*
+            A validação só reclama com a placa COMPLETA. Avisar a cada tecla
+            marcaria o campo de vermelho enquanto a pessoa ainda está
+            digitando — o que ela já sabe, e que a faria duvidar do que
+            escreveu.
+          */}
+          <FormField
+            label="Placa"
+            htmlFor="licensePlate"
+            hint="Formato antigo (ABC1234) ou Mercosul (ABC1D23)"
+            error={placaInvalida ? "Placa inválida. Confira os 7 caracteres." : undefined}
+          >
             <Input
-              id="licensePlateEnd"
-              maxLength={1}
-              inputMode="numeric"
+              id="licensePlate"
+              maxLength={PLATE_LENGTH}
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="ABC1D23"
               disabled={readOnly}
-              value={values.licensePlateEnd}
-              onChange={(event) => update("licensePlateEnd", event.target.value.replace(/\D/g, ""))}
+              value={values.licensePlate}
+              onChange={(event) => update("licensePlate", normalizePlate(event.target.value))}
             />
           </FormField>
         </div>

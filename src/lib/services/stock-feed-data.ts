@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { plateEnd } from "@/lib/format/plate";
 import { getDb } from "@/db";
 import {
   stores,
@@ -107,7 +108,9 @@ export async function loadFeedData(
       bodyType: row.bodyType,
       color: row.color,
       doors: row.doors,
-      licensePlateEnd: row.licensePlateEnd,
+      // o feed dos portais sempre exportou o final, e mudar isso quebraria o
+      // contrato com quem ja consome
+      licensePlateEnd: plateEnd(row.licensePlate) ?? row.licensePlateEnd,
       options: row.options ?? [],
       description: row.description,
       status: row.status,

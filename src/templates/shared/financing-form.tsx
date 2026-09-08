@@ -2,107 +2,236 @@
 
 import { useMemo, useState } from "react";
 import { apiPost } from "@/lib/client/api";
+import { DEFAULT_MONTHLY_RATE, monthlyInstallmentCents } from "@/lib/format/installment";
 import { formatCurrency } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 import { readUtm } from "./utm";
 
-export type FinancingVehicleOption = {
-  id: string;
-  label: string;
-  priceCents: number;
+export type FinancingVehicleOption = { id: string; label: string; priceCents: number };
+
+export type FinancingDefaults = {
+  downPaymentPercent: number;
+  terms: number[];
+  monthlyRatePercent?: number;
 };
 
+const field =
+  "w-full rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-3.5 py-2.5 text-sm text-[var(--site-text)] outline-none transition-colors placeholder:text-[var(--site-muted)] focus:border-[var(--site-primary)]";
+
+const label = "mb-1.5 block text-xs font-medium text-[var(--site-muted)]";
+
 /**
- * Simulação de financiamento do site público.
+ * Calculadora da simulação.
  *
- * O que ela NÃO faz: dizer o valor da parcela. Parcela depende de taxa, e taxa
- * depende de análise do banco para aquela pessoa — publicar um número aqui
- * seria prometer uma condição que a loja não controla, e a conversa começaria
- * com o cliente cobrando um valor que ninguém ofereceu.
+ * Duas formas de escolher o veículo, porque o desenho tem as duas: na home a
+ * pessoa escolhe um carro do estoque; na página de financiamento ela digita o
+ * valor, porque pode ainda não ter escolhido nada.
  *
- * O que ela faz: deixar a pessoa escolher carro, entrada e prazo, mostrar
- * quanto sobra para financiar, e mandar isso para a loja como proposta em
- * rascunho. A conta que aparece é subtração, não juros — dá para conferir de
- * cabeça, e por isso não engana.
+ * A estimativa de parcela aparece aqui, com a ressalva colada nela. Ela existe
+ * porque quem procura carro compara parcela, não saldo financiado — e a
+ * ressalva existe porque a taxa real sai da análise de crédito daquela pessoa,
+ * que a loja não controla. As duas andam juntas: mostrar o número sem o aviso
+ * seria prometer, e esconder o número seria não responder à pergunta que a
+ * pessoa veio fazer.
  */
-export function FinancingForm({
-  tenantSlug,
+export function FinancingEstimator({
   vehicles,
   defaults,
   preselectedVehicleId,
+  initialPriceCents,
   initialDownCents,
   initialInstallments,
-  /**
-   * Modo curto, para a home.
-   *
-   * Mostra veiculo, entrada e prazo, e em vez de enviar leva para a pagina de
-   * financiamento com o que a pessoa escolheu na URL. Pedir nome e telefone na
-   * home cobraria o dado antes de a pessoa ter visto uma conta — e quem
-   * abandona ali nao volta.
-   */
   continueHref,
-  tone = "light",
+  continueLabel = "Continuar simulação",
 }: {
-  tenantSlug: string;
-  vehicles: FinancingVehicleOption[];
-  defaults: { downPaymentPercent: number; terms: number[] };
+  /** Vazio ativa o modo "digite o valor", da página de financiamento. */
+  vehicles?: FinancingVehicleOption[];
+  defaults: FinancingDefaults;
   preselectedVehicleId?: string;
+  initialPriceCents?: number;
   initialDownCents?: number;
   initialInstallments?: number;
-  continueHref?: string;
-  tone?: "light" | "dark";
+  continueHref: string;
+  continueLabel?: string;
 }) {
-  const [vehicleId, setVehicleId] = useState(
-    preselectedVehicleId ?? vehicles[0]?.id ?? "",
+  const options = vehicles ?? [];
+  const modoEstoque = options.length > 0;
+
+  const [vehicleId, setVehicleId] = useState(preselectedVehicleId ?? options[0]?.id ?? "");
+  const vehicle = options.find((item) => item.id === vehicleId) ?? null;
+
+  const [priceText, setPriceText] = useState(
+    initialPriceCents ? centsToText(initialPriceCents) : "",
   );
-  const [downText, setDownText] = useState(
-    initialDownCents ? centsToText(initialDownCents) : "",
-  );
-  const [installments, setInstallments] = useState(
-    // prazo vindo da home so vale se ainda for oferecido
-    initialInstallments && defaults.terms.includes(initialInstallments)
-      ? initialInstallments
-      : (defaults.terms[0] ?? 48),
-  );
+  const [downText, setDownText] = useState(initialDownCents ? centsToText(initialDownCents) : "");
   /*
-   * Entrada vinda da home ja conta como digitada.
+   * Entrada vinda da tela anterior já conta como digitada.
    *
-   * Sem isso, o percentual padrao recalcularia por cima do valor que a pessoa
-   * escolheu na tela anterior, e ela veria o proprio numero ser trocado.
+   * Sem isso o percentual padrão recalcularia por cima do valor que a pessoa
+   * escolheu antes, e ela veria o próprio número ser trocado.
    */
   const [touchedDown, setTouchedDown] = useState(Boolean(initialDownCents));
+  /*
+   * 48 meses é o padrão do desenho, e é o prazo que a maioria escolhe.
+   * Abrir em 24 mostraria a parcela mais cara possível logo de cara.
+   */
+  const [installments, setInstallments] = useState(
+    initialInstallments && defaults.terms.includes(initialInstallments)
+      ? initialInstallments
+      : defaults.terms.includes(48)
+        ? 48
+        : (defaults.terms[0] ?? 48),
+  );
+
+  const priceCents = modoEstoque ? (vehicle?.priceCents ?? 0) : parseReais(priceText);
+
+  const downCents = useMemo(() => {
+    if (touchedDown) return parseReais(downText);
+    return Math.round((priceCents * defaults.downPaymentPercent) / 100);
+  }, [touchedDown, downText, priceCents, defaults.downPaymentPercent]);
+
+  const financedCents = Math.max(0, priceCents - downCents);
+  const installmentCents = monthlyInstallmentCents(
+    financedCents,
+    installments,
+    defaults.monthlyRatePercent ?? DEFAULT_MONTHLY_RATE,
+  );
+
+  return (
+    <div className="grid gap-4">
+      {modoEstoque ? (
+        <div>
+          <label className={label} htmlFor="est-vehicle">
+            Veículo
+          </label>
+          <select
+            id="est-vehicle"
+            className={field}
+            value={vehicleId}
+            onChange={(event) => setVehicleId(event.target.value)}
+          >
+            {options.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label} — {formatCurrency(item.priceCents)}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div>
+          <label className={label} htmlFor="est-price">
+            Valor do veículo
+          </label>
+          <input
+            id="est-price"
+            className={field}
+            inputMode="decimal"
+            placeholder="R$ 139.990"
+            value={priceText}
+            onChange={(event) => setPriceText(event.target.value)}
+          />
+        </div>
+      )}
+
+      <div>
+        <label className={label} htmlFor="est-down">
+          Entrada
+        </label>
+        <input
+          id="est-down"
+          className={field}
+          inputMode="decimal"
+          placeholder="R$ 30.000"
+          value={touchedDown ? downText : centsToText(downCents)}
+          onChange={(event) => {
+            setTouchedDown(true);
+            setDownText(event.target.value);
+          }}
+        />
+      </div>
+
+      <div>
+        <label className={label} htmlFor="est-term">
+          Prazo
+        </label>
+        <select
+          id="est-term"
+          className={field}
+          value={installments}
+          onChange={(event) => setInstallments(Number(event.target.value))}
+        >
+          {defaults.terms.map((term) => (
+            <option key={term} value={term}>
+              {term} meses
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/*
+        A ressalva é parte do número, não rodapé.
+        Fica dentro do mesmo bloco para não haver como ler o valor da parcela
+        sem levar junto a condição dele.
+      */}
+      <div className="rounded-[var(--site-radius)] bg-[var(--site-primary)]/[0.06] px-4 py-3">
+        <p className="text-xs text-[var(--site-muted)]">Estimativa de parcela</p>
+        <p
+          className="mt-0.5 text-[22px] font-bold leading-tight text-[var(--site-text)]"
+          style={{ fontFamily: "var(--site-font-heading)" }}
+        >
+          {installmentCents
+            ? `A partir de ${formatCurrency(installmentCents)}/mês*`
+            : "Informe o valor do veículo"}
+        </p>
+        <p className="mt-1 text-[11px] text-[var(--site-muted)]">
+          *Exemplo ilustrativo. Sujeito à análise de crédito.
+        </p>
+        {financedCents > 0 ? (
+          <p className="mt-2 border-t border-[var(--site-border)] pt-2 text-xs text-[var(--site-muted)]">
+            A financiar:{" "}
+            <span className="font-medium text-[var(--site-text)]">
+              {formatCurrency(financedCents)}
+            </span>
+          </p>
+        ) : null}
+      </div>
+
+      <a
+        href={continueUrl(continueHref, {
+          veiculo: modoEstoque ? vehicleId : undefined,
+          valor: modoEstoque ? undefined : priceCents,
+          entrada: downCents,
+          prazo: installments,
+        })}
+        className="inline-flex items-center justify-center rounded-[var(--site-radius)] bg-[var(--site-primary)] px-5 py-3 text-sm font-medium text-[var(--site-primary-foreground)] transition-colors hover:bg-[var(--site-primary-hover)]"
+      >
+        {continueLabel}
+      </a>
+    </div>
+  );
+}
+
+/**
+ * O formulário que de fato envia: "Continue sua simulação".
+ *
+ * Os campos são os do desenho. Sobre o CPF: ele é pedido porque a análise de
+ * crédito precisa dele, e é isso que o botão promete — mas fica OPCIONAL, e a
+ * pessoa consegue enviar sem. Bloquear o envio por causa dele transformaria um
+ * lead morno em nenhum lead.
+ */
+export function FinancingLeadForm({
+  tenantSlug,
+  vehicleLabel,
+  downPaymentCents,
+  installments,
+}: {
+  tenantSlug: string;
+  vehicleLabel?: string;
+  downPaymentCents: number;
+  installments: number;
+}) {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const vehicle = vehicles.find((item) => item.id === vehicleId) ?? null;
-
-  /*
-   * A entrada acompanha o percentual padrão até a pessoa digitar a dela.
-   *
-   * Trocar de carro com entrada intocada recalcula; depois de digitada, o
-   * valor é decisão dela e não pode ser reescrito por baixo do dedo.
-   */
-  const downCents = useMemo(() => {
-    if (touchedDown) return parseReais(downText);
-    if (!vehicle) return 0;
-    return Math.round((vehicle.priceCents * defaults.downPaymentPercent) / 100);
-  }, [touchedDown, downText, vehicle, defaults.downPaymentPercent]);
-
-  const financedCents = Math.max(0, (vehicle?.priceCents ?? 0) - downCents);
-
-  const fieldClass = cn(
-    "w-full rounded-[var(--site-radius)] px-3 py-2.5 text-sm outline-none transition-colors",
-    tone === "dark"
-      ? "border border-white/15 bg-black/30 text-white placeholder:text-white/30"
-      : "border border-[var(--site-border)] bg-[var(--site-surface)] text-[var(--site-text)]",
-    "focus:border-[var(--site-primary)]",
-  );
-
-  const labelClass = cn(
-    "mb-1 block text-xs font-medium",
-    tone === "dark" ? "text-white/50" : "text-[var(--site-muted)]",
-  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,16 +239,23 @@ export function FinancingForm({
     setError(null);
 
     const form = new FormData(event.currentTarget);
+    const extras = [
+      String(form.get("vehicleLabel") ?? "").trim()
+        ? `Veículo de interesse: ${form.get("vehicleLabel")}`
+        : "",
+      String(form.get("cpf") ?? "").trim() ? `CPF: ${form.get("cpf")}` : "",
+      String(form.get("schedule") ?? "").trim() ? `Melhor horário: ${form.get("schedule")}` : "",
+    ].filter(Boolean);
+
     const result = await apiPost("/api/leads", {
       tenantSlug,
       kind: "financiamento",
-      vehicleId,
       name: String(form.get("name") ?? ""),
       phone: String(form.get("phone") ?? ""),
       email: String(form.get("email") ?? ""),
-      message: String(form.get("message") ?? ""),
+      message: extras.join("\n"),
       website: String(form.get("website") ?? ""),
-      financing: { downPaymentCents: downCents, installments },
+      financing: { downPaymentCents, installments },
       utm: readUtm(),
     });
 
@@ -134,7 +270,7 @@ export function FinancingForm({
   if (sent) {
     return (
       <div className="rounded-[var(--site-radius)] border border-[var(--site-success)]/30 bg-[var(--site-success)]/10 px-4 py-5 text-sm">
-        <p className="font-medium text-[var(--site-success)]">Simulação enviada!</p>
+        <p className="font-medium text-[var(--site-success)]">Solicitação enviada!</p>
         <p className="mt-1 text-[var(--site-muted)]">
           A loja vai retornar com as condições disponíveis para o seu perfil.
         </p>
@@ -143,187 +279,115 @@ export function FinancingForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
+    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2" noValidate>
       <div>
-        <label className={labelClass} htmlFor="fin-vehicle">
-          Veículo
+        <label className={label} htmlFor="fin-name">
+          Nome completo
         </label>
-        <select
-          id="fin-vehicle"
-          className={fieldClass}
-          value={vehicleId}
-          onChange={(event) => setVehicleId(event.target.value)}
-        >
-          {vehicles.length === 0 ? <option value="">Nenhum veículo disponível</option> : null}
-          {vehicles.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label} — {formatCurrency(item.priceCents)}
-            </option>
-          ))}
+        <input id="fin-name" name="name" required placeholder="Seu nome" className={field} />
+      </div>
+      <div>
+        <label className={label} htmlFor="fin-phone">
+          WhatsApp
+        </label>
+        <input
+          id="fin-phone"
+          name="phone"
+          required
+          inputMode="tel"
+          placeholder="(31) 99999-9999"
+          className={field}
+        />
+      </div>
+
+      <div>
+        <label className={label} htmlFor="fin-email">
+          E-mail
+        </label>
+        <input
+          id="fin-email"
+          name="email"
+          type="email"
+          placeholder="voce@email.com"
+          className={field}
+        />
+      </div>
+      <div>
+        <label className={label} htmlFor="fin-cpf">
+          CPF <span className="opacity-60">(opcional)</span>
+        </label>
+        <input
+          id="fin-cpf"
+          name="cpf"
+          inputMode="numeric"
+          placeholder="000.000.000-00"
+          autoComplete="off"
+          className={field}
+        />
+      </div>
+
+      <div>
+        <label className={label} htmlFor="fin-vehicle-label">
+          Veículo de interesse
+        </label>
+        <input
+          id="fin-vehicle-label"
+          name="vehicleLabel"
+          defaultValue={vehicleLabel ?? ""}
+          placeholder="Jeep Compass Longitude 2024"
+          className={field}
+        />
+      </div>
+      <div>
+        <label className={label} htmlFor="fin-schedule">
+          Melhor horário
+        </label>
+        <select id="fin-schedule" name="schedule" className={field} defaultValue="">
+          <option value="">Selecione</option>
+          <option value="Manhã">Manhã</option>
+          <option value="Tarde">Tarde</option>
+          <option value="Noite">Noite</option>
+          <option value="Qualquer horário">Qualquer horário</option>
         </select>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className={labelClass} htmlFor="fin-down">
-            Entrada
-          </label>
-          <input
-            id="fin-down"
-            className={fieldClass}
-            inputMode="decimal"
-            placeholder={formatCurrency(downCents)}
-            value={touchedDown ? downText : centsToText(downCents)}
-            onChange={(event) => {
-              setTouchedDown(true);
-              setDownText(event.target.value);
-            }}
-          />
-        </div>
+      {/* honeypot: some para gente, visível para robô */}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute h-0 w-0 overflow-hidden opacity-0"
+      />
 
-        <div>
-          <label className={labelClass} htmlFor="fin-term">
-            Prazo
-          </label>
-          <select
-            id="fin-term"
-            className={fieldClass}
-            value={installments}
-            onChange={(event) => setInstallments(Number(event.target.value))}
-          >
-            {defaults.terms.map((term) => (
-              <option key={term} value={term}>
-                {term} meses
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      {error ? <p className="text-sm text-red-600 sm:col-span-2">{error}</p> : null}
 
-      {/*
-        A única conta mostrada é preço menos entrada. Nada de parcela: ela
-        depende da taxa que o banco der para aquela pessoa.
-      */}
-      <div className="rounded-[var(--site-radius)] border border-[var(--site-border)] px-4 py-3 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-[var(--site-muted)]">Valor do veículo</span>
-          <span className="tabular-nums text-[var(--site-text)]">
-            {formatCurrency(vehicle?.priceCents ?? 0)}
-          </span>
-        </div>
-        <div className="mt-1 flex items-center justify-between">
-          <span className="text-[var(--site-muted)]">Entrada</span>
-          <span className="tabular-nums text-[var(--site-text)]">
-            {formatCurrency(downCents)}
-          </span>
-        </div>
-        <div className="mt-2 flex items-center justify-between border-t border-[var(--site-border)] pt-2 font-medium">
-          <span className="text-[var(--site-text)]">A financiar</span>
-          <span className="tabular-nums text-[var(--site-primary)]">
-            {formatCurrency(financedCents)}
-          </span>
-        </div>
-        <p className="mt-2 text-xs text-[var(--site-muted)]">
-          A parcela depende da análise de crédito e é informada pela loja.
-        </p>
-      </div>
+      <button
+        type="submit"
+        disabled={sending}
+        className="rounded-[var(--site-radius)] bg-[var(--site-primary)] px-5 py-3 text-sm font-medium text-[var(--site-primary-foreground)] transition-colors hover:bg-[var(--site-primary-hover)] disabled:opacity-60 sm:col-span-2"
+      >
+        {sending ? "Enviando…" : "Solicitar contato"}
+      </button>
 
-      {continueHref ? (
-        <a
-          href={continueUrl(continueHref, vehicleId, downCents, installments)}
-          className="inline-flex items-center justify-center rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-sm font-medium text-[var(--site-primary-foreground)] transition-colors hover:bg-[var(--site-primary-hover)]"
-        >
-          Continuar simulação
-        </a>
-      ) : null}
-
-      {/*
-        No modo curto o formulario para aqui.
-
-        Nome e telefone sao pedidos na pagina de financiamento, depois de a
-        pessoa ter visto a conta. Cobrar o dado antes disso e o que faz alguem
-        fechar a aba na home.
-      */}
-      {!continueHref ? (
-        <>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className={labelClass} htmlFor="fin-name">
-              Nome completo
-            </label>
-            <input id="fin-name" name="name" required className={fieldClass} />
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="fin-phone">
-              WhatsApp
-            </label>
-            <input
-              id="fin-phone"
-              name="phone"
-              required
-              inputMode="tel"
-              className={fieldClass}
-              placeholder="(31) 99999-8888"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className={labelClass} htmlFor="fin-email">
-            E-mail <span className="opacity-60">(opcional)</span>
-          </label>
-          <input id="fin-email" name="email" type="email" className={fieldClass} />
-        </div>
-
-        <div>
-          <label className={labelClass} htmlFor="fin-message">
-            Observação <span className="opacity-60">(opcional)</span>
-          </label>
-          <textarea id="fin-message" name="message" rows={2} className={fieldClass} />
-        </div>
-
-        {/* honeypot: some para gente, visível para robô */}
-        <input
-          type="text"
-          name="website"
-          tabIndex={-1}
-          autoComplete="off"
-          aria-hidden="true"
-          className="absolute h-0 w-0 overflow-hidden opacity-0"
-        />
-
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-        <button
-          type="submit"
-          disabled={sending || vehicles.length === 0}
-          className="rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-sm font-medium text-[var(--site-primary-foreground)] transition-colors hover:bg-[var(--site-primary-hover)] disabled:opacity-60"
-        >
-          {sending ? "Enviando…" : "Enviar simulação"}
-        </button>
-        </>
-      ) : null}
+      <p className="text-xs text-[var(--site-muted)] sm:col-span-2">
+        Ao enviar, você autoriza o contato da loja sobre esta solicitação.
+      </p>
     </form>
   );
 }
 
-/**
- * Leva a escolha da home para a pagina de financiamento.
- *
- * Os tres valores viajam na URL, e nao em memoria: a pessoa pode abrir num
- * aba nova, voltar, ou mandar o link — e a simulacao continua de onde parou.
- */
 function continueUrl(
   base: string,
-  vehicleId: string,
-  downCents: number,
-  installments: number,
+  params: { veiculo?: string; valor?: number; entrada: number; prazo: number },
 ): string {
-  const params = new URLSearchParams();
-  if (vehicleId) params.set("veiculo", vehicleId);
-  if (downCents > 0) params.set("entrada", String(downCents));
-  params.set("prazo", String(installments));
-  return `${base}?${params.toString()}`;
+  const query = new URLSearchParams();
+  if (params.veiculo) query.set("veiculo", params.veiculo);
+  if (params.valor && params.valor > 0) query.set("valor", String(params.valor));
+  if (params.entrada > 0) query.set("entrada", String(params.entrada));
+  query.set("prazo", String(params.prazo));
+  return `${base}?${query.toString()}`;
 }
 
 /** "30.000,00" -> 3000000 centavos. Aceita o que a pessoa digitar. */
@@ -334,5 +398,6 @@ function parseReais(text: string): number {
 }
 
 function centsToText(cents: number): string {
+  if (cents <= 0) return "";
   return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 }

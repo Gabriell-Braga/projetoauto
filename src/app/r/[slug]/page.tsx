@@ -1,5 +1,5 @@
 import { loadPublicSite, PUBLIC_VEHICLE_STATUSES } from "@/lib/services/public-site";
-import { FinancingForm } from "@/templates/shared/financing-form";
+import { FinancingEstimator } from "@/templates/shared/financing-form";
 import { financingOptions } from "@/lib/services/financing-options";
 import { JsonLd, autoDealerJsonLd } from "@/lib/seo/jsonld";
 import { tenantAbsoluteUrl } from "@/lib/seo/urls";
@@ -48,8 +48,7 @@ export default async function TenantHomePage({
          */
         financingForm={
           financingVehicles.length > 0 ? (
-            <FinancingForm
-              tenantSlug={slug}
+            <FinancingEstimator
               vehicles={financingVehicles}
               defaults={context.site.financing}
               continueHref={context.links.financing}

@@ -2,13 +2,18 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { loadPublicSite } from "@/lib/services/public-site";
 import { financingOptions } from "@/lib/services/financing-options";
-import { FinancingForm } from "@/templates/shared/financing-form";
+import { FinancingEstimator, FinancingLeadForm } from "@/templates/shared/financing-form";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ veiculo?: string; entrada?: string; prazo?: string }>;
+  searchParams: Promise<{
+    veiculo?: string;
+    valor?: string;
+    entrada?: string;
+    prazo?: string;
+  }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -20,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-/** Centavos vindos da home; lixo na URL vira ausência, não zero. */
+/** Centavos vindos de outra tela; lixo na URL vira ausência, não zero. */
 function toCents(value: string | undefined): number | undefined {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : undefined;
@@ -33,7 +38,7 @@ function toMonths(value: string | undefined): number | undefined {
 
 export default async function TenantFinancingPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { veiculo, entrada, prazo } = await searchParams;
+  const { veiculo, valor, entrada, prazo } = await searchParams;
   const context = await loadPublicSite(slug);
 
   /*
@@ -45,6 +50,10 @@ export default async function TenantFinancingPage({ params, searchParams }: Prop
   if (!Financing) notFound();
 
   const vehicles = await financingOptions(context.tenantId, veiculo);
+  const escolhido = vehicles.find((item) => item.id === veiculo) ?? null;
+
+  const entradaCents = toCents(entrada);
+  const prazoMeses = toMonths(prazo) ?? context.site.financing.terms[0] ?? 48;
 
   return (
     <Financing
@@ -52,14 +61,32 @@ export default async function TenantFinancingPage({ params, searchParams }: Prop
       links={context.links}
       vehicles={vehicles}
       defaults={context.site.financing}
+      /*
+       * A calculadora do herói trabalha por VALOR, como no desenho: quem chega
+       * aqui pela navegação ainda não escolheu carro nenhum, e um seletor de
+       * estoque vazio no topo da página seria uma porta fechada.
+       */
       simulatorForm={
-        <FinancingForm
-          tenantSlug={slug}
-          vehicles={vehicles}
+        <FinancingEstimator
           defaults={context.site.financing}
-          preselectedVehicleId={veiculo}
-          initialDownCents={toCents(entrada)}
-          initialInstallments={toMonths(prazo)}
+          /*
+           * Sem valor na URL, abre com um carro real do estoque.
+           * Campo vazio deixaria a estimativa sem número, e o card do desenho
+           * existe justamente para mostrar um.
+           */
+          initialPriceCents={toCents(valor) ?? escolhido?.priceCents ?? vehicles[0]?.priceCents}
+          initialDownCents={entradaCents}
+          initialInstallments={prazoMeses}
+          continueHref="#continuar"
+          continueLabel="Continuar simulação"
+        />
+      }
+      leadForm={
+        <FinancingLeadForm
+          tenantSlug={slug}
+          vehicleLabel={escolhido?.label}
+          downPaymentCents={entradaCents ?? 0}
+          installments={prazoMeses}
         />
       }
     />

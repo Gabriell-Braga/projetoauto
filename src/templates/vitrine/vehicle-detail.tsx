@@ -33,7 +33,14 @@ function specRows(vehicle: VehicleView) {
   ].filter((row): row is { label: string; value: string } => Boolean(row.value));
 }
 
-export function VehicleDetail({ site, links, vehicle, related, leadForm }: VehicleDetailProps) {
+export function VehicleDetail({
+  site,
+  links,
+  vehicle,
+  related,
+  financingForm,
+  tradeInForm,
+}: VehicleDetailProps) {
   const whatsapp = links.whatsapp(
     `Olá! Tenho interesse no ${vehicle.title} ${vehicle.yearLabel} anunciado no site da ${site.name}.`,
   );
@@ -197,64 +204,44 @@ export function VehicleDetail({ site, links, vehicle, related, leadForm }: Vehic
         </div>
       </section>
 
-      {/* ------------------------------------------------- compra e contato */}
+      {/* ------------------------------------------------- facilite a compra */}
       <section className={`${SHELL} py-14`}>
         <SectionHeading
           title="Facilite sua compra"
-          description="Fale com a equipe sobre este veículo, financiamento ou troca."
+          description="Simule condições e use seu carro atual como parte do pagamento."
         />
 
         <div className="grid gap-5 lg:grid-cols-2">
+          {/*
+            Simulador do desenho, preenchido com o preço DESTE veículo.
+            Ele não envia: leva para a página de financiamento, onde a pessoa
+            completa com nome e contato.
+          */}
           <div className="rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] p-6">
             <p
               className="text-lg font-semibold text-[var(--site-text)]"
               style={{ fontFamily: "var(--site-font-heading)" }}
             >
-              Fale sobre este veículo
+              Simule seu financiamento
             </p>
             <p className="mt-1 text-[13px] text-[var(--site-muted)]">
-              Deixe seus dados e a equipe retorna com as informações.
+              Tenha uma estimativa inicial antes de falar com a equipe.
             </p>
-            <div className="mt-5">{leadForm}</div>
+            <div className="mt-5">{financingForm}</div>
           </div>
 
-          {/*
-            O card escuro do desenho oferece a troca. Ele leva para a página de
-            avaliação em vez de repetir o formulário: são dois fluxos, e um
-            formulário de troca aqui competiria com o de contato ao lado.
-          */}
-          {/* `self-start`: sem isso o card estica ate a altura do formulario
-              ao lado e sobra um vao escuro no meio, que parece secao faltando */}
-          <div className="flex flex-col self-start rounded-[var(--site-radius)] bg-[var(--site-text)] p-6 text-white">
-            <div>
-              <p
-                className="text-lg font-semibold"
-                style={{ fontFamily: "var(--site-font-heading)" }}
-              >
-                Seu usado pode entrar na troca
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-white/70">
-                Informe os dados do seu carro e nossa equipe avalia uma proposta para usar como
-                entrada nesta compra.
-              </p>
-            </div>
-
-            <div className="mt-6 flex flex-col gap-2.5">
-              <Link
-                href={links.sellCar}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-[var(--site-text)] transition-opacity hover:opacity-90"
-              >
-                Avaliar meu usado
-              </Link>
-              {!vehicle.priceOnRequest ? (
-                <Link
-                  href={`${links.financing}?veiculo=${vehicle.id}`}
-                  className="inline-flex items-center justify-center rounded-lg border border-white/20 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:border-white/50"
-                >
-                  Simular financiamento
-                </Link>
-              ) : null}
-            </div>
+          <div className="rounded-[var(--site-radius)] bg-[var(--site-text)] p-6 text-white">
+            <p
+              className="text-lg font-semibold"
+              style={{ fontFamily: "var(--site-font-heading)" }}
+            >
+              Seu usado pode entrar na troca
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-white/70">
+              Informe os dados do seu carro e nossa equipe avalia uma proposta para usar como
+              entrada nesta compra.
+            </p>
+            <div className="mt-5">{tradeInForm}</div>
           </div>
         </div>
       </section>

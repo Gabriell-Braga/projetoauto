@@ -5,7 +5,10 @@ import { SellCarForm } from "@/templates/shared/sell-car-form";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ carro?: string; ano?: string; km?: string }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -16,8 +19,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function TenantSellCarPage({ params }: Props) {
+export default async function TenantSellCarPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { carro, ano, km } = await searchParams;
   const context = await loadPublicSite(slug);
 
   const SellCar = context.template.SellCar;
@@ -27,7 +31,13 @@ export default async function TenantSellCarPage({ params }: Props) {
     <SellCar
       site={context.site}
       links={context.links}
-      sellForm={<SellCarForm tenantSlug={slug} />}
+      /* o que a pessoa digitou no card de troca da ficha chega preenchido */
+      sellForm={
+        <SellCarForm
+          tenantSlug={slug}
+          initial={{ brandModel: carro, years: ano, mileageKm: km }}
+        />
+      }
     />
   );
 }

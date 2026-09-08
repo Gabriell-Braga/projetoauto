@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { Check, MessageCircle } from "lucide-react";
 import type { SiteData, SiteLinks, StockFacets } from "@/templates/contract";
 import { BODY_TYPE_LABELS } from "@/lib/catalog/labels";
 import { headlineHours, summarizeHours } from "@/templates/shared/hours";
@@ -9,14 +9,13 @@ import { headlineHours, summarizeHours } from "@/templates/shared/hours";
  *
  * Nenhuma cor literal — tudo sai das CSS variables do tema. É o que permite a
  * mesma estrutura servir revendas com identidades diferentes sem tocar no
- * código, e é a razão de o contrato ter ganhado tokens de texto, borda e
- * superfície.
+ * código.
+ *
+ * A estrutura segue o desenho do Figma: cinco itens no menu, três colunas de
+ * links no rodapé, e as listas com visto que se repetem nas páginas internas.
  */
 
 export const SHELL = "mx-auto w-full max-w-[1200px] px-4 sm:px-6";
-
-/** Verde do WhatsApp: fixo, porque é marca de terceiro. */
-const WHATSAPP = "var(--site-whatsapp)";
 
 export function WhatsappButton({
   href,
@@ -35,7 +34,7 @@ export function WhatsappButton({
       href={href}
       target="_blank"
       rel="noreferrer"
-      style={{ backgroundColor: WHATSAPP }}
+      style={{ backgroundColor: "var(--site-whatsapp)" }}
       className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 ${className}`}
     >
       <MessageCircle className="h-4 w-4" aria-hidden="true" />
@@ -60,6 +59,48 @@ export function PrimaryButton({
     >
       {children}
     </Link>
+  );
+}
+
+/**
+ * Lista com visto, do desenho.
+ *
+ * Aparece no herói de quase toda página interna e dentro dos cards escuros. O
+ * visto é azul no claro e branco no escuro — sobre fundo escuro o azul da
+ * marca some.
+ */
+export function CheckList({
+  items,
+  tone = "light",
+  className = "",
+}: {
+  items: string[];
+  tone?: "light" | "dark";
+  className?: string;
+}) {
+  return (
+    <ul className={`space-y-2 ${className}`}>
+      {items.map((item) => (
+        <li
+          key={item}
+          className={
+            tone === "dark"
+              ? "flex items-start gap-2 text-sm text-white"
+              : "flex items-start gap-2 text-sm text-[var(--site-text)]"
+          }
+        >
+          <Check
+            className={
+              tone === "dark"
+                ? "mt-0.5 h-4 w-4 shrink-0 text-white"
+                : "mt-0.5 h-4 w-4 shrink-0 text-[var(--site-primary)]"
+            }
+            aria-hidden="true"
+          />
+          {item}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -98,33 +139,113 @@ export function SectionHeading({
   );
 }
 
+/** Cartão numerado de "Como funciona" — a mesma peça em quatro páginas. */
+export function StepCards({ steps }: { steps: { title: string; text: string }[] }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {steps.map((step, index) => (
+        <div
+          key={step.title}
+          className="rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] p-5"
+        >
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--site-primary)]/10 text-xs font-semibold text-[var(--site-primary)]">
+            {index + 1}
+          </span>
+          <h3
+            className="mt-3 text-base font-semibold text-[var(--site-text)]"
+            style={{ fontFamily: "var(--site-font-heading)" }}
+          >
+            {step.title}
+          </h3>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--site-muted)]">{step.text}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Item em pílula com visto — "O que ter em mãos" e "O que ajuda na avaliação". */
+export function CheckPills({ items }: { items: string[] }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {items.map((item) => (
+        <div
+          key={item}
+          className="flex items-start gap-2 rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-4 py-3 text-[13px] text-[var(--site-text)]"
+        >
+          <Check
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--site-primary)]"
+            aria-hidden="true"
+          />
+          {item}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export type CategoryShortcut = { label: string; description: string; href: string };
+
 /**
  * Atalhos de categoria, na home e no topo do estoque.
  *
- * Saem das facetas do estoque de verdade, nao de uma lista fixa: oferecer
- * "Picapes" a uma revenda que so vende hatch leva a pessoa a uma busca vazia
- * ja no primeiro clique.
+ * Saem das facetas do estoque de verdade, não de uma lista fixa: oferecer
+ * "Picapes" a uma revenda que só vende hatch leva a pessoa a uma busca vazia
+ * já no primeiro clique. A faixa de preço fecha a lista, como no desenho.
  */
-export function categoryShortcuts(
-  facets: StockFacets,
-  links: SiteLinks,
-): { label: string; href: string }[] {
+export function categoryShortcuts(facets: StockFacets, links: SiteLinks): CategoryShortcut[] {
+  const DESCRICOES: Record<string, string> = {
+    suv: "Mais espaço e versatilidade",
+    hatch: "Práticos para a cidade",
+    sedan: "Conforto para o dia a dia",
+    picape: "Força e capacidade",
+    minivan: "Espaço para a família",
+    cupe: "Estilo e desempenho",
+    conversivel: "Para dirigir aberto",
+    utilitario: "Trabalho e carga",
+  };
+
   const porCarroceria = facets.bodyTypes
     .filter((body): body is NonNullable<typeof body> => Boolean(body))
-    .slice(0, 5)
+    .slice(0, 4)
     .map((body) => ({
       label: BODY_TYPE_LABELS[body],
+      description: DESCRICOES[body] ?? "Veja as opções",
       href: links.stockWith({ carroceria: body }),
     }));
 
   const automaticos = facets.transmissions.includes("automatico")
-    ? [{ label: "Automáticos", href: links.stockWith({ cambio: "automatico" }) }]
+    ? [
+        {
+          label: "Automáticos",
+          description: "Mais conforto ao dirigir",
+          href: links.stockWith({ cambio: "automatico" }),
+        },
+      ]
     : [];
 
-  return [...porCarroceria, ...automaticos];
+  /*
+   * Faixa de preço arredondada para baixo, em dezenas de milhar.
+   *
+   * O desenho traz "Até R$ 80 mil". O número sai do estoque real: prometer uma
+   * faixa que a loja não tem leva a pessoa a uma lista vazia.
+   */
+  const teto = Math.floor(facets.priceRange.max / 100 / 10_000) * 10_000;
+  const faixa =
+    teto > 0
+      ? [
+          {
+            label: `Até R$ ${teto / 1000} mil`,
+            description: "Opções para seu orçamento",
+            href: links.stockWith({ precoMax: teto }),
+          },
+        ]
+      : [];
+
+  return [...porCarroceria, ...automaticos, ...faixa];
 }
 
-/** Linha de atalhos, com a aparencia de pilula do desenho. */
+/** Linha de atalhos em pílula, no herói da home e do estoque. */
 export function CategoryChips({ items }: { items: { label: string; href: string }[] }) {
   if (items.length === 0) return null;
 
@@ -149,7 +270,7 @@ function TopBar({ site }: { site: SiteData }) {
     .filter(Boolean)
     .join(" / ");
 
-  // sem horário nem cidade a faixa não tem o que dizer, e uma tarja preta
+  // sem horário nem cidade a faixa não tem o que dizer, e uma tarja escura
   // vazia no topo é pior que a ausência dela
   if (!hours && !place) return null;
 
@@ -159,45 +280,52 @@ function TopBar({ site }: { site: SiteData }) {
         <span className="truncate">
           {hours ? `Atendimento online • ${hours}` : "Atendimento online"}
         </span>
-        {place ? <span className="hidden shrink-0 font-medium text-white/90 sm:block">{place}</span> : null}
+        {place ? (
+          <span className="hidden shrink-0 font-medium text-white/90 sm:block">{place}</span>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function Wordmark({ site, links }: { site: SiteData; links: SiteLinks }) {
-  return (
-    <Link href={links.home} className="flex shrink-0 items-center gap-2.5">
-      {site.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={site.logoUrl} alt={site.name} className="h-9 w-auto object-contain" />
-      ) : (
-        <span
-          className="text-lg font-bold uppercase tracking-tight text-[var(--site-text)]"
-          style={{ fontFamily: "var(--site-font-heading)" }}
-        >
-          {site.name}
-        </span>
-      )}
-    </Link>
-  );
+export type NavKey = "home" | "stock" | "financing" | "about" | "contact";
+
+/**
+ * Cinco itens, como no desenho.
+ *
+ * "Venda seu carro" NÃO entra aqui: ela mora no rodapé, na coluna
+ * Institucional, e é alcançada pelos cartões de "Como podemos ajudar" e pelo
+ * card de troca da ficha do veículo.
+ */
+function navItems(links: SiteLinks): { key: NavKey; href: string; label: string }[] {
+  return [
+    { key: "home", href: links.home, label: "Início" },
+    { key: "stock", href: links.stock, label: "Estoque" },
+    { key: "financing", href: links.financing, label: "Financiamento" },
+    { key: "about", href: links.about, label: "Sobre nós" },
+    { key: "contact", href: links.contact, label: "Contato" },
+  ];
 }
 
-function Header({
-  site,
-  links,
-  active,
-}: {
-  site: SiteData;
-  links: SiteLinks;
-  active?: NavKey;
-}) {
+function Header({ site, links, active }: { site: SiteData; links: SiteLinks; active?: NavKey }) {
   const items = navItems(links);
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--site-border)] bg-[var(--site-surface)]">
       <div className={`${SHELL} flex h-[68px] items-center justify-between gap-6`}>
-        <Wordmark site={site} links={links} />
+        <Link href={links.home} className="flex shrink-0 items-center gap-2.5">
+          {site.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={site.logoUrl} alt={site.name} className="h-9 w-auto object-contain" />
+          ) : (
+            <span
+              className="text-lg font-bold uppercase tracking-tight text-[var(--site-text)]"
+              style={{ fontFamily: "var(--site-font-heading)" }}
+            >
+              {site.name}
+            </span>
+          )}
+        </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
           {items.map((item) => (
@@ -250,25 +378,12 @@ function Header({
   );
 }
 
-export type NavKey = "home" | "stock" | "financing" | "sellCar" | "about" | "contact";
-
-function navItems(links: SiteLinks): { key: NavKey; href: string; label: string }[] {
-  return [
-    { key: "home", href: links.home, label: "Início" },
-    { key: "stock", href: links.stock, label: "Estoque" },
-    { key: "financing", href: links.financing, label: "Financiamento" },
-    { key: "sellCar", href: links.sellCar, label: "Venda seu carro" },
-    { key: "about", href: links.about, label: "Sobre nós" },
-    { key: "contact", href: links.contact, label: "Contato" },
-  ];
-}
-
 function Footer({ site, links }: { site: SiteData; links: SiteLinks }) {
-  const hours = site.contact.businessHours;
+  const hours = summarizeHours(site.contact.businessHours);
   const address = site.contact.address.full;
 
   return (
-    <footer className="mt-20 bg-[var(--site-text)] text-white/70">
+    <footer className="bg-[var(--site-text)] text-white/70">
       <div className={`${SHELL} grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4`}>
         <div>
           <p
@@ -277,12 +392,10 @@ function Footer({ site, links }: { site: SiteData; links: SiteLinks }) {
           >
             {site.name}
           </p>
-          {site.aboutText ? (
-            <p className="mt-3 max-w-xs text-sm leading-relaxed">
-              {site.aboutText.slice(0, 140)}
-              {site.aboutText.length > 140 ? "…" : ""}
-            </p>
-          ) : null}
+          <p className="mt-3 max-w-xs text-sm leading-relaxed">
+            Seu próximo carro com atendimento direto, estoque atualizado e condições para
+            diferentes perfis.
+          </p>
           {address ? <p className="mt-4 text-sm">{address}</p> : null}
           {site.contact.phone ? (
             <p className="mt-3 text-sm font-medium text-white">{site.contact.phone}</p>
@@ -296,8 +409,10 @@ function Footer({ site, links }: { site: SiteData; links: SiteLinks }) {
             { label: "Todos os veículos", href: links.stock },
             { label: "SUVs", href: links.stockWith({ carroceria: "suv" }) },
             { label: "Hatches", href: links.stockWith({ carroceria: "hatch" }) },
-            { label: "Sedãs", href: links.stockWith({ carroceria: "sedan" }) },
+            { label: "Sedans", href: links.stockWith({ carroceria: "sedan" }) },
             { label: "Picapes", href: links.stockWith({ carroceria: "picape" }) },
+            // "Ofertas" do desenho: o estoque do mais barato para o mais caro
+            { label: "Ofertas", href: links.stockWith({ ordem: "preco-asc" }) },
           ]}
         />
 
@@ -307,6 +422,7 @@ function Footer({ site, links }: { site: SiteData; links: SiteLinks }) {
             { label: "Sobre nós", href: links.about },
             { label: "Financiamento", href: links.financing },
             { label: "Venda seu carro", href: links.sellCar },
+            { label: "Avaliações", href: `${links.about}#avaliacoes` },
             { label: "Contato", href: links.contact },
           ]}
         />
@@ -314,8 +430,8 @@ function Footer({ site, links }: { site: SiteData; links: SiteLinks }) {
         <div>
           <p className="mb-4 text-sm font-semibold text-white">Atendimento</p>
           <ul className="space-y-1.5 text-sm">
-            {hours.length === 0 ? <li>Consulte pelo WhatsApp</li> : null}
-            {summarizeHours(hours).map((line) => (
+            <li>WhatsApp</li>
+            {hours.map((line) => (
               <li key={line.label}>
                 {line.label}: {line.value}
               </li>
@@ -325,9 +441,7 @@ function Footer({ site, links }: { site: SiteData; links: SiteLinks }) {
       </div>
 
       <div className="border-t border-white/10">
-        <div
-          className={`${SHELL} flex flex-wrap items-center justify-between gap-3 py-5 text-xs`}
-        >
+        <div className={`${SHELL} flex flex-wrap items-center justify-between gap-3 py-5 text-xs`}>
           <p>
             © {new Date().getFullYear()} {site.name}. Todos os direitos reservados.
           </p>
@@ -397,7 +511,7 @@ export function Shell({
 }) {
   return (
     <div
-      className="min-h-screen bg-[var(--site-background)] text-[var(--site-text)]"
+      className="min-h-screen bg-[var(--site-surface)] text-[var(--site-text)]"
       style={{ fontFamily: "var(--site-font-body)" }}
     >
       <TopBar site={site} />
@@ -408,35 +522,73 @@ export function Shell({
   );
 }
 
-/** Faixa escura de conversão, repetida em várias páginas. */
+/**
+ * Faixa de conversão.
+ *
+ * Escura na home, no estoque e no sobre; clara no contato e no "venda seu
+ * carro". As duas existem no desenho, e a escolha não é decorativa: a escura
+ * corta a página em dois blocos, a clara fecha a página sem competir com o
+ * rodapé, que também é escuro.
+ */
 export function WhatsappBand({
   site,
   links,
   title,
   description,
+  tone = "dark",
+  extra,
 }: {
   site: SiteData;
   links: SiteLinks;
   title: string;
   description: string;
+  tone?: "dark" | "light";
+  extra?: React.ReactNode;
 }) {
   const href = links.whatsapp(`Olá! Vim pelo site da ${site.name}.`);
-  if (!href) return null;
+  if (!href && !extra) return null;
 
-  return (
-    <section className="bg-[var(--site-text)] py-12 text-white">
-      <div className={`${SHELL} flex flex-wrap items-center justify-between gap-6`}>
-        <div className="max-w-xl">
-          <h2
-            className="text-2xl font-bold leading-tight"
-            style={{ fontFamily: "var(--site-font-heading)" }}
-          >
-            {title}
-          </h2>
-          <p className="mt-2 text-sm text-white/70">{description}</p>
-        </div>
+  const inner = (
+    <div className="flex flex-wrap items-center justify-between gap-6">
+      <div className="max-w-xl">
+        <h2
+          className={
+            tone === "dark"
+              ? "text-2xl font-bold leading-tight text-white"
+              : "text-2xl font-bold leading-tight text-[var(--site-text)]"
+          }
+          style={{ fontFamily: "var(--site-font-heading)" }}
+        >
+          {title}
+        </h2>
+        <p
+          className={
+            tone === "dark" ? "mt-2 text-sm text-white/70" : "mt-2 text-sm text-[var(--site-muted)]"
+          }
+        >
+          {description}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        {extra}
         <WhatsappButton href={href} />
       </div>
+    </div>
+  );
+
+  if (tone === "light") {
+    return (
+      <section className={`${SHELL} py-10`}>
+        <div className="rounded-[var(--site-radius)] bg-[var(--site-primary)]/[0.06] px-8 py-8">
+          {inner}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="bg-[var(--site-text)] py-12">
+      <div className={SHELL}>{inner}</div>
     </section>
   );
 }

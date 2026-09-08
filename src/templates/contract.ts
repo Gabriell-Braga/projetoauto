@@ -228,8 +228,18 @@ export type ListingProps = BaseTemplateProps & {
 export type VehicleDetailProps = BaseTemplateProps & {
   vehicle: VehicleView;
   related: VehicleView[];
-  /** Formulário de lead injetado pelo app (o template só posiciona). */
+  /**
+   * Formulário de lead genérico.
+   *
+   * Continua no contrato porque os cinco templates antigos o usam. O Vitrine
+   * não o posiciona: o desenho captura por WhatsApp, pelo simulador e pelo
+   * card de troca, e um quarto formulário competiria com os três.
+   */
   leadForm: React.ReactNode;
+  /** Simulador do "Facilite sua compra", já com o preço deste veículo. */
+  financingForm?: React.ReactNode;
+  /** Card de troca do "Facilite sua compra". */
+  tradeInForm?: React.ReactNode;
 };
 
 export type ContactProps = BaseTemplateProps;
@@ -252,7 +262,10 @@ export type FinancingVehicleOption = { id: string; label: string; priceCents: nu
 export type FinancingProps = BaseTemplateProps & {
   vehicles: FinancingVehicleOption[];
   defaults: FinancingDefaults;
+  /** Calculadora do herói: valor, entrada, prazo e a estimativa de parcela. */
   simulatorForm: React.ReactNode;
+  /** O formulário que envia — nome, contato e veículo de interesse. */
+  leadForm: React.ReactNode;
 };
 
 /**

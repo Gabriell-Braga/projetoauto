@@ -6,6 +6,8 @@ import { getVehicleBySlug, listVehicles } from "@/lib/services/vehicles";
 import { JsonLd, breadcrumbJsonLd, vehicleJsonLd } from "@/lib/seo/jsonld";
 import { tenantAbsoluteUrl } from "@/lib/seo/urls";
 import { LeadForm } from "@/templates/shared/lead-form";
+import { FinancingEstimator } from "@/templates/shared/financing-form";
+import { SellCarTeaser } from "@/templates/shared/sell-car-form";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +103,22 @@ export default async function VehicleDetailPage({ params }: Props) {
             tone={tone}
           />
         }
+        /*
+         * Os dois cards do "Facilite sua compra": simulador com o preço deste
+         * veículo, e o card de troca. Nenhum dos dois envia daqui — os dois
+         * levam para a página completa, onde a pessoa dá o contato uma vez só.
+         */
+        financingForm={
+          !vehicle.priceOnRequest ? (
+            <FinancingEstimator
+              defaults={context.site.financing}
+              initialPriceCents={vehicle.priceCents}
+              continueHref={`${context.links.financing}?veiculo=${vehicle.id}`}
+              continueLabel="Simular condições"
+            />
+          ) : null
+        }
+        tradeInForm={<SellCarTeaser href={context.links.sellCar} />}
       />
     </>
   );

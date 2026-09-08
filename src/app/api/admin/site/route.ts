@@ -5,7 +5,7 @@ import { logAuditFor } from "@/lib/audit";
 import { requireApiTenant } from "@/lib/auth/guards";
 import { badRequest, jsonOk, withApi } from "@/lib/http";
 import { invalidateTenantCache } from "@/lib/tenant/service";
-import { isTemplateSelectable } from "@/templates/manifests";
+import { isTemplateSelectable } from "@projetoauto/site-kit/manifests";
 import { siteSettingsSchema } from "@/lib/validation/site";
 
 export const dynamic = "force-dynamic";

@@ -10,6 +10,12 @@ import type { NextConfig } from "next";
 const basePath = process.env.BASE_URL || "";
 
 const nextConfig: NextConfig = {
+  /*
+   * O pacote dos templates e publicado como TypeScript cru, sem passo de build
+   * proprio. Um build so, no app que o consome, evita ter que lembrar de
+   * recompilar o pacote antes de rodar qualquer coisa.
+   */
+  transpilePackages: ["@projetoauto/site-kit"],
   ...(basePath && {
     basePath,
     assetPrefix: process.env.ASSETS_PREFIX || basePath,

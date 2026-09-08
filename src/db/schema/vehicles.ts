@@ -1,27 +1,28 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { createdAt, idColumn, updatedAt } from "./_shared";
 import { tenants } from "./tenants";
+import type { BodyType, Fuel, Transmission, VehicleStatus } from "@projetoauto/site-kit/catalog";
 
-export const VEHICLE_STATUS = ["draft", "available", "reserved", "sold"] as const;
-export type VehicleStatus = (typeof VEHICLE_STATUS)[number];
-
-export const TRANSMISSIONS = ["manual", "automatico", "automatizado", "cvt"] as const;
-export type Transmission = (typeof TRANSMISSIONS)[number];
-
-export const FUELS = ["flex", "gasolina", "etanol", "diesel", "gnv", "hibrido", "eletrico"] as const;
-export type Fuel = (typeof FUELS)[number];
-
-export const BODY_TYPES = [
-  "hatch",
-  "sedan",
-  "suv",
-  "picape",
-  "minivan",
-  "cupe",
-  "conversivel",
-  "utilitario",
-] as const;
-export type BodyType = (typeof BODY_TYPES)[number];
+/*
+ * Os valores de cambio, combustivel, carroceria e status moram no pacote
+ * compartilhado, nao aqui.
+ *
+ * Quem precisa deles junto com o rotulo em portugues e o template — e o app dos
+ * sites, que renderiza os mesmos templates, nao tem banco nenhum. Deixar a
+ * lista no schema obrigaria aquele app a depender do Drizzle para saber que
+ * "cvt" existe. O schema le do pacote e continua sendo a unica fonte para o
+ * banco.
+ */
+export {
+  VEHICLE_STATUS,
+  TRANSMISSIONS,
+  FUELS,
+  BODY_TYPES,
+  type VehicleStatus,
+  type Transmission,
+  type Fuel,
+  type BodyType,
+} from "@projetoauto/site-kit/catalog";
 
 export const vehicles = sqliteTable(
   "vehicles",

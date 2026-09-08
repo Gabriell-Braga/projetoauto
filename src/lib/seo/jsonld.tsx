@@ -1,4 +1,4 @@
-import type { SiteData, VehicleView } from "@/templates/contract";
+import type { SiteData, VehicleView } from "@projetoauto/site-kit/contract";
 
 /**
  * Dados estruturados schema.org.

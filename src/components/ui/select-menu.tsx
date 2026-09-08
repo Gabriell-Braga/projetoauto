@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, Search } from "lucide-react";
-import { filterOptions, fold } from "@/lib/format/option-filter";
+import { filterOptions, fold } from "@projetoauto/site-kit/option-filter";
 import { cn } from "@/lib/utils";
 
 export type SelectOption = { value: string; label: string; disabled?: boolean };

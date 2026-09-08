@@ -4,7 +4,7 @@ import { vehicles, type VehicleStatus } from "@/db/schema";
 import { getOrigin } from "@/lib/seo/urls";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { getTenantCoreBySlug, isPublicSiteAvailable } from "@/lib/tenant/service";
-import { getTemplate } from "@/templates/registry";
+import { getTemplate } from "@projetoauto/site-kit/registry";
 
 export const dynamic = "force-dynamic";
 

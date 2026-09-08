@@ -2,10 +2,10 @@ import { notFound, redirect } from "next/navigation";
 import { getTenantCoreBySlug, isPublicSiteAvailable } from "@/lib/tenant/service";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { buildSiteLinks, getSiteData } from "./site";
-import type { AppliedFilters, SiteData, SiteLinks } from "@/templates/contract";
+import type { AppliedFilters, SiteData, SiteLinks } from "@projetoauto/site-kit/contract";
 import type { VehicleFilters } from "@/lib/validation/vehicles";
-import { getTemplate } from "@/templates/registry";
-import type { TemplateModule } from "@/templates/contract";
+import { getTemplate } from "@projetoauto/site-kit/registry";
+import type { TemplateModule } from "@projetoauto/site-kit/contract";
 
 export type PublicContext = {
   site: SiteData;

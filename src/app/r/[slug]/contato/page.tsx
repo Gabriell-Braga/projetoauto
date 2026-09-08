@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { loadPublicSite } from "@/lib/services/public-site";
 import { JsonLd, autoDealerJsonLd } from "@/lib/seo/jsonld";
 import { tenantAbsoluteUrl } from "@/lib/seo/urls";
-import { ContactForm } from "@/templates/shared/contact-form";
+import { ContactForm } from "@projetoauto/site-kit/shared/contact-form";
 
 export const dynamic = "force-dynamic";
 

@@ -1,5 +1,5 @@
 import { loadPublicSite, PUBLIC_VEHICLE_STATUSES } from "@/lib/services/public-site";
-import { FinancingEstimator } from "@/templates/shared/financing-form";
+import { FinancingEstimator } from "@projetoauto/site-kit/shared/financing-form";
 import { financingOptions } from "@/lib/services/financing-options";
 import { JsonLd, autoDealerJsonLd } from "@/lib/seo/jsonld";
 import { tenantAbsoluteUrl } from "@/lib/seo/urls";

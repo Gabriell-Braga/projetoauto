@@ -5,9 +5,9 @@ import { toVehicleCard, toVehicleDetail } from "@/lib/services/site";
 import { getVehicleBySlug, listVehicles } from "@/lib/services/vehicles";
 import { JsonLd, breadcrumbJsonLd, vehicleJsonLd } from "@/lib/seo/jsonld";
 import { tenantAbsoluteUrl } from "@/lib/seo/urls";
-import { LeadForm } from "@/templates/shared/lead-form";
-import { FinancingEstimator } from "@/templates/shared/financing-form";
-import { SellCarTeaser } from "@/templates/shared/sell-car-form";
+import { LeadForm } from "@projetoauto/site-kit/shared/lead-form";
+import { FinancingEstimator } from "@projetoauto/site-kit/shared/financing-form";
+import { SellCarTeaser } from "@projetoauto/site-kit/shared/sell-car-form";
 
 export const dynamic = "force-dynamic";
 

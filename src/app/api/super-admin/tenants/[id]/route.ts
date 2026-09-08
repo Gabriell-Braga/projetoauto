@@ -6,7 +6,7 @@ import { requireApiSuperAdmin } from "@/lib/auth/guards";
 import { badRequest, conflict, jsonOk, notFound, withApi } from "@/lib/http";
 import { isSlugTaken, updateTenantRecord } from "@/lib/services/tenants";
 import { invalidateTenantCache } from "@/lib/tenant/service";
-import { isTemplateSelectable } from "@/templates/manifests";
+import { isTemplateSelectable } from "@projetoauto/site-kit/manifests";
 import { gtmSchema, updateTenantSchema } from "@/lib/validation/tenants";
 
 export const dynamic = "force-dynamic";

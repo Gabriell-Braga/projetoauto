@@ -5,7 +5,7 @@ import { requireApiSuperAdmin } from "@/lib/auth/guards";
 import { hashPassword } from "@/lib/auth/password";
 import { badRequest, conflict, jsonOk, withApi } from "@/lib/http";
 import { isSlugTaken, nextDueDate } from "@/lib/services/tenants";
-import { isTemplateSelectable } from "@/templates/manifests";
+import { isTemplateSelectable } from "@projetoauto/site-kit/manifests";
 import { createTenantSchema } from "@/lib/validation/tenants";
 import { eq } from "drizzle-orm";
 

@@ -1,0 +1,31 @@
+{
+  "name": "@projetoauto/site-kit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./contract": "./src/templates/contract.ts",
+    "./manifests": "./src/templates/manifests.ts",
+    "./registry": "./src/templates/registry.ts",
+    "./shared/contact-form": "./src/templates/shared/contact-form.tsx",
+    "./shared/financing-form": "./src/templates/shared/financing-form.tsx",
+    "./shared/lead-form": "./src/templates/shared/lead-form.tsx",
+    "./shared/sell-car-form": "./src/templates/shared/sell-car-form.tsx",
+    "./shared/gtm": "./src/templates/shared/gtm.tsx",
+    "./catalog": "./src/lib/catalog.ts",
+    "./format": "./src/lib/format.ts",
+    "./paths": "./src/lib/paths.ts",
+    "./client-api": "./src/lib/client-api.ts",
+    "./option-filter": "./src/lib/option-filter.ts",
+    "./installment": "./src/lib/installment.ts"
+  },
+  "peerDependencies": {
+    "next": "^15",
+    "react": "^19"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.33.0",
+    "tailwind-merge": "^3.4.1"
+  }
+}

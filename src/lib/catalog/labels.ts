@@ -1,43 +1,24 @@
 import type {
   AppraisalStatus,
   BillingStatus,
-  BodyType,
   FinancingStatus,
-  Fuel,
   LeadSource,
   LeadStatus,
   StageKind,
-  Transmission,
   VehicleStatus,
 } from "@/db/schema";
 
-export const TRANSMISSION_LABELS: Record<Transmission, string> = {
-  manual: "Manual",
-  automatico: "Automático",
-  automatizado: "Automatizado",
-  cvt: "CVT",
-};
-
-export const FUEL_LABELS: Record<Fuel, string> = {
-  flex: "Flex",
-  gasolina: "Gasolina",
-  etanol: "Etanol",
-  diesel: "Diesel",
-  gnv: "GNV",
-  hibrido: "Híbrido",
-  eletrico: "Elétrico",
-};
-
-export const BODY_TYPE_LABELS: Record<BodyType, string> = {
-  hatch: "Hatch",
-  sedan: "Sedã",
-  suv: "SUV",
-  picape: "Picape",
-  minivan: "Minivan",
-  cupe: "Cupê",
-  conversivel: "Conversível",
-  utilitario: "Utilitário",
-};
+/*
+ * Cambio, combustivel e carroceria vem do pacote compartilhado: sao os unicos
+ * rotulos que o site publico tambem desenha, e o app dos sites nao enxerga
+ * este arquivo. O resto (lead, cobranca, avaliacao) e vocabulario de painel e
+ * continua aqui.
+ */
+export {
+  TRANSMISSION_LABELS,
+  FUEL_LABELS,
+  BODY_TYPE_LABELS,
+} from "@projetoauto/site-kit/catalog";
 
 export const VEHICLE_STATUS_LABELS: Record<VehicleStatus, string> = {
   draft: "Rascunho",

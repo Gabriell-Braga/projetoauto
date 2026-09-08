@@ -4,8 +4,8 @@ import type { Metadata } from "next";
 import { getSiteData } from "@/lib/services/site";
 import { getTenantCoreBySlug, isPublicSiteAvailable } from "@/lib/tenant/service";
 import { getOrigin, tenantAbsoluteUrl } from "@/lib/seo/urls";
-import { themeToCssVariables } from "@/templates/contract";
-import { GoogleTagManager } from "@/templates/shared/gtm";
+import { themeToCssVariables } from "@projetoauto/site-kit/contract";
+import { GoogleTagManager } from "@projetoauto/site-kit/shared/gtm";
 
 export const dynamic = "force-dynamic";
 

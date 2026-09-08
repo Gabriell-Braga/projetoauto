@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { loadPublicSite } from "@/lib/services/public-site";
 import { financingOptions } from "@/lib/services/financing-options";
-import { FinancingEstimator, FinancingLeadForm } from "@/templates/shared/financing-form";
+import { FinancingEstimator, FinancingLeadForm } from "@projetoauto/site-kit/shared/financing-form";
 
 export const dynamic = "force-dynamic";
 

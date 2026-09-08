@@ -18,7 +18,7 @@ import {
 import { OPTION_LABELS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
 import { mediaUrl } from "@/lib/paths";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
-import { findTemplateManifest } from "@/templates/manifests";
+import { findTemplateManifest } from "@projetoauto/site-kit/manifests";
 import { formatCurrency, formatNumber, onlyDigits } from "@/lib/utils";
 import {
   composeTheme,
@@ -26,7 +26,7 @@ import {
   type SiteLinks,
   type ThemeTokens,
   type VehicleView,
-} from "@/templates/contract";
+} from "@projetoauto/site-kit/contract";
 import type { VehicleListItem } from "./vehicles";
 
 /** Estrutura serializável guardada no KV (datas/URLs já resolvidas). */

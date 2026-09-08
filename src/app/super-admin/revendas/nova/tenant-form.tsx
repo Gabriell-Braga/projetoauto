@@ -10,7 +10,7 @@ import { PasswordInput, PasswordRequirements } from "@/components/ui/password-in
 import { useToast } from "@/components/ui/toast";
 import { apiPost, errorMessageFrom, fieldErrorsFrom } from "@/lib/client/api";
 import { CurrencyInput } from "@/components/ui/number-field";
-import { DEFAULT_TEMPLATE_ID } from "@/templates/manifests";
+import { DEFAULT_TEMPLATE_ID } from "@projetoauto/site-kit/manifests";
 import { slugify } from "@/lib/utils";
 
 export function NewTenantForm() {

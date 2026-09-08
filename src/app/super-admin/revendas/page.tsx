@@ -10,7 +10,7 @@ import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { BILLING_STATUS, TENANT_STATUS, type BillingStatus, type TenantStatus } from "@/db/schema";
 import { BILLING_STATUS_LABELS } from "@/lib/catalog/labels";
 import { listTenants } from "@/lib/services/tenants";
-import { getTemplateManifest } from "@/templates/manifests";
+import { getTemplateManifest } from "@projetoauto/site-kit/manifests";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Revendas" };

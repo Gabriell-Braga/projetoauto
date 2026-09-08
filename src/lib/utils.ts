@@ -1,17 +1,9 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-export function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
-}
-
-export function formatNumber(value: number): string {
-  return new Intl.NumberFormat("pt-BR").format(value);
-}
+/*
+ * `cn`, moeda e numero vem do pacote compartilhado: os templates usam os tres,
+ * e duas implementacoes de moeda acabariam mostrando precos diferentes na
+ * mesma tela. O resto daqui e so do painel e fica.
+ */
+export { cn, formatCurrency, formatNumber } from "@projetoauto/site-kit/format";
 
 export function formatDate(value: Date | number | null | undefined): string {
   if (!value) return "—";

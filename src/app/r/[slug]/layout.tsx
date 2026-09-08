@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { DM_Sans } from "next/font/google";
 import type { Metadata } from "next";
 import { getSiteData } from "@/lib/services/site";
 import { getTenantCoreBySlug, isPublicSiteAvailable } from "@/lib/tenant/service";
@@ -41,6 +42,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/**
+ * Fontes dos templates desenhados no Figma.
+ *
+ * `preload: false` de propósito: o site de uma revenda usa UMA delas, e
+ * pré-carregar todas gastaria banda de visitante em arquivo que a página não
+ * vai referenciar. Sem preload o navegador baixa só a que o CSS pedir.
+ *
+ * A variável entra sempre; quem decide se ela é usada é o tema do template,
+ * que aponta `fontHeading` para ela.
+ */
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  variable: "--font-dm-sans",
+});
+
 export default async function PublicSiteLayout({ children, params }: Props) {
   const { slug } = await params;
 
@@ -52,7 +70,7 @@ export default async function PublicSiteLayout({ children, params }: Props) {
   const available = isPublicSiteAvailable(tenant);
 
   return (
-    <div style={cssVariables as React.CSSProperties}>
+    <div className={dmSans.variable} style={cssVariables as React.CSSProperties}>
       {/* GTM só carrega em site no ar — página de indisponibilidade não dispara tag */}
       {available ? <GoogleTagManager containerId={site?.gtmCode ?? null} /> : null}
       {children}

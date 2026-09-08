@@ -4,6 +4,8 @@
  * Os componentes ficam em src/templates/registry.ts.
  */
 
+import type { ThemeTokens } from "./contract";
+
 export type TemplateCustomization = "primary" | "accent" | "surface" | "fontHeading" | "fontBody";
 
 export type TemplateManifest = {
@@ -16,9 +18,49 @@ export type TemplateManifest = {
   preview: { background: string; foreground: string; accent: string };
   supports: TemplateCustomization[];
   status: "ready" | "coming_soon";
+  /**
+   * A paleta e a tipografia com que o template foi desenhado.
+   *
+   * Entra ENTRE o padrão da plataforma e o que a revenda escolheu: quem não
+   * mexeu em nada vê o template como ele foi desenhado, e quem escolheu a
+   * própria cor continua mandando. Sem isso, escolher "Vitrine" entregaria a
+   * estrutura do desenho pintada com o azul genérico do sistema — e o
+   * template pareceria quebrado sem estar.
+   */
+  defaultTheme?: Partial<ThemeTokens>;
 };
 
 export const TEMPLATE_MANIFESTS: TemplateManifest[] = [
+  /*
+   * Os três desenhados no Figma vêm primeiro: são os que a revenda deve
+   * escolher hoje. Os cinco antigos continuam na lista enquanto houver
+   * revenda usando, e saem quando todas migrarem.
+   */
+  {
+    id: "vitrine",
+    name: "Vitrine",
+    description:
+      "Claro e direto, com busca em primeiro plano e páginas de financiamento, avaliação e institucional.",
+    vibe: "Claro · loja própria",
+    preview: { background: "#F7F8FA", foreground: "#101828", accent: "#0F5FD7" },
+    supports: ["primary", "accent", "surface", "fontHeading", "fontBody"],
+    status: "ready",
+    defaultTheme: {
+      primary: "#0F5FD7",
+      primaryHover: "#0B4CAE",
+      primaryForeground: "#FFFFFF",
+      accent: "#0F5FD7",
+      text: "#101828",
+      muted: "#667085",
+      border: "#D9DDE3",
+      background: "#F7F8FA",
+      surface: "#FFFFFF",
+      success: "#16803C",
+      fontHeading: "var(--font-dm-sans), system-ui, sans-serif",
+      fontBody: "var(--font-dm-sans), system-ui, sans-serif",
+      radius: "12px",
+    },
+  },
   {
     id: "template-1-clean",
     name: "Clean",
@@ -70,8 +112,31 @@ export const DEFAULT_TEMPLATE_ID = "template-1-clean";
 
 export const TEMPLATE_IDS = TEMPLATE_MANIFESTS.map((template) => template.id);
 
+/**
+ * Busca exata: devolve `undefined` quando o id não existe.
+ *
+ * É o que a montagem do tema precisa — um template desconhecido não pode
+ * herdar a paleta de outro, porque o resultado seria um site pintado com as
+ * cores de um desenho que ninguém escolheu.
+ */
+export function findTemplateManifest(id: string): TemplateManifest | undefined {
+  return TEMPLATE_MANIFESTS.find((template) => template.id === id);
+}
+
+/**
+ * Com reserva, para quem precisa de um manifesto de qualquer jeito.
+ *
+ * A reserva é o template PADRÃO, não o primeiro da lista: os dois eram a
+ * mesma coisa até o Vitrine entrar no topo, e a partir daí `[0]` passaria a
+ * discordar do que `getTemplate` devolve no registry — a tela do painel
+ * mostraria um nome e o site renderizaria outro.
+ */
 export function getTemplateManifest(id: string): TemplateManifest {
-  return TEMPLATE_MANIFESTS.find((template) => template.id === id) ?? TEMPLATE_MANIFESTS[0];
+  return (
+    findTemplateManifest(id) ??
+    findTemplateManifest(DEFAULT_TEMPLATE_ID) ??
+    TEMPLATE_MANIFESTS[0]
+  );
 }
 
 export function isTemplateSelectable(id: string): boolean {

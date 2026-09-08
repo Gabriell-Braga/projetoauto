@@ -18,9 +18,10 @@ import {
 import { OPTION_LABELS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
 import { mediaUrl } from "@/lib/paths";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
+import { findTemplateManifest } from "@/templates/manifests";
 import { formatCurrency, formatNumber, onlyDigits } from "@/lib/utils";
 import {
-  DEFAULT_THEME,
+  composeTheme,
   type SiteData,
   type SiteLinks,
   type ThemeTokens,
@@ -66,7 +67,17 @@ async function loadSiteData(slug: string): Promise<CachedSite | null> {
     .orderBy(asc(tenantBanners.position));
 
   const site = row.site;
-  const theme: ThemeTokens = { ...DEFAULT_THEME, ...(site?.theme ?? {}) };
+  /*
+   * Três camadas, nesta ordem: padrão da plataforma, desenho do template, e
+   * por último o que a revenda escolheu.
+   *
+   * Quem não mexeu em nada vê o template como ele foi desenhado; quem trocou
+   * a cor continua mandando. Inverter as duas últimas faria a escolha da
+   * revenda ser sobrescrita pelo template — que é o defeito que faz alguém
+   * salvar a cor de novo e concluir que o painel não guarda.
+   */
+  const manifest = findTemplateManifest(row.tenant.templateId);
+  const theme: ThemeTokens = composeTheme(manifest?.defaultTheme, site?.theme);
 
   const addressParts = [
     [site?.addressStreet, site?.addressNumber].filter(Boolean).join(", "),

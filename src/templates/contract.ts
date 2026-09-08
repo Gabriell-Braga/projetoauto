@@ -308,6 +308,35 @@ export const DEFAULT_THEME: ThemeTokens = {
 };
 
 /**
+ * Monta o tema final em três camadas.
+ *
+ * Ordem: padrão da plataforma → desenho do template → escolha da revenda.
+ *
+ * A última camada vence, e é isso que precisa ficar travado. Se o template
+ * viesse por último, a revenda salvaria a cor dela, veria o site com a cor do
+ * template, salvaria de novo — e concluiria que o painel não guarda o que ela
+ * escreve. É um defeito que não aparece em nenhum log.
+ */
+export function composeTheme(
+  templateTheme: Partial<ThemeTokens> | null | undefined,
+  tenantTheme: Partial<ThemeTokens> | null | undefined,
+): ThemeTokens {
+  return {
+    ...DEFAULT_THEME,
+    ...(templateTheme ?? {}),
+    // valor vazio no banco não pode apagar a cor do template
+    ...clean(tenantTheme),
+  };
+}
+
+function clean(theme: Partial<ThemeTokens> | null | undefined): Partial<ThemeTokens> {
+  if (!theme) return {};
+  return Object.fromEntries(
+    Object.entries(theme).filter(([, value]) => typeof value === "string" && value.trim() !== ""),
+  ) as Partial<ThemeTokens>;
+}
+
+/**
  * Verde do WhatsApp, igual em todos os templates.
  *
  * Fica fora de `ThemeTokens` de propósito: é marca de terceiro, e uma revenda

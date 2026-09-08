@@ -130,6 +130,11 @@ export default async function SitePage({
           hasSellCar={Boolean(template.SellCar)}
           initial={{
             stats: site?.stats ?? [],
+            reviews: (site?.reviews ?? []).map((review) => ({
+              rating: review.rating,
+              text: review.text,
+              author: review.author ?? "",
+            })),
             downPaymentPercent: site?.financing?.downPaymentPercent ?? 20,
             terms: site?.financing?.terms ?? [24, 36, 48, 60],
             legalPrivacy: site?.legalPrivacy ?? "",

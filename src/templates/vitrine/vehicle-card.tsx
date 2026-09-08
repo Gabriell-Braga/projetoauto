@@ -171,7 +171,7 @@ export function VehicleGrid({
 }) {
   return (
     <div
-      className={`grid gap-5 sm:grid-cols-2 ${columns === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
+      className={`grid grid-cols-1 gap-5 sm:grid-cols-2 ${columns === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
     >
       {vehicles.map((vehicle) => (
         <VehicleCard key={vehicle.id} vehicle={vehicle} links={links} storeName={storeName} />

@@ -95,6 +95,21 @@ export const siteSettingsSchema = z.object({
     }),
   ),
 
+  reviews: optional(
+    z
+      .array(
+        z.object({
+          rating: z.coerce.number().int().min(1).max(5),
+          text: z.string().trim().min(1).max(400),
+          author: z.preprocess(
+            (value) => (value === "" ? null : value),
+            z.string().trim().max(60).nullable(),
+          ),
+        }),
+      )
+      .max(6),
+  ),
+
   legalPrivacy: optional(z.string().trim().max(50_000)),
   legalTerms: optional(z.string().trim().max(50_000)),
 });

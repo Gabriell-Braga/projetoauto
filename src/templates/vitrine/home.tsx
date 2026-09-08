@@ -73,6 +73,52 @@ export function Home({
         </div>
       </section>
 
+      {/* ------------------------------------------------------ categorias */}
+      {atalhos.length > 0 ? (
+        <section className={`${SHELL} py-16`}>
+          <SectionHeading
+            title="Encontre do seu jeito"
+            description="Explore o estoque por categoria ou faixa de interesse."
+            action={
+              <Link
+                href={links.stock}
+                className="text-sm font-medium text-[var(--site-primary)] hover:underline"
+              >
+                Ver todo o estoque →
+              </Link>
+            }
+          />
+
+          {/*
+            Seis colunas no desktop, como o desenho. A lista sai das facetas do
+            estoque real: oferecer "Picapes" a uma loja que só vende hatch leva
+            a pessoa a uma busca vazia já no primeiro clique.
+          */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {atalhos.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] p-4 transition-colors hover:border-[var(--site-primary)]"
+              >
+                <span className="inline-flex h-8 items-center rounded-full bg-[var(--site-primary)]/10 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--site-primary)]">
+                  {item.label.slice(0, 3)}
+                </span>
+                <p
+                  className="mt-3 text-sm font-semibold text-[var(--site-text)]"
+                  style={{ fontFamily: "var(--site-font-heading)" }}
+                >
+                  {item.label}
+                </p>
+                <p className="mt-1 text-[12px] leading-snug text-[var(--site-muted)]">
+                  {item.description}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {/* ------------------------------------------------------- destaques */}
       {destaques.length > 0 ? (
         <section className={`${SHELL} py-16`}>
@@ -132,7 +178,7 @@ export function Home({
           title="Comprar seu próximo carro pode ser simples"
           description="Mais clareza, segurança e atendimento direto em todas as etapas."
         />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
               title: "Compra segura",
@@ -174,7 +220,7 @@ export function Home({
 
       {/* --------------------------------------------------- financiamento */}
       <section className="border-y border-[var(--site-border)] bg-[var(--site-background)] py-16">
-        <div className={`${SHELL} grid items-center gap-10 lg:grid-cols-2`}>
+        <div className={`${SHELL} grid grid-cols-1 items-center gap-10 lg:grid-cols-2`}>
           <div>
             <h2
               className="text-[30px] font-bold leading-tight text-[var(--site-text)]"
@@ -240,7 +286,7 @@ export function Home({
 
       {/* --------------------------------------------------------- a loja */}
       <section className={`${SHELL} py-16`}>
-        <div className="grid items-center gap-10 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
           {/* contorno: sem ele o espaco reservado some no fundo da secao e a
               coluna parece um vao, nao uma foto que falta */}
           <div className="aspect-4/3 overflow-hidden rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)]">

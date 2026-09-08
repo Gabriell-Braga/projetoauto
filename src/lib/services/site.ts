@@ -120,6 +120,16 @@ async function loadSiteData(slug: string): Promise<CachedSite | null> {
     // até três; a faixa some inteira quando não há nenhum, em vez de
     // mostrar zeros que envergonham a loja
     stats: (site?.stats ?? []).filter((stat) => stat.value && stat.label).slice(0, 3),
+    reviews: (site?.reviews ?? [])
+      .filter((review) => review.text?.trim())
+      .slice(0, 6)
+      .map((review) => ({
+        // a nota é presa entre 1 e 5 aqui: banco antigo pode ter qualquer
+        // número, e o template desenharia estrelas demais sem reclamar
+        rating: Math.min(5, Math.max(1, Math.round(review.rating || 5))),
+        text: review.text.trim(),
+        author: review.author?.trim() || null,
+      })),
     financing: {
       downPaymentPercent:
         site?.financing?.downPaymentPercent ?? FINANCING_FALLBACK.downPaymentPercent,

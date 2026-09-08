@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { loadPublicSite } from "@/lib/services/public-site";
 import { JsonLd, autoDealerJsonLd } from "@/lib/seo/jsonld";
 import { tenantAbsoluteUrl } from "@/lib/seo/urls";
+import { ContactForm } from "@/templates/shared/contact-form";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,11 @@ export default async function TenantContactPage({ params }: Props) {
   return (
     <>
       <JsonLd data={autoDealerJsonLd(context.site, siteUrl)} />
-      <Contact site={context.site} links={context.links} />
+      <Contact
+        site={context.site}
+        links={context.links}
+        contactForm={<ContactForm tenantSlug={slug} />}
+      />
     </>
   );
 }

@@ -176,5 +176,11 @@ export const MIGRATIONS: BundledMigration[] = [
       "ALTER TABLE `tenant_sites` ADD `legal_terms` text;",
       "ALTER TABLE `tenant_sites` ADD `legal_updated_at` integer;"
     ]
+  },
+  {
+    "tag": "0013_site_reviews",
+    "statements": [
+      "ALTER TABLE `tenant_sites` ADD `reviews` text;"
+    ]
   }
 ];

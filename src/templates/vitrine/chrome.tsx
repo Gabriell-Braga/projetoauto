@@ -142,7 +142,7 @@ export function SectionHeading({
 /** Cartão numerado de "Como funciona" — a mesma peça em quatro páginas. */
 export function StepCards({ steps }: { steps: { title: string; text: string }[] }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {steps.map((step, index) => (
         <div
           key={step.title}
@@ -164,19 +164,25 @@ export function StepCards({ steps }: { steps: { title: string; text: string }[] 
   );
 }
 
-/** Item em pílula com visto — "O que ter em mãos" e "O que ajuda na avaliação". */
+/**
+ * Item em pílula com visto — "O que ter em mãos" e "O que ajuda na avaliação".
+ *
+ * Preenchimento cinza e SEM borda, como no desenho: a borda transformaria a
+ * pílula num card, que é outro peso na página.
+ *
+ * `content-start` porque a coluna vizinha é mais alta. Sem isso as linhas da
+ * grade esticam para acompanhá-la, e cada pílula vira um retângulo enorme com
+ * uma frase colada no topo.
+ */
 export function CheckPills({ items }: { items: string[] }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid grid-cols-1 content-start gap-3 sm:grid-cols-2">
       {items.map((item) => (
         <div
           key={item}
-          className="flex items-start gap-2 rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-4 py-3 text-[13px] text-[var(--site-text)]"
+          className="flex items-center gap-2 rounded-[var(--site-radius)] bg-[var(--site-background)] px-4 py-3.5 text-[13px] font-medium text-[var(--site-text)]"
         >
-          <Check
-            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--site-primary)]"
-            aria-hidden="true"
-          />
+          <Check className="h-3.5 w-3.5 shrink-0 text-[var(--site-primary)]" aria-hidden="true" />
           {item}
         </div>
       ))}
@@ -313,13 +319,13 @@ function Header({ site, links, active }: { site: SiteData; links: SiteLinks; act
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--site-border)] bg-[var(--site-surface)]">
       <div className={`${SHELL} flex h-[68px] items-center justify-between gap-6`}>
-        <Link href={links.home} className="flex shrink-0 items-center gap-2.5">
+        <Link href={links.home} className="flex min-w-0 items-center gap-2.5">
           {site.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={site.logoUrl} alt={site.name} className="h-9 w-auto object-contain" />
           ) : (
             <span
-              className="text-lg font-bold uppercase tracking-tight text-[var(--site-text)]"
+              className="truncate text-base font-bold uppercase tracking-tight text-[var(--site-text)] sm:text-lg"
               style={{ fontFamily: "var(--site-font-heading)" }}
             >
               {site.name}
@@ -327,7 +333,10 @@ function Header({ site, links, active }: { site: SiteData; links: SiteLinks; act
           )}
         </Link>
 
-        <nav className="hidden items-center gap-7 lg:flex">
+        {/* `ml-auto`: menu, telefone e botão formam UM bloco à direita. Sem
+            isso o `justify-between` joga o menu para o meio, e o desenho o
+            quer encostado nas ações. */}
+        <nav className="ml-auto hidden items-center gap-7 lg:flex">
           {items.map((item) => (
             <Link
               key={item.key}
@@ -353,7 +362,13 @@ function Header({ site, links, active }: { site: SiteData; links: SiteLinks; act
               {site.contact.phone}
             </a>
           ) : null}
-          <WhatsappButton href={links.whatsapp(`Olá! Vim pelo site da ${site.name}.`)} />
+          <WhatsappButton
+            href={links.whatsapp(`Olá! Vim pelo site da ${site.name}.`)}
+            className="!px-4 sm:!px-5"
+          >
+            <span className="sm:hidden">WhatsApp</span>
+            <span className="hidden sm:inline">Falar no WhatsApp</span>
+          </WhatsappButton>
         </div>
       </div>
 
@@ -384,7 +399,7 @@ function Footer({ site, links }: { site: SiteData; links: SiteLinks }) {
 
   return (
     <footer className="bg-[var(--site-text)] text-white/70">
-      <div className={`${SHELL} grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4`}>
+      <div className={`${SHELL} grid grid-cols-1 gap-10 py-14 md:grid-cols-2 lg:grid-cols-4`}>
         <div>
           <p
             className="text-lg font-bold uppercase tracking-tight text-white"

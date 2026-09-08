@@ -63,7 +63,7 @@ export function VehicleDetail({
       </div>
 
       {/* ------------------------------------------------------------ topo */}
-      <section className={`${SHELL} grid gap-8 pb-14 lg:grid-cols-[1.15fr_1fr]`}>
+      <section className={`${SHELL} grid grid-cols-1 gap-8 pb-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]`}>
         <PhotoGallery photos={vehicle.photos} title={vehicle.title} />
 
         <div>
@@ -144,7 +144,7 @@ export function VehicleDetail({
             description="Informações principais para você comparar antes de falar com a loja."
           />
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <div className="overflow-hidden rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)]">
               <p
                 className="border-b border-[var(--site-border)] px-5 py-4 text-lg font-semibold text-[var(--site-text)]"
@@ -176,7 +176,7 @@ export function VehicleDetail({
                   confirmar o que ele tem.
                 </p>
               ) : (
-                <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                <ul className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                   {vehicle.options.map((option) => (
                     <li
                       key={option.key}
@@ -211,7 +211,7 @@ export function VehicleDetail({
           description="Simule condições e use seu carro atual como parte do pagamento."
         />
 
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {/*
             Simulador do desenho, preenchido com o preço DESTE veículo.
             Ele não envia: leva para a página de financiamento, onde a pessoa
@@ -255,7 +255,7 @@ export function VehicleDetail({
               description="Visite a loja ou fale com nossa equipe para confirmar disponibilidade e agendar atendimento."
             />
 
-            <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
               <div className="aspect-16/9 overflow-hidden rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)]">
                 {site.contact.mapsUrl ? (
                   <a

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { apiPost } from "@/lib/client/api";
 import { DEFAULT_MONTHLY_RATE, monthlyInstallmentCents } from "@/lib/format/installment";
 import { formatCurrency } from "@/lib/utils";
+import { SearchableSelect } from "./searchable-select";
 import { readUtm } from "./utm";
 
 export type FinancingVehicleOption = { id: string; label: string; priceCents: number };
@@ -97,24 +98,25 @@ export function FinancingEstimator({
   );
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       {modoEstoque ? (
         <div>
           <label className={label} htmlFor="est-vehicle">
             Veículo
           </label>
-          <select
+          {/*
+            Seletor com busca: uma revenda com duzentos carros tem nomes que
+            começam iguais, e rolar até achar o certo custa mais que desistir.
+          */}
+          <SearchableSelect
             id="est-vehicle"
-            className={field}
             value={vehicleId}
-            onChange={(event) => setVehicleId(event.target.value)}
-          >
-            {options.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.label} — {formatCurrency(item.priceCents)}
-              </option>
-            ))}
-          </select>
+            onChange={setVehicleId}
+            options={options.map((item) => ({
+              id: item.id,
+              label: `${item.label} — ${formatCurrency(item.priceCents)}`,
+            }))}
+          />
         </div>
       ) : (
         <div>
@@ -175,7 +177,7 @@ export function FinancingEstimator({
       <div className="rounded-[var(--site-radius)] bg-[var(--site-primary)]/[0.06] px-4 py-3">
         <p className="text-xs text-[var(--site-muted)]">Estimativa de parcela</p>
         <p
-          className="mt-0.5 text-[22px] font-bold leading-tight text-[var(--site-text)]"
+          className="mt-0.5 text-[20px] font-bold leading-tight text-[var(--site-text)] sm:text-[22px]"
           style={{ fontFamily: "var(--site-font-heading)" }}
         >
           {installmentCents
@@ -279,7 +281,7 @@ export function FinancingLeadForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2" noValidate>
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
       <div>
         <label className={label} htmlFor="fin-name">
           Nome completo

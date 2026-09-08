@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 import type { ListingProps, StockFacets } from "@/templates/contract";
+import type { BodyType, Fuel, Transmission } from "@/db/schema";
 import { BODY_TYPE_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from "@/lib/catalog/labels";
 import { CategoryChips, SHELL, Shell, WhatsappBand, WhatsappButton, categoryShortcuts } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
@@ -257,6 +258,64 @@ function pageWindow(page: number, total: number): (number | "…")[] {
   return result;
 }
 
+/**
+ * Chips do que está filtrado agora, com o "x" que remove só aquele filtro.
+ *
+ * Sem eles a pessoa vê "3 veículos encontrados" e não sabe POR QUE são três —
+ * o painel lateral pode estar fora da tela, e a única saída visível seria
+ * "Limpar tudo", que joga fora os outros filtros junto.
+ */
+function activeChips(
+  filters: ListingProps["filters"],
+  links: ListingProps["links"],
+): { label: string; href: string }[] {
+  const base = {
+    q: filters.search,
+    marca: filters.brand,
+    modelo: filters.model,
+    carroceria: filters.bodyType,
+    cambio: filters.transmission,
+    combustivel: filters.fuel,
+    precoMin: filters.priceMin ? Math.round(filters.priceMin / 100) : undefined,
+    precoMax: filters.priceMax ? Math.round(filters.priceMax / 100) : undefined,
+    anoMin: filters.yearMin,
+    kmMax: filters.kmMax,
+    ordem: filters.sort,
+  };
+
+  const rotulos: { chave: keyof typeof base; texto: string }[] = [
+    { chave: "q", texto: filters.search ? `"${filters.search}"` : "" },
+    { chave: "marca", texto: filters.brand ?? "" },
+    { chave: "modelo", texto: filters.model ?? "" },
+    {
+      chave: "carroceria",
+      texto: filters.bodyType ? BODY_TYPE_LABELS[filters.bodyType as BodyType] : "",
+    },
+    {
+      chave: "cambio",
+      texto: filters.transmission
+        ? TRANSMISSION_LABELS[filters.transmission as Transmission]
+        : "",
+    },
+    {
+      chave: "combustivel",
+      texto: filters.fuel ? FUEL_LABELS[filters.fuel as Fuel] : "",
+    },
+    { chave: "precoMin", texto: base.precoMin ? `A partir de R$ ${base.precoMin}` : "" },
+    { chave: "precoMax", texto: base.precoMax ? `Até R$ ${base.precoMax}` : "" },
+    { chave: "anoMin", texto: filters.yearMin ? `A partir de ${filters.yearMin}` : "" },
+    { chave: "kmMax", texto: filters.kmMax ? `Até ${filters.kmMax} km` : "" },
+  ];
+
+  return rotulos
+    .filter((item) => item.texto)
+    .map((item) => ({
+      label: item.texto,
+      // o link remove só este filtro e mantém os outros
+      href: links.stockWith({ ...base, [item.chave]: undefined }),
+    }));
+}
+
 export function Listing({
   site,
   links,
@@ -268,6 +327,7 @@ export function Listing({
   pageSize,
 }: ListingProps) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
+  const chips = activeChips(filters, links);
 
   const withPage = (target: number) =>
     links.stockWith({
@@ -329,13 +389,13 @@ export function Listing({
         </div>
       </section>
 
-      <div className={`${SHELL} grid gap-8 py-12 lg:grid-cols-[280px_1fr]`}>
+      <div className={`${SHELL} grid grid-cols-1 gap-8 py-12 lg:grid-cols-[280px_minmax(0,1fr)]`}>
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <Filters facets={facets} filters={filters} action={links.stock} />
         </aside>
 
         <div>
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
             <p
               className="text-xl font-semibold text-[var(--site-text)]"
               style={{ fontFamily: "var(--site-font-heading)" }}
@@ -382,6 +442,22 @@ export function Listing({
               </button>
             </form>
           </div>
+
+          {chips.length > 0 ? (
+            <div className="mb-6 flex flex-wrap gap-2">
+              {chips.map((chip) => (
+                <Link
+                  key={chip.label}
+                  href={chip.href}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--site-primary)]/10 px-3 py-1.5 text-[13px] text-[var(--site-primary)] transition-colors hover:bg-[var(--site-primary)]/20"
+                >
+                  {chip.label}
+                  <span aria-hidden="true">×</span>
+                  <span className="sr-only">remover filtro</span>
+                </Link>
+              ))}
+            </div>
+          ) : null}
 
           {vehicles.length === 0 ? (
             <div className="rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-6 py-20 text-center">

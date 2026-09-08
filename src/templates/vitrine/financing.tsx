@@ -43,7 +43,7 @@ export function Financing({
     <Shell site={site} links={links} active="financing">
       {/* ----------------------------------------------------------- herói */}
       <section className="border-b border-[var(--site-border)] bg-[var(--site-background)]">
-        <div className={`${SHELL} grid items-start gap-10 py-14 lg:grid-cols-[1fr_420px]`}>
+        <div className={`${SHELL} grid grid-cols-1 items-start gap-10 py-14 lg:grid-cols-[minmax(0,1fr)_420px]`}>
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--site-primary)]">
               Financiamento
@@ -84,7 +84,7 @@ export function Financing({
           description="Deixe seus dados para a loja retornar com as opções disponíveis para o seu perfil e para o veículo de interesse."
         />
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-background)] p-6">
             {leadForm}
           </div>
@@ -141,7 +141,7 @@ export function Financing({
           description="A documentação pode variar conforme a análise, mas estes dados costumam ser necessários."
         />
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
           <CheckPills items={DOCUMENTOS} />
 
           <aside className="rounded-[var(--site-radius)] bg-[var(--site-primary)]/[0.06] p-6">

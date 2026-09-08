@@ -6,7 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormField, Input, Textarea } from "@/components/ui/field";
+import { FormField, Input, Select, Textarea } from "@/components/ui/field";
 import { IntegerInput } from "@/components/ui/number-field";
 import { useToast } from "@/components/ui/toast";
 import { apiPatch } from "@/lib/client/api";
@@ -22,6 +22,7 @@ function parseTerms(text: string): number[] {
 
 export type PagesValues = {
   stats: { value: string; label: string }[];
+  reviews: { rating: number; text: string; author: string }[];
   downPaymentPercent: number;
   terms: number[];
   legalPrivacy: string;
@@ -66,6 +67,14 @@ export function PagesPanel({
       // linha vazia não vai para o banco: ela viraria uma coluna em branco na
       // faixa do site, que é pior que a faixa não existir
       stats: values.stats.filter((stat) => stat.value.trim() && stat.label.trim()),
+      // depoimento sem texto vira card vazio no site; some antes de salvar
+      reviews: values.reviews
+        .filter((review) => review.text.trim())
+        .map((review) => ({
+          rating: review.rating,
+          text: review.text.trim(),
+          author: review.author.trim(),
+        })),
       financing: {
         downPaymentPercent: values.downPaymentPercent,
         terms: parseTerms(termsText),
@@ -151,6 +160,103 @@ export function PagesPanel({
             >
               <Plus className="h-3.5 w-3.5" />
               Adicionar número
+            </Button>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {/* ---------------------------------------------------- avaliações */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Avaliações de clientes</CardTitle>
+          <CardDescription>
+            Aparecem na página Sobre nós. São depoimentos que você cadastra — não vêm do Google
+            nem de outro site. Sem nenhum cadastrado, a seção não aparece: um espaço reservado
+            vazio trabalha contra a loja.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {values.reviews.map((review, index) => (
+            <div
+              key={index}
+              className="mb-3 rounded-inner border border-border px-4 py-3"
+            >
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <Select
+                  aria-label={`Nota do depoimento ${index + 1}`}
+                  disabled={readOnly}
+                  className="max-w-[10rem]"
+                  value={String(review.rating)}
+                  onChange={(event) => {
+                    const next = [...values.reviews];
+                    next[index] = { ...review, rating: Number(event.target.value) };
+                    update("reviews", next);
+                  }}
+                >
+                  {[5, 4, 3, 2, 1].map((nota) => (
+                    <option key={nota} value={nota}>
+                      {"★".repeat(nota)} {nota}
+                    </option>
+                  ))}
+                </Select>
+
+                {!readOnly ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Remover depoimento ${index + 1}`}
+                    onClick={() =>
+                      update(
+                        "reviews",
+                        values.reviews.filter((_, posicao) => posicao !== index),
+                      )
+                    }
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                ) : null}
+              </div>
+
+              <Textarea
+                aria-label={`Texto do depoimento ${index + 1}`}
+                rows={2}
+                disabled={readOnly}
+                placeholder="Atendimento rápido e negociação clara do começo ao fim."
+                value={review.text}
+                onChange={(event) => {
+                  const next = [...values.reviews];
+                  next[index] = { ...review, text: event.target.value };
+                  update("reviews", next);
+                }}
+              />
+
+              <Input
+                aria-label={`Autor do depoimento ${index + 1}`}
+                className="mt-2"
+                disabled={readOnly}
+                placeholder="Nome do cliente (opcional)"
+                value={review.author}
+                onChange={(event) => {
+                  const next = [...values.reviews];
+                  next[index] = { ...review, author: event.target.value };
+                  update("reviews", next);
+                }}
+              />
+            </div>
+          ))}
+
+          {!readOnly && values.reviews.length < 6 ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                update("reviews", [...values.reviews, { rating: 5, text: "", author: "" }])
+              }
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Adicionar depoimento
             </Button>
           ) : null}
         </CardContent>

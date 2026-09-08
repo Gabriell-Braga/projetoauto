@@ -93,7 +93,7 @@ export function SellCarForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2" noValidate>
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
       <div>
         <label className={label} htmlFor="sell-brand">
           Marca
@@ -217,7 +217,7 @@ export function SellCarTeaser({ href }: { href: string }) {
     "w-full rounded-[var(--site-radius)] border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/40 focus:border-white/40";
 
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-1 gap-3">
       <input
         aria-label="Marca e modelo"
         className={dark}

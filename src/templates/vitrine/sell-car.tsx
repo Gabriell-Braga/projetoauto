@@ -40,7 +40,7 @@ export function SellCar({ site, links, sellForm }: SellCarProps) {
     <Shell site={site} links={links}>
       {/* ----------------------------------------------------------- herói */}
       <section className="border-b border-[var(--site-border)] bg-[var(--site-background)]">
-        <div className={`${SHELL} grid items-start gap-10 py-14 lg:grid-cols-[1fr_500px]`}>
+        <div className={`${SHELL} grid grid-cols-1 items-start gap-10 py-14 lg:grid-cols-[minmax(0,1fr)_500px]`}>
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--site-primary)]">
               Venda seu carro
@@ -85,7 +85,7 @@ export function SellCar({ site, links, sellForm }: SellCarProps) {
 
       {/* ---------------------------------------- o que ajuda na avaliação */}
       <section className="border-y border-[var(--site-border)] bg-[var(--site-background)] py-14">
-        <div className={`${SHELL} grid gap-8 lg:grid-cols-[1fr_400px]`}>
+        <div className={`${SHELL} grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px]`}>
           <div>
             <SectionHeading
               title="O que ajuda na avaliação"

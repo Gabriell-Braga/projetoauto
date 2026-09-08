@@ -76,6 +76,16 @@ export type SeoSettings = {
  */
 export type SiteStats = { value: string; label: string }[];
 
+/**
+ * Depoimento de cliente, como o desenho mostra no Sobre.
+ *
+ * Cadastrado pela revenda, não sincronizado de fora — o desenho diz
+ * "podem ser sincronizadas ou cadastradas pela loja", e a sincronização
+ * depende de integração com Google ou Meta, que não existe. Cadastrar é o
+ * caminho que funciona hoje.
+ */
+export type SiteReviews = { rating: number; text: string; author: string | null }[];
+
 /** O que a simulação de financiamento assume antes de a pessoa mexer. */
 export type FinancingDefaults = {
   downPaymentPercent?: number;
@@ -109,6 +119,7 @@ export const tenantSites = sqliteTable("tenant_sites", {
   seo: text("seo", { mode: "json" }).$type<SeoSettings>(),
   stats: text("stats", { mode: "json" }).$type<SiteStats>(),
   financing: text("financing", { mode: "json" }).$type<FinancingDefaults>(),
+  reviews: text("reviews", { mode: "json" }).$type<SiteReviews>(),
   /*
    * Privacidade e termos ficam como texto da revenda, não como página nossa.
    *

@@ -92,6 +92,14 @@ export type SiteBanner = {
  */
 export type SiteStat = { value: string; label: string };
 
+/**
+ * Depoimento de cliente.
+ *
+ * `rating` já chega limitado a 1–5; o template desenha estrelas em cima disso
+ * sem precisar validar de novo.
+ */
+export type SiteReview = { rating: number; text: string; author: string | null };
+
 /** Valores que a simulação de financiamento assume antes de a pessoa mexer. */
 export type FinancingDefaults = {
   /** Entrada sugerida, em porcentagem do valor do veículo. */
@@ -112,6 +120,8 @@ export type SiteData = {
   banners: SiteBanner[];
   /** Até três; vazio esconde a faixa inteira em vez de mostrar zeros. */
   stats: SiteStat[];
+  /** Vazio esconde a seção: espaço reservado sem depoimento envergonha a loja. */
+  reviews: SiteReview[];
   financing: FinancingDefaults;
   legal: { privacy: string | null; terms: string | null; updatedAt: string | null };
 };
@@ -242,7 +252,10 @@ export type VehicleDetailProps = BaseTemplateProps & {
   tradeInForm?: React.ReactNode;
 };
 
-export type ContactProps = BaseTemplateProps;
+export type ContactProps = BaseTemplateProps & {
+  /** "Envie uma mensagem" — opcional, os templates antigos não têm essa seção. */
+  contactForm?: React.ReactNode;
+};
 
 /**
  * Simulação de financiamento na página pública.

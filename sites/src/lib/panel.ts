@@ -33,6 +33,26 @@ async function get<T>(path: string, revalidate: number): Promise<T | null> {
     next: { revalidate },
   });
 
+  /*
+   * HTML no lugar de JSON quer dizer que PANEL_URL aponta para o lugar errado.
+   *
+   * Foi o que aconteceu na primeira publicacao: o painel vive sob um mount
+   * path (`/app`), e sem ele a chamada caia no 404 em HTML do site Webflow. O
+   * app leu aquilo como "revenda nao existe" e devolveu 404 — a mesma resposta
+   * de um dominio nao cadastrado, que e um problema COMPLETAMENTE diferente e
+   * mandou a investigacao para o lado errado.
+   *
+   * A checagem vem antes da do 404 justamente porque o sintoma era um 404.
+   */
+  const tipo = response.headers.get("content-type") ?? "";
+  if (!tipo.includes("json")) {
+    throw new Error(
+      `PANEL_URL parece errada: ${panelUrl()}${path} respondeu ${response.status} ` +
+        `em "${tipo || "tipo desconhecido"}", e não JSON. ` +
+        "Confira se falta o caminho onde o painel está montado (ex.: /app).",
+    );
+  }
+
   if (response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`Painel respondeu ${response.status} em ${path}`);

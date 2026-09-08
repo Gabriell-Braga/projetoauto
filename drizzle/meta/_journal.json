@@ -85,6 +85,13 @@
       "when": 1788830796521,
       "tag": "0011_tenant_domains",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1788833531472,
+      "tag": "0012_site_stats_legal_financing",
+      "breakpoints": true
     }
   ]
 }

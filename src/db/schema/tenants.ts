@@ -67,6 +67,21 @@ export type SeoSettings = {
   ogImageKey?: string;
 };
 
+/**
+ * Números de vitrine da revenda: "+300 / veículos vendidos".
+ *
+ * Valor é texto, não número: a revenda escreve "+300", "4,9/5" e "10 anos" na
+ * mesma faixa, que não são a mesma grandeza. Formatar isso do nosso lado
+ * transformaria "4,9/5" em algo errado.
+ */
+export type SiteStats = { value: string; label: string }[];
+
+/** O que a simulação de financiamento assume antes de a pessoa mexer. */
+export type FinancingDefaults = {
+  downPaymentPercent?: number;
+  terms?: number[];
+};
+
 /** Dados de apresentação/CMS do site — separados de `tenants` para cachear fácil no KV. */
 export const tenantSites = sqliteTable("tenant_sites", {
   tenantId: text("tenant_id")
@@ -92,6 +107,19 @@ export const tenantSites = sqliteTable("tenant_sites", {
   aboutTitle: text("about_title"),
   aboutText: text("about_text"),
   seo: text("seo", { mode: "json" }).$type<SeoSettings>(),
+  stats: text("stats", { mode: "json" }).$type<SiteStats>(),
+  financing: text("financing", { mode: "json" }).$type<FinancingDefaults>(),
+  /*
+   * Privacidade e termos ficam como texto da revenda, não como página nossa.
+   *
+   * O conteúdo é jurídico e responde pela empresa dela — publicar um texto
+   * genérico assinado pela revenda seria colocar a loja para responder por
+   * uma promessa que ninguém leu. Vazio esconde a página em vez de mostrar
+   * uma casca sem conteúdo.
+   */
+  legalPrivacy: text("legal_privacy"),
+  legalTerms: text("legal_terms"),
+  legalUpdatedAt: integer("legal_updated_at", { mode: "timestamp_ms" }),
   updatedAt: updatedAt(),
 });
 

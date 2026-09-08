@@ -166,5 +166,15 @@ export const MIGRATIONS: BundledMigration[] = [
       "CREATE UNIQUE INDEX `tenant_domains_domain_unique` ON `tenant_domains` (`domain`);",
       "CREATE INDEX `tenant_domains_tenant_idx` ON `tenant_domains` (`tenant_id`,`is_primary`);"
     ]
+  },
+  {
+    "tag": "0012_site_stats_legal_financing",
+    "statements": [
+      "ALTER TABLE `tenant_sites` ADD `stats` text;",
+      "ALTER TABLE `tenant_sites` ADD `financing` text;",
+      "ALTER TABLE `tenant_sites` ADD `legal_privacy` text;",
+      "ALTER TABLE `tenant_sites` ADD `legal_terms` text;",
+      "ALTER TABLE `tenant_sites` ADD `legal_updated_at` integer;"
+    ]
   }
 ];

@@ -33,6 +33,15 @@ type CachedSite = SiteData & { gtmCode: string | null; templateId: string };
 
 const SITE_TTL = 120;
 
+/**
+ * Padrões da simulação, quando a revenda não configurou os dela.
+ *
+ * Ficam no serviço e não no template: o template só desenha o seletor, e
+ * prazos diferentes por template fariam a mesma revenda oferecer condições
+ * distintas conforme o desenho escolhido.
+ */
+const FINANCING_FALLBACK = { downPaymentPercent: 20, terms: [24, 36, 48, 60] };
+
 export async function getSiteData(slug: string): Promise<CachedSite | null> {
   return cached(cacheKeys.tenantSite(slug), SITE_TTL, () => loadSiteData(slug));
 }
@@ -97,6 +106,21 @@ async function loadSiteData(slug: string): Promise<CachedSite | null> {
       businessHours: site?.businessHours ?? [],
       social: site?.social ?? {},
     },
+    // até três; a faixa some inteira quando não há nenhum, em vez de
+    // mostrar zeros que envergonham a loja
+    stats: (site?.stats ?? []).filter((stat) => stat.value && stat.label).slice(0, 3),
+    financing: {
+      downPaymentPercent:
+        site?.financing?.downPaymentPercent ?? FINANCING_FALLBACK.downPaymentPercent,
+      terms: site?.financing?.terms?.length
+        ? site.financing.terms
+        : FINANCING_FALLBACK.terms,
+    },
+    legal: {
+      privacy: site?.legalPrivacy ?? null,
+      terms: site?.legalTerms ?? null,
+      updatedAt: site?.legalUpdatedAt ? site.legalUpdatedAt.toISOString() : null,
+    },
     banners: banners.map((banner) => ({
       id: banner.id,
       imageUrl: mediaUrl(banner.imageKey),
@@ -121,6 +145,11 @@ export function buildSiteLinks(slug: string, whatsappDigits: string | null): Sit
     home: tenantPublicPath(slug),
     stock: tenantPublicPath(slug, "/estoque"),
     contact: tenantPublicPath(slug, "/contato"),
+    financing: tenantPublicPath(slug, "/financiamento"),
+    sellCar: tenantPublicPath(slug, "/venda-seu-carro"),
+    about: tenantPublicPath(slug, "/sobre"),
+    privacy: tenantPublicPath(slug, "/privacidade"),
+    terms: tenantPublicPath(slug, "/termos"),
     vehicle: (vehicleSlug: string) => tenantPublicPath(slug, `/veiculo/${vehicleSlug}`),
     stockWith: (params) => {
       const query = new URLSearchParams();

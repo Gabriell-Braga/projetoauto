@@ -93,13 +93,27 @@ async function main() {
    * raio, espaçamento de cada nó. É de onde os tokens saem quando a API de
    * Variables não está disponível — ela é exclusiva de Enterprise.
    */
-  const document = await api(`/files/${fileKey}?geometry=paths`);
+  // a chave fica gravada para o figma-render não precisar dela de novo
+  save("meta.json", { fileKey, nodeId, baixadoEm: new Date().toISOString() });
+
+  const document = await api(`/files/${fileKey}`);
   console.log(`  ${save("document.json", document)}  (${document.name})`);
 
-  // os estilos publicados guardam os NOMES semânticos; sem eles sobra o valor
-  // cru, e "#694AE5" não diz que aquilo é a cor primária
-  const styles = await api(`/files/${fileKey}/styles`);
-  console.log(`  ${save("styles.json", styles)}`);
+  /*
+   * Estilos publicados são um extra, não um requisito.
+   *
+   * Este endpoint lê a biblioteca publicada e pede um escopo além do de
+   * leitura de arquivo — numa conta sem ele volta 403. Não é perda: o próprio
+   * documento traz o mapa `styles` com os nomes semânticos, que é de onde os
+   * tokens saem. Derrubar a importação inteira por causa do extra seria trocar
+   * tudo por nada.
+   */
+  try {
+    const styles = await api(`/files/${fileKey}/styles`);
+    console.log(`  ${save("styles.json", styles)}`);
+  } catch {
+    console.log("  (estilos publicados indisponíveis — os nomes vêm do documento)");
+  }
 
   if (nodeId) {
     const node = await api(`/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}`);

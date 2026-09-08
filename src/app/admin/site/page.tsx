@@ -10,9 +10,12 @@ import { can } from "@/lib/auth/rbac";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { Tabs } from "@/components/ui/tabs";
 import { DEFAULT_THEME } from "@/templates/contract";
+import { listDomains } from "@/lib/services/domains";
+import { hostingReady } from "@/lib/integrations/vercel";
 import { ContactPanel } from "./contact-panel";
 import { ContentPanel } from "./content-panel";
 import { IdentityPanel } from "./identity-panel";
+import { DomainsPanel } from "./domains-panel";
 
 export const metadata: Metadata = { title: "Site" };
 export const dynamic = "force-dynamic";
@@ -21,6 +24,7 @@ const TABS = [
   { key: "identidade", label: "Identidade" },
   { key: "contato", label: "Contato" },
   { key: "conteudo", label: "Conteúdo" },
+  { key: "dominio", label: "Domínio" },
 ] as const;
 
 export default async function SitePage({
@@ -48,6 +52,8 @@ export default async function SitePage({
           .where(eq(tenantBanners.tenantId, context.tenant.id))
           .orderBy(asc(tenantBanners.position))
       : [];
+
+  const domains = tab === "dominio" ? await listDomains(context.tenant.id) : [];
 
   const readOnly = !can(context.role, "site:write") || context.access !== "full";
 
@@ -109,6 +115,22 @@ export default async function SitePage({
             businessHours: site?.businessHours ?? [],
             social: site?.social ?? {},
           }}
+        />
+      ) : null}
+
+      {tab === "dominio" ? (
+        <DomainsPanel
+          readOnly={readOnly}
+          hostingReady={hostingReady()}
+          domains={domains.map((row) => ({
+            id: row.id,
+            domain: row.domain,
+            status: row.status,
+            isPrimary: row.isPrimary,
+            pendingRecords: row.pendingRecords,
+            lastError: row.lastError,
+            lastCheckedAt: row.lastCheckedAt ? row.lastCheckedAt.toISOString() : null,
+          }))}
         />
       ) : null}
 

@@ -158,5 +158,13 @@ export const MIGRATIONS: BundledMigration[] = [
       "CREATE INDEX `vehicle_appraisals_tenant_status_idx` ON `vehicle_appraisals` (`tenant_id`,`status`,`created_at`);",
       "CREATE INDEX `vehicle_appraisals_lead_idx` ON `vehicle_appraisals` (`lead_id`);"
     ]
+  },
+  {
+    "tag": "0011_tenant_domains",
+    "statements": [
+      "CREATE TABLE `tenant_domains` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`tenant_id` text NOT NULL,\n\t`domain` text NOT NULL,\n\t`status` text DEFAULT 'pendente' NOT NULL,\n\t`is_primary` integer DEFAULT false NOT NULL,\n\t`pending_records` text,\n\t`last_error` text,\n\t`last_checked_at` integer,\n\t`created_by_user_id` text,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE UNIQUE INDEX `tenant_domains_domain_unique` ON `tenant_domains` (`domain`);",
+      "CREATE INDEX `tenant_domains_tenant_idx` ON `tenant_domains` (`tenant_id`,`is_primary`);"
+    ]
   }
 ];

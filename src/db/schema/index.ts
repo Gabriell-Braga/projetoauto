@@ -7,6 +7,7 @@ export * from "./vehicles";
 export * from "./leads";
 export * from "./crm";
 export * from "./appraisals";
+export * from "./domains";
 export * from "./portals";
 export * from "./audit";
 export * from "./password-resets";

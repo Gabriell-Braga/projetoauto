@@ -18,6 +18,7 @@ import {
 import { OPTION_LABELS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
 import { mediaUrl } from "@/lib/paths";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
+import { buildSiteLinks as kitBuildSiteLinks } from "@projetoauto/site-kit/links";
 import { findTemplateManifest } from "@projetoauto/site-kit/manifests";
 import { formatCurrency, formatNumber, onlyDigits } from "@/lib/utils";
 import {
@@ -161,30 +162,14 @@ export function normalizeWhatsapp(value: string): string {
   return digits;
 }
 
+/**
+ * Links do site publico servido pelo painel, sob /r/<slug>.
+ *
+ * A montagem em si mora no pacote: o app dos sites monta os MESMOS links sem
+ * prefixo nenhum, e duas copias divergiriam na primeira pagina nova.
+ */
 export function buildSiteLinks(slug: string, whatsappDigits: string | null): SiteLinks {
-  return {
-    home: tenantPublicPath(slug),
-    stock: tenantPublicPath(slug, "/estoque"),
-    contact: tenantPublicPath(slug, "/contato"),
-    financing: tenantPublicPath(slug, "/financiamento"),
-    sellCar: tenantPublicPath(slug, "/venda-seu-carro"),
-    about: tenantPublicPath(slug, "/sobre"),
-    privacy: tenantPublicPath(slug, "/privacidade"),
-    terms: tenantPublicPath(slug, "/termos"),
-    vehicle: (vehicleSlug: string) => tenantPublicPath(slug, `/veiculo/${vehicleSlug}`),
-    stockWith: (params) => {
-      const query = new URLSearchParams();
-      for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined && value !== "") query.set(key, String(value));
-      }
-      const suffix = query.toString();
-      return tenantPublicPath(slug, suffix ? `/estoque?${suffix}` : "/estoque");
-    },
-    whatsapp: (message: string) =>
-      whatsappDigits
-        ? `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(message)}`
-        : null,
-  };
+  return kitBuildSiteLinks(tenantPublicPath(slug), whatsappDigits);
 }
 
 function vehicleTitle(vehicle: { brand: string; model: string; version?: string | null }): string {

@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @import "./design-tokens.css";
 
+/*
+ * Os templates moram em packages/site-kit, e o Tailwind v4 pula node_modules
+ * ao varrer o projeto. Sem esta linha as classes deles nao entram na folha, e
+ * o site publico servido pelo painel sai sem estilo nenhum.
+ */
+@source "../../packages/site-kit/src";
+
 /* ============================================================================
    Ponte tokens -> utilitários do Tailwind.
    `bg-surface`, `text-muted`, `border-border`, `text-accent`… todos apontam

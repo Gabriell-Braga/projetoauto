@@ -17,7 +17,9 @@
     "./paths": "./src/lib/paths.ts",
     "./client-api": "./src/lib/client-api.ts",
     "./option-filter": "./src/lib/option-filter.ts",
-    "./installment": "./src/lib/installment.ts"
+    "./installment": "./src/lib/installment.ts",
+    "./links": "./src/lib/links.ts",
+    "./jsonld": "./src/lib/jsonld.tsx"
   },
   "peerDependencies": {
     "next": "^15",

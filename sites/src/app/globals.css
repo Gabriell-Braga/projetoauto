@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/*
+ * Onde procurar as classes.
+ *
+ * O Tailwind v4 varre o projeto sozinho, mas pula `node_modules` — e os
+ * templates moraram la, como pacote de workspace. Sem esta linha ele nao ve
+ * uma classe sequer dos templates e gera uma folha praticamente vazia: a
+ * pagina sai com todo o conteudo certo e nenhum estilo.
+ */
+@source "../../../packages/site-kit/src";
+
+/*
+ * Este app desenha SO site publico, entao aqui nao entra o sistema de design
+ * do painel. As cores vem todas de `--site-*`, que o layout injeta a partir do
+ * tema da revenda; o que sobra e o basico que o navegador nao da de graca.
+ */
+
+/*
+ * O Tailwind v4 tirou a regra do preflight que punha a maozinha em `button`.
+ * Sem isto, todo botao do site fica com o cursor de texto, e o visitante
+ * duvida que aquilo clica.
+ */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+summary,
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+label:has(input[type="checkbox"]:not(:disabled)),
+label:has(input[type="radio"]:not(:disabled)) {
+  cursor: pointer;
+}
+
+html {
+  scroll-behavior: smooth;
+}

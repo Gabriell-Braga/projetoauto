@@ -13,21 +13,11 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "plugins": [{ "name": "next" }],
     "paths": {
-      "@/*": ["./src/*"]
-    },
-    "types": [
-        "@cloudflare/workers-types/2023-07-01"
-    ]
+      "~/*": ["./src/*"]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  // sites tem tsconfig proprio: o alias ~/ so existe la, e o app da Vercel nunca
-  // enxerga src/. Checar os dois com a mesma configuracao daria erro de modulo
-  // inexistente em arquivos que compilam perfeitamente no lugar deles.
-  "exclude": ["node_modules", "nextjs", "sites"]
+  "exclude": ["node_modules"]
 }

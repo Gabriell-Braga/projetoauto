@@ -3,7 +3,9 @@ import { getDb } from "@/db";
 import {
   vehiclePhotos,
   vehicles,
+  type Fuel,
   type PhotoVariants,
+  type Transmission,
   type Vehicle,
   type VehicleStatus,
 } from "@/db/schema";
@@ -24,6 +26,17 @@ export type VehicleListItem = {
   priceOnRequest: boolean;
   status: VehicleStatus;
   featured: boolean;
+  /*
+   * Cambio e combustivel entram na LISTA, nao so na ficha.
+   *
+   * O card do site mostra "2024 . 32.480 km . Automatico" — sao os tres
+   * numeros que a pessoa usa para descartar um carro sem abrir. Sem eles na
+   * consulta, o card ficava com dois tercos da linha e o template nao tinha
+   * como saber que faltava dado: o campo chegava nulo, que e indistinguivel
+   * de "esta revenda nao preencheu".
+   */
+  transmission: Transmission | null;
+  fuel: Fuel | null;
   coverPhotoKey: string | null;
   photosCount: number;
   createdAt: Date;
@@ -42,6 +55,8 @@ const LIST_COLUMNS = {
   priceOnRequest: vehicles.priceOnRequest,
   status: vehicles.status,
   featured: vehicles.featured,
+  transmission: vehicles.transmission,
+  fuel: vehicles.fuel,
   coverPhotoKey: vehicles.coverPhotoKey,
   photosCount: vehicles.photosCount,
   createdAt: vehicles.createdAt,

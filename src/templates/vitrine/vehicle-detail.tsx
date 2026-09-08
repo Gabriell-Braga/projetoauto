@@ -223,7 +223,9 @@ export function VehicleDetail({ site, links, vehicle, related, leadForm }: Vehic
             avaliação em vez de repetir o formulário: são dois fluxos, e um
             formulário de troca aqui competiria com o de contato ao lado.
           */}
-          <div className="flex flex-col justify-between rounded-[var(--site-radius)] bg-[var(--site-text)] p-6 text-white">
+          {/* `self-start`: sem isso o card estica ate a altura do formulario
+              ao lado e sobra um vao escuro no meio, que parece secao faltando */}
+          <div className="flex flex-col self-start rounded-[var(--site-radius)] bg-[var(--site-text)] p-6 text-white">
             <div>
               <p
                 className="text-lg font-semibold"

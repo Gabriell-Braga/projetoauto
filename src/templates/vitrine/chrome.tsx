@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
-import type { SiteData, SiteLinks } from "@/templates/contract";
+import type { SiteData, SiteLinks, StockFacets } from "@/templates/contract";
+import { BODY_TYPE_LABELS } from "@/lib/catalog/labels";
 import { headlineHours, summarizeHours } from "@/templates/shared/hours";
 
 /**
@@ -93,6 +94,51 @@ export function SectionHeading({
         ) : null}
       </div>
       {action}
+    </div>
+  );
+}
+
+/**
+ * Atalhos de categoria, na home e no topo do estoque.
+ *
+ * Saem das facetas do estoque de verdade, nao de uma lista fixa: oferecer
+ * "Picapes" a uma revenda que so vende hatch leva a pessoa a uma busca vazia
+ * ja no primeiro clique.
+ */
+export function categoryShortcuts(
+  facets: StockFacets,
+  links: SiteLinks,
+): { label: string; href: string }[] {
+  const porCarroceria = facets.bodyTypes
+    .filter((body): body is NonNullable<typeof body> => Boolean(body))
+    .slice(0, 5)
+    .map((body) => ({
+      label: BODY_TYPE_LABELS[body],
+      href: links.stockWith({ carroceria: body }),
+    }));
+
+  const automaticos = facets.transmissions.includes("automatico")
+    ? [{ label: "Automáticos", href: links.stockWith({ cambio: "automatico" }) }]
+    : [];
+
+  return [...porCarroceria, ...automaticos];
+}
+
+/** Linha de atalhos, com a aparencia de pilula do desenho. */
+export function CategoryChips({ items }: { items: { label: string; href: string }[] }) {
+  if (items.length === 0) return null;
+
+  return (
+    <div className="mt-5 flex flex-wrap gap-2">
+      {items.map((item) => (
+        <Link
+          key={item.label}
+          href={item.href}
+          className="rounded-full border border-[var(--site-border)] bg-[var(--site-surface)] px-4 py-1.5 text-sm text-[var(--site-text)] transition-colors hover:border-[var(--site-primary)] hover:text-[var(--site-primary)]"
+        >
+          {item.label}
+        </Link>
+      ))}
     </div>
   );
 }

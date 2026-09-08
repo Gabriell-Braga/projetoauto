@@ -205,10 +205,12 @@ export function toVehicleCard(vehicle: VehicleListItem): VehicleView {
     status: vehicle.status,
     statusLabel: VEHICLE_STATUS_LABELS[vehicle.status],
     featured: vehicle.featured,
-    transmission: null,
-    transmissionLabel: null,
-    fuel: null,
-    fuelLabel: null,
+    transmission: vehicle.transmission,
+    transmissionLabel: vehicle.transmission
+      ? TRANSMISSION_LABELS[vehicle.transmission]
+      : null,
+    fuel: vehicle.fuel,
+    fuelLabel: vehicle.fuel ? FUEL_LABELS[vehicle.fuel] : null,
     bodyType: null,
     bodyTypeLabel: null,
     color: null,
@@ -219,6 +221,19 @@ export function toVehicleCard(vehicle: VehicleListItem): VehicleView {
     coverUrl: mediaUrl(vehicle.coverPhotoKey),
     photos: [],
   };
+}
+
+/**
+ * Rótulo de emergência para opcional fora do catálogo.
+ *
+ * Sem isso, um veículo com chave antiga ou criada pela API mostra
+ * "ar_condicionado" na página pública — texto de banco de dados exibido ao
+ * cliente, que faz o site parecer quebrado. Some o traço e o sublinhado, e a
+ * primeira letra sobe.
+ */
+function humanizeOption(key: string): string {
+  const texto = key.replace(/[-_]+/g, " ").trim();
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
 export function toVehicleDetail(vehicle: Vehicle, photos: VehiclePhoto[]): VehicleView {
@@ -255,7 +270,7 @@ export function toVehicleDetail(vehicle: Vehicle, photos: VehiclePhoto[]): Vehic
     licensePlateEnd: vehicle.licensePlateEnd,
     options: optionKeys.map((key) => ({
       key,
-      label: OPTION_LABELS[key] ?? key,
+      label: OPTION_LABELS[key] ?? humanizeOption(key),
       group: VEHICLE_OPTIONS.find((option) => option.key === key)?.group ?? "Outros",
     })),
     description: vehicle.description,

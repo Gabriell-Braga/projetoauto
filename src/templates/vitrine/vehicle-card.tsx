@@ -33,7 +33,15 @@ export function VehicleCard({
               src={vehicle.coverUrl}
               alt={vehicle.title}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              /*
+               * O fundo cobre a falha de carregamento.
+               *
+               * Foto apagada do armazenamento vira o icone de imagem quebrada do
+               * navegador — um retangulo berrante no meio da grade. Com o fundo
+               * da propria area, a falha vira um espaco neutro, do mesmo tom do
+               * "Sem foto" ao lado.
+               */
+              className="h-full w-full bg-[var(--site-background)] object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-[var(--site-muted)]">
@@ -46,8 +54,15 @@ export function VehicleCard({
       </Link>
 
       <div className="flex flex-1 flex-col p-4">
+        {/*
+          Altura fixa de duas linhas.
+          Sem isso, um "Compass Longitude 1.3 T270 Turbo Flex AT6" ao lado de um
+          "Kwid Intense 1.0" empurra o preço para baixo em um card e não no
+          outro, e a grade perde o alinhamento onde o olho compara: a linha do
+          preço.
+        */}
         <h3
-          className="line-clamp-2 text-[17px] font-semibold leading-snug text-[var(--site-text)]"
+          className="line-clamp-2 min-h-[2.75rem] text-[17px] font-semibold leading-snug text-[var(--site-text)]"
           style={{ fontFamily: "var(--site-font-heading)" }}
         >
           <Link href={links.vehicle(vehicle.slug)}>{vehicle.title}</Link>
@@ -55,7 +70,7 @@ export function VehicleCard({
 
         {/* ano · km · câmbio, na ordem que a pessoa compara */}
         <p className="mt-1.5 text-[13px] text-[var(--site-muted)]">
-          {[vehicle.yearLabel, vehicle.mileageLabel, vehicle.transmissionLabel]
+          {[cardYear(vehicle), vehicle.mileageLabel, vehicle.transmissionLabel]
             .filter(Boolean)
             .join(" • ")}
         </p>
@@ -102,6 +117,19 @@ export function VehicleCard({
       </div>
     </article>
   );
+}
+
+/**
+ * Ano do card: "2024", não "2024/2024".
+ *
+ * O par só informa quando fabricação e modelo diferem — que é o caso que
+ * muda o preço. Repetir o mesmo número dos dois lados gasta metade da linha
+ * de comparação para não dizer nada.
+ */
+function cardYear(vehicle: VehicleView): string {
+  return vehicle.yearManufacture === vehicle.yearModel
+    ? String(vehicle.yearModel)
+    : vehicle.yearLabel;
 }
 
 /**

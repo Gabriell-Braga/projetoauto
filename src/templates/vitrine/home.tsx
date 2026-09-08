@@ -1,36 +1,20 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
-import type { HomeProps, SiteLinks, StockFacets } from "@/templates/contract";
-import { BODY_TYPE_LABELS } from "@/lib/catalog/labels";
-import { SHELL, SectionHeading, Shell, WhatsappBand, WhatsappButton } from "./chrome";
+import type { HomeProps } from "@/templates/contract";
+import {
+  CategoryChips,
+  SHELL,
+  SectionHeading,
+  Shell,
+  WhatsappBand,
+  WhatsappButton,
+  categoryShortcuts,
+} from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
-
-/**
- * Atalhos de categoria da home.
- *
- * Saem das facetas do estoque de verdade, não de uma lista fixa: oferecer
- * "Picapes" a uma revenda que só vende hatch leva a pessoa a uma busca vazia
- * já no primeiro clique.
- */
-function categories(facets: StockFacets, links: SiteLinks) {
-  const porCarroceria = facets.bodyTypes
-    .filter((body): body is NonNullable<typeof body> => Boolean(body))
-    .slice(0, 5)
-    .map((body) => ({
-      label: BODY_TYPE_LABELS[body],
-      href: links.stockWith({ carroceria: body }),
-    }));
-
-  const automaticos = facets.transmissions.includes("automatico")
-    ? [{ label: "Automáticos", href: links.stockWith({ cambio: "automatico" }) }]
-    : [];
-
-  return [...porCarroceria, ...automaticos];
-}
 
 export function Home({ site, links, featured, latest, facets, totalVehicles }: HomeProps) {
   const destaques = featured.length > 0 ? featured : latest;
-  const atalhos = categories(facets, links);
+  const atalhos = categoryShortcuts(facets, links);
 
   return (
     <Shell site={site} links={links} active="home">
@@ -77,19 +61,7 @@ export function Home({ site, links, featured, latest, facets, totalVehicles }: H
             </button>
           </form>
 
-          {atalhos.length > 0 ? (
-            <div className="mt-5 flex flex-wrap gap-2">
-              {atalhos.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="rounded-full border border-[var(--site-border)] bg-[var(--site-surface)] px-4 py-1.5 text-sm text-[var(--site-text)] transition-colors hover:border-[var(--site-primary)] hover:text-[var(--site-primary)]"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          ) : null}
+          <CategoryChips items={atalhos} />
         </div>
       </section>
 
@@ -110,11 +82,12 @@ export function Home({ site, links, featured, latest, facets, totalVehicles }: H
               </Link>
             }
           />
+          {/* quatro em uma linha, como o desenho: o resto vive no estoque */}
           <VehicleGrid
-            vehicles={destaques.slice(0, 6)}
+            vehicles={destaques.slice(0, 4)}
             links={links}
             storeName={site.name}
-            columns={3}
+            columns={4}
           />
         </section>
       ) : (

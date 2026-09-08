@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import type { ListingProps, StockFacets } from "@/templates/contract";
 import { BODY_TYPE_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from "@/lib/catalog/labels";
-import { SHELL, Shell, WhatsappBand, WhatsappButton } from "./chrome";
+import { CategoryChips, SHELL, Shell, WhatsappBand, WhatsappButton, categoryShortcuts } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
 const SORTS = [
@@ -324,6 +324,8 @@ export function Listing({
               Buscar
             </button>
           </form>
+
+          <CategoryChips items={categoryShortcuts(facets, links)} />
         </div>
       </section>
 

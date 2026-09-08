@@ -74,7 +74,9 @@ export function Financing({ site, links, vehicles, defaults, simulatorForm }: Fi
             )}
           </div>
 
-          <aside className="rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] p-6">
+          {/* `self-start`: a coluna de apoio tem pouco conteudo e nao deve esticar
+            ate a altura do formulario — o vao vazio parece secao faltando */}
+          <aside className="self-start rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] p-6">
             <p
               className="text-lg font-semibold text-[var(--site-text)]"
               style={{ fontFamily: "var(--site-font-heading)" }}

@@ -1,16 +1,18 @@
 import { asc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { tenants, vehiclePhotos, vehicles } from "@/db/schema";
+import { tenantSites, tenants, vehiclePhotos, vehicles } from "@/db/schema";
 import { badRequest, jsonOk, notFound, withApi } from "@/lib/http";
 import { assertOpsSecret } from "@/lib/ops";
 import { putObject, vehiclePhotoKey } from "@/lib/storage/r2";
 import { syncVehiclePhotoState } from "@/lib/services/vehicles";
 import { DEMO_STOCK, type DemoVehicle } from "@/lib/dev/demo-stock";
+import { DEMO_SITE } from "@/lib/dev/demo-site";
+import { baixar, buscarFotos } from "@/lib/dev/demo-photos";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Povoa uma revenda de TESTE com estoque de demonstração.
+ * Povoa uma revenda de TESTE com estoque e dados de demonstração.
  *
  * TEMPORÁRIO — sai do código quando o teste acabar. Rota que cria dado de
  * mentira num banco de produção é um pé no vidro: mesmo atrás do segredo, ela
@@ -25,84 +27,26 @@ export const dynamic = "force-dynamic";
 /** Confirmação escrita: dedo escorregado não popula um banco. */
 const CONFIRMACAO = "sim-quero-dados-de-teste";
 
-const TAMANHOS = {
-  thumb: { w: 400, h: 300 },
-  card: { w: 800, h: 600 },
-  full: { w: 1600, h: 1200 },
-} as const;
-
+const LARGURAS = { thumb: 400, card: 800, full: 1600 };
 const FOTOS_POR_VEICULO = 3;
 
-/**
- * Fotos do LoremFlickr: imagens do Flickr sob Creative Commons.
- *
- * `lock` deixa a escolha determinística — sem ele, cada tamanho do MESMO
- * anúncio viria de uma foto diferente, e a galeria mostraria três carros
- * distintos como se fossem o mesmo veículo.
- */
-function photoUrl(tags: string, lock: number, size: { w: number; h: number }): string {
-  /*
-   * Tag com ESPAÇO faz o serviço responder 403.
-   *
-   * "pickup truck" derrubou a semeadura no segundo veículo, e o erro chegou
-   * como 500 genérico — nada apontava para a tag. Aqui qualquer coisa que não
-   * seja letra ou número vira separador de tag.
-   */
-  const limpas = tags
-    .split(/[^a-zA-Z0-9]+/)
-    .filter(Boolean)
-    .join(",");
-  return `https://loremflickr.com/${size.w}/${size.h}/${limpas}?lock=${lock}`;
-}
-
-/**
- * Tentativas, da mais específica para a mais genérica.
- *
- * Nem toda combinação de marca e modelo tem foto no acervo, e uma tag sem
- * resultado derruba o veículo inteiro. Melhor um carro genérico do que um
- * anúncio sem foto nenhuma — e melhor ainda não interromper a semeadura por
- * causa de um.
- */
-function tentativas(tags: string): string[] {
-  const partes = tags.split(/[^a-zA-Z0-9]+/).filter(Boolean);
-  return [partes.join(","), partes.slice(0, 2).join(","), partes[0] ?? "car", "car"];
-}
-
-async function fetchFoto(tags: string, lock: number, size: { w: number; h: number }) {
-  let ultimoErro = "";
-  for (const tentativa of tentativas(tags)) {
-    const resposta = await fetch(photoUrl(tentativa, lock, size), { redirect: "follow" });
-    if (resposta.ok) return await resposta.arrayBuffer();
-    ultimoErro = `${resposta.status} em "${tentativa}"`;
-  }
-
-  // último recurso: fonte que nunca recusa, para a semeadura não parar
-  const reserva = await fetch(`https://picsum.photos/seed/${lock}/${size.w}/${size.h}`, {
-    redirect: "follow",
-  });
-  if (reserva.ok) return await reserva.arrayBuffer();
-
-  throw new Error(`nenhuma foto respondeu (${ultimoErro})`);
-}
-
-async function addPhotos(tenantId: string, vehicleId: string, demo: DemoVehicle) {
+async function addPhotos(
+  tenantId: string,
+  vehicleId: string,
+  demo: DemoVehicle,
+): Promise<number> {
   const db = await getDb();
+  const encontradas = await buscarFotos(demo.photoTerms, LARGURAS, FOTOS_POR_VEICULO);
+  if (encontradas.length === 0) return 0;
 
-  for (let indice = 0; indice < FOTOS_POR_VEICULO; indice++) {
+  for (let indice = 0; indice < encontradas.length; indice++) {
+    const foto = encontradas[indice];
     const photoId = crypto.randomUUID();
-    // trava por veículo E por posição: fotos diferentes do mesmo carro
-    const lock = Math.abs(hash(`${demo.slug}-${indice}`)) % 100000;
     const variants: Record<string, string> = {};
 
-    for (const [variant, size] of Object.entries(TAMANHOS)) {
-      const bytes = await fetchFoto(demo.photoTags, lock, size);
-      const key = vehiclePhotoKey(
-        tenantId,
-        vehicleId,
-        photoId,
-        variant as keyof typeof TAMANHOS,
-        "jpg",
-      );
+    for (const variant of Object.keys(LARGURAS) as (keyof typeof LARGURAS)[]) {
+      const bytes = await baixar(foto.urls[variant]);
+      const key = vehiclePhotoKey(tenantId, vehicleId, photoId, variant, "jpg");
       await putObject(key, bytes, "image/jpeg");
       variants[variant] = key;
     }
@@ -112,24 +56,13 @@ async function addPhotos(tenantId: string, vehicleId: string, demo: DemoVehicle)
       tenantId,
       vehicleId,
       variants: variants as { thumb: string; card: string; full: string },
-      width: TAMANHOS.full.w,
-      height: TAMANHOS.full.h,
       position: indice,
       isCover: indice === 0,
     });
   }
 
   await syncVehiclePhotoState(tenantId, vehicleId);
-}
-
-/** Hash estável para a trava da foto; não precisa ser criptográfico. */
-function hash(texto: string): number {
-  let valor = 0;
-  for (let i = 0; i < texto.length; i++) {
-    valor = (valor << 5) - valor + texto.charCodeAt(i);
-    valor |= 0;
-  }
-  return valor;
+  return encontradas.length;
 }
 
 export const POST = withApi(async (request: Request) => {
@@ -138,6 +71,8 @@ export const POST = withApi(async (request: Request) => {
   const body = (await request.json().catch(() => ({}))) as {
     slug?: string;
     confirm?: string;
+    /** Apaga as fotos antes de recomeçar; usado quando a fonte anterior errou. */
+    resetPhotos?: boolean;
   };
 
   if (body.confirm !== CONFIRMACAO) {
@@ -153,7 +88,51 @@ export const POST = withApi(async (request: Request) => {
     .limit(1);
   if (!tenant) throw notFound("Revenda não encontrada");
 
-  // 1) cria o que faltar. Sem sub-requisição nenhuma: é barato e idempotente.
+  /*
+   * Reset: apaga o vínculo das fotos, não os objetos no bucket.
+   *
+   * Apagar no R2 custaria uma sub-requisição por arquivo e é o que mais
+   * arriscaria estourar o limite bem no passo de limpeza. Os órfãos ficam, e
+   * somem junto com a revenda de teste no fim.
+   */
+  if (body.resetPhotos) {
+    await db.delete(vehiclePhotos).where(eq(vehiclePhotos.tenantId, tenant.id));
+    await db
+      .update(vehicles)
+      .set({ photosCount: 0, coverPhotoKey: null })
+      .where(eq(vehicles.tenantId, tenant.id));
+    return jsonOk({ resetado: true, veiculosCriados: 0, fotosAdicionadas: 0, faltamComFoto: null });
+  }
+
+  // 1) dados da empresa. Barato e idempotente: sobrescreve sempre.
+  await db
+    .update(tenantSites)
+    .set({
+      phone: DEMO_SITE.phone,
+      whatsapp: DEMO_SITE.whatsapp,
+      email: DEMO_SITE.email,
+      addressStreet: DEMO_SITE.addressStreet,
+      addressNumber: DEMO_SITE.addressNumber,
+      addressComplement: DEMO_SITE.addressComplement,
+      addressDistrict: DEMO_SITE.addressDistrict,
+      addressCity: DEMO_SITE.addressCity,
+      addressState: DEMO_SITE.addressState,
+      addressZip: DEMO_SITE.addressZip,
+      mapsUrl: DEMO_SITE.mapsUrl,
+      businessHours: DEMO_SITE.businessHours,
+      social: DEMO_SITE.social,
+      aboutTitle: DEMO_SITE.aboutTitle,
+      aboutText: DEMO_SITE.aboutText,
+      stats: DEMO_SITE.stats,
+      reviews: DEMO_SITE.reviews,
+      financing: DEMO_SITE.financing,
+      legalPrivacy: DEMO_SITE.legalPrivacy,
+      legalTerms: DEMO_SITE.legalTerms,
+      legalUpdatedAt: new Date(),
+    })
+    .where(eq(tenantSites.tenantId, tenant.id));
+
+  // 2) cria o estoque que faltar. Sem sub-requisição: é barato e idempotente.
   const existentes = await db
     .select({ id: vehicles.id, slug: vehicles.slug, photosCount: vehicles.photosCount })
     .from(vehicles)
@@ -190,32 +169,36 @@ export const POST = withApi(async (request: Request) => {
     criados++;
   }
 
-  // 2) fotos de UM veículo por chamada
-  const semFoto = await db
-    .select({ id: vehicles.id, slug: vehicles.slug })
+  // 3) fotos de UM veículo por chamada
+  const todos = await db
+    .select({ id: vehicles.id, slug: vehicles.slug, photosCount: vehicles.photosCount })
     .from(vehicles)
     .where(eq(vehicles.tenantId, tenant.id))
     .orderBy(asc(vehicles.slug));
 
-  const pendentes = semFoto.filter((v) => {
-    const demo = DEMO_STOCK.find((d) => d.slug === v.slug);
-    if (!demo) return false;
-    const atual = porSlug.get(v.slug);
-    return !atual || atual.photosCount === 0;
-  });
+  const pendentes = todos.filter(
+    (v) => v.photosCount === 0 && DEMO_STOCK.some((d) => d.slug === v.slug),
+  );
 
   const alvo = pendentes[0];
   let fotos = 0;
   if (alvo) {
     const demo = DEMO_STOCK.find((d) => d.slug === alvo.slug)!;
-    await addPhotos(tenant.id, alvo.id, demo);
-    fotos = FOTOS_POR_VEICULO;
+    fotos = await addPhotos(tenant.id, alvo.id, demo);
   }
 
   return jsonOk({
     veiculosCriados: criados,
     fotosAdicionadas: fotos,
     veiculoDaVez: alvo?.slug ?? null,
-    faltamComFoto: Math.max(0, pendentes.length - (alvo ? 1 : 0)),
+    /*
+     * Veículo sem foto no acervo não pode travar a fila.
+     *
+     * Se `addPhotos` não achou nada, `photosCount` continua zero e a próxima
+     * chamada escolheria o MESMO veículo para sempre. O aviso sai aqui para
+     * quem está rodando decidir o que fazer.
+     */
+    semFotoNoAcervo: alvo && fotos === 0 ? alvo.slug : null,
+    faltamComFoto: Math.max(0, pendentes.length - (fotos > 0 ? 1 : 0)),
   });
 });

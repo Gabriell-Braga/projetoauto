@@ -20,6 +20,15 @@ export type DnsRecord = {
   /** Nome do registro no painel de DNS. "@" é a raiz do domínio. */
   name: string;
   value: string;
+  /**
+   * Para que este registro serve.
+   *
+   * A tela mostra os dois de uma vez, e sem isto eles parecem alternativas —
+   * a pessoa cria um, acha que terminou, e volta horas depois.
+   *
+   * Opcional porque registros gravados antes disto não têm o campo.
+   */
+  purpose?: "posse" | "apontamento";
 };
 
 /**

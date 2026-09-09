@@ -39,6 +39,12 @@ const LABELS: Record<DomainStatus, string> = {
   erro: "Com problema",
 };
 
+/** Em palavras da revenda, não do protocolo: TXT e CNAME não dizem nada a ela. */
+const PURPOSE_LABELS: Record<"posse" | "apontamento", string> = {
+  posse: "Provar que é seu",
+  apontamento: "Trazer o site",
+};
+
 export function DomainsPanel({
   domains,
   hostingReady,
@@ -235,13 +241,15 @@ function DomainCard({
       {row.status !== "ativo" ? (
         <div className="mt-3">
           <p className="mb-2 text-xs text-muted">
-            Crie este registro no painel onde o domínio foi registrado (Registro.br, GoDaddy,
-            Cloudflare…). Depois volte aqui e clique em Conferir.
+            {records.length > 1 ? "Crie os dois registros" : "Crie este registro"} no painel onde o
+            domínio foi registrado (Registro.br, GoDaddy, Cloudflare…). Depois volte aqui e clique
+            em Conferir.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[420px] border-collapse text-xs">
               <thead>
                 <tr className="text-left text-faint">
+                  <th className="py-1 pr-3 font-medium">Para quê</th>
                   <th className="py-1 pr-3 font-medium">Tipo</th>
                   <th className="py-1 pr-3 font-medium">Nome</th>
                   <th className="py-1 font-medium">Valor</th>
@@ -250,6 +258,11 @@ function DomainCard({
               <tbody>
                 {records.map((record) => (
                   <tr key={`${record.type}-${record.name}`} className="align-middle">
+                    {/*
+                      Sem dizer para que serve cada um, dois registros na mesma
+                      tabela parecem alternativas — e a pessoa cria só um.
+                    */}
+                    <td className="py-1 pr-3 text-muted">{PURPOSE_LABELS[record.purpose ?? "apontamento"]}</td>
                     <td className="py-1 pr-3 font-mono text-text">{record.type}</td>
                     <td className="py-1 pr-3 font-mono text-text">{record.name}</td>
                     <td className="py-1">

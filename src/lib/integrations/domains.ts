@@ -134,8 +134,13 @@ export function dnsRecordName(domain: string): string {
  */
 export function dnsInstructionsFor(domain: string): DnsRecord {
   return isApexDomain(domain)
-    ? { type: "A", name: "@", value: VERCEL_APEX_IP }
-    : { type: "CNAME", name: dnsRecordName(domain), value: VERCEL_CNAME_TARGET };
+    ? { type: "A", name: "@", value: VERCEL_APEX_IP, purpose: "apontamento" }
+    : {
+        type: "CNAME",
+        name: dnsRecordName(domain),
+        value: VERCEL_CNAME_TARGET,
+        purpose: "apontamento",
+      };
 }
 
 /** O par natural de um domínio: a raiz sugere o `www`, e o `www` sugere a raiz. */
@@ -168,13 +173,33 @@ export type DomainVerdict = {
  */
 export function domainVerdict(domain: string, state: VercelDomainState): DomainVerdict {
   if (!state.verified) {
-    // a Vercel só exige TXT quando o domínio já está em uso em outra conta
-    const records = state.missing.length > 0 ? state.missing : [dnsInstructionsFor(domain)];
+    /*
+     * Os DOIS registros de uma vez.
+     *
+     * Antes a tela pedia primeiro a prova de posse e só depois, numa segunda
+     * visita, o apontamento. Quem cadastra um domínio entra uma vez no painel
+     * de DNS — descobrir o segundo registro horas depois significa entrar de
+     * novo, e no meio-tempo o site parece quebrado sem motivo aparente.
+     *
+     * A ordem importa: a posse vem primeiro porque é ela que destrava o resto.
+     */
+    const posse = state.missing.length > 0 ? state.missing : [];
+    const apontamento = dnsInstructionsFor(domain);
+    /*
+     * TXT é prova de posse; qualquer outro tipo que a Vercel peça já É o
+     * apontamento. Comparar tipo e nome não servia: num domínio raiz o nosso
+     * padrão é `A` e o dela pode vir como `CNAME`, e a tela mostraria os dois,
+     * pedindo à revenda que criasse dois registros conflitantes no mesmo nome.
+     */
+    const jaTem = posse.some((record) => record.type !== "TXT");
+
     return {
       status: "pendente",
       message:
-        "Falta provar que o domínio é seu. Crie o registro abaixo no painel onde o domínio foi registrado.",
-      pendingRecords: records,
+        posse.length > 0
+          ? "Crie os dois registros abaixo no painel onde o domínio foi registrado: um prova que ele é seu, o outro traz o site para cá."
+          : "Crie o registro abaixo no painel onde o domínio foi registrado.",
+      pendingRecords: jaTem ? posse : [...posse, apontamento],
     };
   }
 

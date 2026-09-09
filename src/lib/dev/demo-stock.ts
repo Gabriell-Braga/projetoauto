@@ -31,8 +31,13 @@ export type DemoVehicle = {
   description: string;
   featured: boolean;
   reserved?: boolean;
-  /** Termos de busca da foto; o primeiro é sempre o modelo. */
-  photoTags: string;
+  /**
+   * Termos de busca da foto, do específico para o genérico.
+   *
+   * O primeiro é marca + modelo, que é o que o acervo cataloga. Os seguintes
+   * existem para o veículo não ficar sem foto quando o modelo não estiver lá.
+   */
+  photoTerms: string[];
 };
 
 const OPCOES_BASE = ["ar_condicionado", "direcao_eletrica", "vidros_eletricos", "travas_eletricas"];
@@ -65,7 +70,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Argo Drive 1.3 com revisões em dia e único dono. Econômico e fácil de estacionar, é a opção certa para quem roda na cidade todo dia.",
     featured: true,
-    photoTags: "fiat,argo,hatch",
+    photoTerms: ["Fiat Argo", "Fiat car", "car"],
   },
   {
     slug: "fiat-toro-freedom-2022",
@@ -86,7 +91,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Picape Toro Freedom automática, com caçamba preservada e pneus novos. Cabe a família e cabe o serviço.",
     featured: true,
-    photoTags: "fiat,toro,pickup",
+    photoTerms: ["Fiat Toro", "Fiat car", "car"],
   },
   {
     slug: "fiat-mobi-like-2021",
@@ -107,7 +112,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Mobi Like completo de fábrica para o segmento, com o menor custo de manutenção do pátio. Primeiro carro sem dor de cabeça.",
     featured: false,
-    photoTags: "fiat,mobi,compact",
+    photoTerms: ["Fiat Mobi", "Fiat car", "car"],
   },
   {
     slug: "volkswagen-polo-highline-2023",
@@ -128,7 +133,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Polo Highline turbo, com o acabamento mais completo da linha e central multimídia original. Dirige como carro de categoria acima.",
     featured: true,
-    photoTags: "volkswagen,polo,hatchback",
+    photoTerms: ["Volkswagen Polo", "Volkswagen car", "car"],
   },
   {
     slug: "volkswagen-t-cross-comfortline-2022",
@@ -149,7 +154,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "T-Cross Comfortline com porta-malas de 420 litros e assistentes de condução. SUV compacto que não abre mão de espaço.",
     featured: false,
-    photoTags: "volkswagen,t-cross,suv",
+    photoTerms: ["Volkswagen T-Cross", "Volkswagen car", "car"],
   },
   {
     slug: "volkswagen-nivus-highline-2021",
@@ -170,7 +175,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Nivus Highline com teto em linha cupê e painel digital. Rodou pouco para o ano e está com garantia de fábrica vigente.",
     featured: false,
-    photoTags: "volkswagen,nivus,crossover",
+    photoTerms: ["Volkswagen Nivus", "Volkswagen car", "car"],
   },
   {
     slug: "chevrolet-onix-premier-2024",
@@ -191,7 +196,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Onix Premier turbo praticamente novo, com pouco mais de 18 mil km. Seminovo com cara e cheiro de zero.",
     featured: true,
-    photoTags: "chevrolet,onix,hatchback",
+    photoTerms: ["Chevrolet Onix", "Chevrolet car", "car"],
   },
   {
     slug: "chevrolet-tracker-ltz-2023",
@@ -212,7 +217,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Tracker LTZ com câmera de ré, sensores e ar-condicionado digital. SUV para quem quer altura sem perder economia.",
     featured: false,
-    photoTags: "chevrolet,tracker,suv",
+    photoTerms: ["Chevrolet Tracker", "Chevrolet car", "car"],
   },
   {
     slug: "chevrolet-s10-ltz-diesel-2021",
@@ -233,7 +238,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "S10 LTZ diesel 4x4 com tração reduzida e capota marítima. Rodou estrada, e a manutenção está toda documentada.",
     featured: true,
-    photoTags: "chevrolet,s10,pickup",
+    photoTerms: ["Chevrolet S10", "Chevrolet car", "car"],
   },
   {
     slug: "hyundai-hb20-comfort-2022",
@@ -254,7 +259,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "HB20 Comfort com garantia de fábrica ainda válida. Manutenção barata e revenda fácil.",
     featured: false,
-    photoTags: "hyundai,hb20,hatchback",
+    photoTerms: ["Hyundai HB20", "Hyundai car", "car"],
   },
   {
     slug: "hyundai-creta-platinum-2023",
@@ -276,7 +281,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
       "Creta Platinum com teto solar, bancos em couro e piloto automático adaptativo. O topo de linha do SUV mais vendido da marca.",
     featured: true,
     reserved: true,
-    photoTags: "hyundai,creta,suv",
+    photoTerms: ["Hyundai Creta", "Hyundai car", "car"],
   },
   {
     slug: "toyota-corolla-altis-hybrid-2022",
@@ -297,7 +302,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Corolla Altis híbrido, fazendo mais de 18 km/l na cidade. Conforto de sedã grande com consumo de carro pequeno.",
     featured: true,
-    photoTags: "toyota,corolla,sedan",
+    photoTerms: ["Toyota Corolla", "Toyota car", "car"],
   },
   {
     slug: "toyota-hilux-srv-2020",
@@ -318,7 +323,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Hilux SRV diesel com histórico completo de revisões na concessionária. Picape que aguenta trabalho pesado e continua confortável.",
     featured: false,
-    photoTags: "toyota,hilux,pickup",
+    photoTerms: ["Toyota Hilux", "Toyota car", "car"],
   },
   {
     slug: "toyota-yaris-xls-2021",
@@ -339,7 +344,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Yaris XLS sedã com sete airbags e central conectada. Robustez Toyota num pacote que cabe no orçamento.",
     featured: false,
-    photoTags: "toyota,yaris,sedan",
+    photoTerms: ["Toyota Yaris", "Toyota car", "car"],
   },
   {
     slug: "honda-civic-exl-2021",
@@ -360,7 +365,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Civic EXL com bancos em couro e sensor de ponto cego. Sedã que envelhece bem e não desvaloriza.",
     featured: false,
-    photoTags: "honda,civic,sedan",
+    photoTerms: ["Honda Civic", "Honda car", "car"],
   },
   {
     slug: "honda-hr-v-exl-2022",
@@ -381,7 +386,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "HR-V EXL turbo com bancos mágicos e porta-malas gigante para a categoria. SUV de família com espaço de verdade.",
     featured: true,
-    photoTags: "honda,hrv,suv",
+    photoTerms: ["Honda HR-V", "Honda car", "car"],
   },
   {
     slug: "jeep-compass-longitude-2024",
@@ -402,7 +407,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Compass Longitude turbo com apenas 22 mil km e garantia de fábrica. SUV médio com acabamento de topo.",
     featured: true,
-    photoTags: "jeep,compass,suv",
+    photoTerms: ["Jeep Compass", "Jeep car", "car"],
   },
   {
     slug: "jeep-renegade-sport-2021",
@@ -423,7 +428,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Renegade Sport automático, com suspensão revisada e pneus novos. A porta de entrada da Jeep, no preço certo.",
     featured: false,
-    photoTags: "jeep,renegade,suv",
+    photoTerms: ["Jeep Renegade", "Jeep car", "car"],
   },
   {
     slug: "renault-kwid-intense-2023",
@@ -444,7 +449,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Kwid Intense quase zero, com 15 mil km rodados. O menor consumo do pátio e altura de SUV para as ruas ruins.",
     featured: false,
-    photoTags: "renault,kwid,compact",
+    photoTerms: ["Renault Kwid", "Renault car", "car"],
   },
   {
     slug: "renault-duster-iconic-2022",
@@ -466,6 +471,6 @@ export const DEMO_STOCK: DemoVehicle[] = [
       "Duster Iconic turbo com o maior porta-malas da categoria. SUV que encara estrada de terra sem reclamar.",
     featured: false,
     reserved: true,
-    photoTags: "renault,duster,suv",
+    photoTerms: ["Renault Duster", "Renault car", "car"],
   },
 ];

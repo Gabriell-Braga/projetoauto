@@ -103,6 +103,7 @@ describe("dnsInstructionsFor", () => {
       type: "A",
       name: "@",
       value: VERCEL_APEX_IP,
+      purpose: "apontamento",
     });
   });
 
@@ -111,6 +112,7 @@ describe("dnsInstructionsFor", () => {
       type: "CNAME",
       name: "www",
       value: VERCEL_CNAME_TARGET,
+      purpose: "apontamento",
     });
   });
 });
@@ -136,17 +138,50 @@ describe("domainVerdict", () => {
     const verdict = domainVerdict(dominio, { verified: false, misconfigured: true, missing: [] });
     expect(verdict.status).toBe("pendente");
     // sem instrução a tela mostraria "faça algo" sem dizer o quê
-    expect(verdict.pendingRecords).toEqual([{ type: "A", name: "@", value: VERCEL_APEX_IP }]);
+    expect(verdict.pendingRecords).toEqual([
+      { type: "A", name: "@", value: VERCEL_APEX_IP, purpose: "apontamento" },
+    ]);
   });
 
-  it("prefere o registro que a Vercel exigiu ao nosso padrão", () => {
+  /*
+   * Antes esta suite dizia "prefere o registro que a Vercel exigiu ao nosso
+   * padrao" — e a tela pedia a prova de posse primeiro e o apontamento so numa
+   * segunda visita. Quem cadastra um dominio entra UMA vez no painel de DNS.
+   */
+  it("nao verificado pede posse e apontamento na mesma tela", () => {
     const txt = { type: "TXT" as const, name: "_vercel", value: "vc-domain-verify=abc" };
     const verdict = domainVerdict(dominio, {
       verified: false,
       misconfigured: true,
       missing: [txt],
     });
-    expect(verdict.pendingRecords).toEqual([txt]);
+
+    expect(verdict.pendingRecords).toEqual([
+      txt,
+      { type: "A", name: "@", value: VERCEL_APEX_IP, purpose: "apontamento" },
+    ]);
+    // a mensagem tem que anunciar que sao dois, ou a pessoa cria so um
+    expect(verdict.message).toMatch(/dois registros/);
+  });
+
+  /*
+   * Comparar tipo e nome nao servia: num dominio raiz o nosso padrao e `A` e o
+   * da Vercel pode vir como `CNAME`. A tela mostraria os dois, pedindo dois
+   * registros conflitantes no mesmo nome.
+   */
+  it("nao repete o apontamento quando a Vercel ja o exigiu, mesmo em outro tipo", () => {
+    const cname = {
+      type: "CNAME" as const,
+      name: "@",
+      value: VERCEL_CNAME_TARGET,
+      purpose: "apontamento" as const,
+    };
+    const verdict = domainVerdict(dominio, {
+      verified: false,
+      misconfigured: true,
+      missing: [cname],
+    });
+    expect(verdict.pendingRecords).toEqual([cname]);
   });
 
   it("verificado mas apontando para outro lugar continua pendente", () => {

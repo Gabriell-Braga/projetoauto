@@ -128,6 +128,7 @@ function toRecords(domain: ProjectDomain): DnsRecord[] {
       type: (RECORD_TYPES.has(type) ? type : "TXT") as DnsRecord["type"],
       name: dnsRecordName(item.domain),
       value: item.value,
+      purpose: "posse" as const,
     };
   });
 }

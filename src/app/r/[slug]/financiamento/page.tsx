@@ -66,14 +66,19 @@ export default async function TenantFinancingPage({ params, searchParams }: Prop
        * aqui pela navegação ainda não escolheu carro nenhum, e um seletor de
        * estoque vazio no topo da página seria uma porta fechada.
        */
+      /*
+       * O simulador do topo escolhe o VEÍCULO, igual ao da home.
+       *
+       * Antes ele pedia o valor em reais, o que obrigava a pessoa a saber de
+       * cor o preço do carro que ela ainda estava escolhendo — e produzia
+       * simulação sobre um número que não corresponde a nenhum carro do pátio.
+       * Com estoque vazio o componente volta sozinho ao modo por valor.
+       */
       simulatorForm={
         <FinancingEstimator
+          vehicles={vehicles}
           defaults={context.site.financing}
-          /*
-           * Sem valor na URL, abre com um carro real do estoque.
-           * Campo vazio deixaria a estimativa sem número, e o card do desenho
-           * existe justamente para mostrar um.
-           */
+          preselectedVehicleId={escolhido?.id}
           initialPriceCents={toCents(valor) ?? escolhido?.priceCents ?? vehicles[0]?.priceCents}
           initialDownCents={entradaCents}
           initialInstallments={prazoMeses}

@@ -10,7 +10,7 @@ import {
 } from "./chrome";
 
 const BENEFICIOS = [
-  "Escolha o valor do veículo",
+  "Escolha o veículo",
   "Defina uma entrada",
   "Compare prazos",
   "Fale com a loja para continuar",

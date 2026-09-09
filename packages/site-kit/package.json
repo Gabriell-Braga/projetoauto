@@ -19,7 +19,8 @@
     "./option-filter": "./src/lib/option-filter.ts",
     "./installment": "./src/lib/installment.ts",
     "./links": "./src/lib/links.ts",
-    "./jsonld": "./src/lib/jsonld.tsx"
+    "./jsonld": "./src/lib/jsonld.tsx",
+    "./maps": "./src/lib/maps.ts"
   },
   "peerDependencies": {
     "next": "^15",

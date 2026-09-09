@@ -166,3 +166,22 @@ export async function removeDomain(tenantId: string, id: string): Promise<boolea
 
   return true;
 }
+
+/**
+ * O endereço que a revenda divulga.
+ *
+ * É o domínio oficial quando existe um no ar; senão, o primeiro que estiver
+ * ativo. Devolve `null` quando nenhum domínio responde ainda — e aí quem
+ * chama mostra o caminho interno, que sempre funciona.
+ *
+ * Domínio pendente NÃO entra: ele ainda não responde, e divulgar um endereço
+ * que dá erro é pior do que divulgar o caminho interno, que é feio mas abre.
+ */
+export async function publicSiteUrl(tenantId: string): Promise<string | null> {
+  const domains = await listDomains(tenantId);
+  const ativos = domains.filter((domain) => domain.status === "ativo");
+  if (ativos.length === 0) return null;
+
+  const escolhido = ativos.find((domain) => domain.isPrimary) ?? ativos[0];
+  return `https://${escolhido.domain}`;
+}

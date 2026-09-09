@@ -1,9 +1,9 @@
 import { asc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { tenantSites, tenants, vehiclePhotos, vehicles } from "@/db/schema";
+import { tenantBanners, tenantSites, tenants, vehiclePhotos, vehicles } from "@/db/schema";
 import { badRequest, jsonOk, notFound, withApi } from "@/lib/http";
 import { assertOpsSecret } from "@/lib/ops";
-import { putObject, vehiclePhotoKey } from "@/lib/storage/r2";
+import { putObject, tenantAssetKey, vehiclePhotoKey } from "@/lib/storage/r2";
 import { syncVehiclePhotoState } from "@/lib/services/vehicles";
 import { DEMO_STOCK, type DemoVehicle } from "@/lib/dev/demo-stock";
 import { DEMO_SITE } from "@/lib/dev/demo-site";
@@ -65,6 +65,45 @@ async function addPhotos(
   return encontradas.length;
 }
 
+/**
+ * As duas fotos da loja: fachada e estrutura.
+ *
+ * O template as usa no Sobre e na home. Sem elas, dois blocos grandes ficam
+ * como espaco reservado escrito "Foto da loja" — o que faz um site pronto
+ * parecer inacabado.
+ */
+const BANNERS = [
+  { termos: ["Car dealership showroom", "Car dealership", "showroom"], titulo: "Nossa loja" },
+  { termos: ["Automobile repair shop", "Car service", "garage"], titulo: "Nossa estrutura" },
+];
+
+async function addBanners(tenantId: string): Promise<number> {
+  const db = await getDb();
+  let criados = 0;
+
+  for (let posicao = 0; posicao < BANNERS.length; posicao++) {
+    const banner = BANNERS[posicao];
+    const encontradas = await buscarFotos(banner.termos, { full: 1600 }, 1);
+    if (encontradas.length === 0) continue;
+
+    const bytes = await baixar(encontradas[0].urls.full);
+    const key = tenantAssetKey(tenantId, "banners", crypto.randomUUID(), "jpg");
+    await putObject(key, bytes, "image/jpeg");
+
+    await db.insert(tenantBanners).values({
+      id: crypto.randomUUID(),
+      tenantId,
+      imageKey: key,
+      title: banner.titulo,
+      position: posicao,
+      active: true,
+    });
+    criados++;
+  }
+
+  return criados;
+}
+
 export const POST = withApi(async (request: Request) => {
   assertOpsSecret(request);
 
@@ -97,6 +136,7 @@ export const POST = withApi(async (request: Request) => {
    */
   if (body.resetPhotos) {
     await db.delete(vehiclePhotos).where(eq(vehiclePhotos.tenantId, tenant.id));
+    await db.delete(tenantBanners).where(eq(tenantBanners.tenantId, tenant.id));
     await db
       .update(vehicles)
       .set({ photosCount: 0, coverPhotoKey: null })
@@ -182,14 +222,30 @@ export const POST = withApi(async (request: Request) => {
 
   const alvo = pendentes[0];
   let fotos = 0;
+  let banners = 0;
+
   if (alvo) {
     const demo = DEMO_STOCK.find((d) => d.slug === alvo.slug)!;
     fotos = await addPhotos(tenant.id, alvo.id, demo);
+  } else {
+    /*
+     * Os banners entram DEPOIS do estoque, e nunca na mesma chamada.
+     *
+     * Cada um custa mais uma busca e um download; somados aos nove do veiculo
+     * da vez, seria a rajada que ja derrubou a semeadura uma vez.
+     */
+    const jaTem = await db
+      .select({ id: tenantBanners.id })
+      .from(tenantBanners)
+      .where(eq(tenantBanners.tenantId, tenant.id))
+      .limit(1);
+    if (jaTem.length === 0) banners = await addBanners(tenant.id);
   }
 
   return jsonOk({
     veiculosCriados: criados,
     fotosAdicionadas: fotos,
+    bannersAdicionados: banners,
     veiculoDaVez: alvo?.slug ?? null,
     /*
      * Veículo sem foto no acervo não pode travar a fila.

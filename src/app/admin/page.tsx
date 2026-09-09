@@ -12,6 +12,7 @@ import { can } from "@/lib/auth/rbac";
 import { listLeads } from "@/lib/services/leads";
 import { getVehicleStats } from "@/lib/services/vehicles";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
+import { publicSiteUrl } from "@/lib/services/domains";
 import { formatDateTime, formatNumber, formatPhone } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Painel da revenda" };
@@ -28,6 +29,15 @@ export default async function AdminHome() {
   ]);
 
   const publicPath = tenantPublicPath(context.tenant.slug);
+  /*
+   * O endereco que a revenda divulga e o dominio dela, quando existe.
+   *
+   * Mostrar "/r/gabriel-braga-andrade-ltda" para uma loja que ja tem
+   * seminovos.gabrielbraga.app no ar nao ajuda ninguem: e um caminho interno
+   * que ela nunca vai passar para um cliente.
+   */
+  const siteUrl = await publicSiteUrl(context.tenant.id);
+  const enderecoVisivel = siteUrl ?? publicPath;
 
   return (
     <>
@@ -35,7 +45,7 @@ export default async function AdminHome() {
         title="Visão geral"
         description="Estoque e contatos recebidos pelo site da revenda."
         actions={
-          <Link href={publicPath} target="_blank">
+          <Link href={enderecoVisivel} target="_blank">
             <Button variant="secondary">
               Ver meu site
               <ExternalLink className="h-3.5 w-3.5" />
@@ -121,8 +131,18 @@ export default async function AdminHome() {
           </CardHeader>
           <CardContent>
             <code className="block break-all rounded border border-border bg-surface-2 px-2.5 py-2 text-xs text-text">
-              {publicPath}
+              {enderecoVisivel}
             </code>
+            {/*
+              O caminho interno continua a vista quando ha dominio proprio: ele
+              responde mesmo se o DNS do cliente sair do ar, e e por onde a
+              equipe confere o site sem depender da configuracao dele.
+            */}
+            {siteUrl ? (
+              <p className="mt-2 text-xs text-faint">
+                Também responde por <span className="font-mono">{publicPath}</span>
+              </p>
+            ) : null}
             <p className="mt-3 text-[13px] leading-relaxed text-muted">
               Somente veículos <strong className="font-medium text-text">disponíveis</strong> e{" "}
               <strong className="font-medium text-text">reservados</strong> aparecem no site.

@@ -2,11 +2,13 @@ import Link from "next/link";
 import { MapPin } from "lucide-react";
 import type { ContactProps } from "../contract";
 import { summarizeHours } from "../shared/hours";
+import { mapsEmbedUrl } from "../../lib/maps";
 import { SHELL, SectionHeading, Shell, WhatsappBand } from "./chrome";
 
 export function Contact({ site, links, contactForm }: ContactProps) {
   const hours = summarizeHours(site.contact.businessHours);
   const whatsapp = links.whatsapp(`Olá! Vim pelo site da ${site.name}.`);
+  const mapa = mapsEmbedUrl(site.contact);
 
   const canais = [
     whatsapp && site.contact.whatsapp
@@ -108,7 +110,21 @@ export function Contact({ site, links, contactForm }: ContactProps) {
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           <div className="aspect-16/9 overflow-hidden rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-background)]">
-            {site.contact.mapsUrl ? (
+            {/*
+              O mapa de verdade, e não um link para ele.
+              Quem abre esta seção quer saber ONDE fica; sair do site para
+              descobrir isso é pedir uma decisão antes de dar a informação.
+              `lazy` porque ele fica abaixo da dobra na maioria das telas.
+            */}
+            {mapa ? (
+              <iframe
+                src={mapa}
+                title={`Localização da ${site.name}`}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="h-full w-full border-0"
+              />
+            ) : site.contact.mapsUrl ? (
               <a
                 href={site.contact.mapsUrl}
                 target="_blank"
@@ -119,9 +135,9 @@ export function Contact({ site, links, contactForm }: ContactProps) {
                 Ver localização no mapa
               </a>
             ) : (
+              /* sem endereço cadastrado não há mapa nem link honesto a mostrar */
               <div className="flex h-full flex-col items-center justify-center gap-1 text-sm text-[var(--site-muted)]">
-                <span>Mapa / localização da loja</span>
-                <span className="text-xs">Integração com mapa no site publicado</span>
+                <span>Endereço não informado</span>
               </div>
             )}
           </div>

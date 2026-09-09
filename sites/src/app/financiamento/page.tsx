@@ -62,9 +62,19 @@ export default async function FinancingPage({ searchParams }: Props) {
        * navegação ainda não escolheu carro nenhum, e um seletor de estoque
        * vazio no topo da página seria uma porta fechada.
        */
+      /*
+       * O simulador do topo escolhe o VEÍCULO, igual ao da home.
+       *
+       * Antes ele pedia o valor em reais, o que obrigava a pessoa a saber de
+       * cor o preço do carro que ela ainda estava escolhendo — e produzia
+       * simulação sobre um número que não corresponde a nenhum carro do pátio.
+       * Com estoque vazio o componente volta sozinho ao modo por valor.
+       */
       simulatorForm={
         <FinancingEstimator
+          vehicles={vehicles}
           defaults={site.financing}
+          preselectedVehicleId={escolhido?.id}
           initialPriceCents={toCents(valor) ?? escolhido?.priceCents ?? vehicles[0]?.priceCents}
           initialDownCents={entradaCents}
           initialInstallments={prazoMeses}

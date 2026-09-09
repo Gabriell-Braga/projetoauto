@@ -153,6 +153,16 @@ export async function fetchVehicle(
   };
 }
 
+export type SitemapPayload = {
+  available: boolean;
+  pages: { financing: boolean; sellCar: boolean; about: boolean };
+  vehicles: { slug: string; updatedAt: string }[];
+};
+
+export async function fetchSitemap(slug: string): Promise<SitemapPayload | null> {
+  return await get<SitemapPayload>(`/api/public/site/${slug}/sitemap`, 300);
+}
+
 export type FinancingOption = { id: string; label: string; priceCents: number };
 
 export async function fetchFinancingOptions(

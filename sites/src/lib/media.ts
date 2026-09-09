@@ -41,6 +41,14 @@ export function siteWithLocalMedia(site: SiteData): SiteData {
   return {
     ...site,
     logoUrl: localMedia(site.logoUrl),
+    /*
+     * O favicon passa pela MESMA reescrita da logo.
+     *
+     * Esqueci dele ao adicionar o campo, e a tag saiu apontando para
+     * /app/api/media/... — o caminho do painel, que neste dominio nao existe.
+     * A aba ficava sem icone e nada no build reclamava.
+     */
+    faviconUrl: localMedia(site.faviconUrl),
     banners: site.banners.map((banner) => ({
       ...banner,
       imageUrl: localMedia(banner.imageUrl),

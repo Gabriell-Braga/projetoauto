@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Check, MapPin } from "lucide-react";
+import { Check } from "lucide-react";
 import type { VehicleDetailProps, VehicleView } from "../contract";
 import { PhotoGallery } from "../shared/gallery";
 import { summarizeHours } from "../shared/hours";
+import { mapsEmbedUrl } from "../../lib/maps";
 import { SHELL, SectionHeading, Shell, WhatsappButton } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
@@ -45,6 +46,7 @@ export function VehicleDetail({
     `Olá! Tenho interesse no ${vehicle.title} ${vehicle.yearLabel} anunciado no site da ${site.name}.`,
   );
   const hours = summarizeHours(site.contact.businessHours);
+  const mapa = mapsEmbedUrl(site.contact);
 
   return (
     <Shell site={site} links={links} active="stock">
@@ -257,19 +259,22 @@ export function VehicleDetail({
 
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
               <div className="aspect-16/9 overflow-hidden rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)]">
-                {site.contact.mapsUrl ? (
-                  <a
-                    href={site.contact.mapsUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex h-full flex-col items-center justify-center gap-2 text-sm text-[var(--site-primary)]"
-                  >
-                    <MapPin className="h-6 w-6" aria-hidden="true" />
-                    Ver localização no mapa
-                  </a>
+                {/*
+                  O mesmo mapa da página de contato. Quem está decidindo ver
+                  o carro quer saber a distância até a loja — um link para
+                  descobrir isso adia a resposta e tira a pessoa do site.
+                */}
+                {mapa ? (
+                  <iframe
+                    src={mapa}
+                    title={`Localização da ${site.name}`}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="h-full w-full border-0"
+                  />
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-[var(--site-muted)]">
-                    Localização da loja
+                    Endereço não informado
                   </div>
                 )}
               </div>

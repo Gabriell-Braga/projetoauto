@@ -26,3 +26,19 @@ export function mapsEmbedUrl(contact: SiteData["contact"]): string | null {
   if (!busca) return null;
   return `https://www.google.com/maps?q=${encodeURIComponent(busca)}&output=embed`;
 }
+
+/**
+ * Link para abrir o mapa fora do site.
+ *
+ * Montado do mesmo endereco do incorporado, para os dois nunca apontarem para
+ * lugares diferentes. Um `mapsUrl` cadastrado a mao vence: e o caso da loja
+ * que tem ficha propria no Google e quer levar para ela, com foto e avaliacao,
+ * em vez de uma busca por endereco.
+ */
+export function mapsLinkUrl(contact: SiteData["contact"]): string | null {
+  if (contact.mapsUrl) return contact.mapsUrl;
+
+  const embed = mapsEmbedUrl(contact);
+  if (!embed) return null;
+  return embed.replace("&output=embed", "");
+}

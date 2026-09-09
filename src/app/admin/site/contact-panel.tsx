@@ -196,15 +196,21 @@ export function ContactPanel({
                 onChange={(event) => update("addressState", event.target.value.toUpperCase())}
               />
             </FormField>
-            <FormField label="Link do Google Maps" htmlFor="mapsUrl" className="lg:col-span-3">
-              <Input
-                id="mapsUrl"
-                value={values.mapsUrl}
-                disabled={readOnly}
-                onChange={(event) => update("mapsUrl", event.target.value)}
-                placeholder="https://maps.google.com/..."
-              />
-            </FormField>
+            {/*
+              O link do mapa saiu daqui.
+
+              Ele era montado a partir do endereço que já está logo acima —
+              pedir de novo, em forma de URL, é pedir à revenda que faça à mão
+              o que o sistema faz sozinho, e abre espaço para o link apontar
+              para um lugar diferente do endereço cadastrado.
+
+              O campo continua no banco: revenda que tem ficha própria no
+              Google e já tinha colado o link dela mantém o comportamento.
+            */}
+            <p className="text-[13px] text-muted lg:col-span-3">
+              O mapa do site é montado com o endereço acima — não precisa
+              cadastrar link nenhum.
+            </p>
           </div>
         </CardContent>
       </Card>

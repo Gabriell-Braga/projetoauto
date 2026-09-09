@@ -107,7 +107,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Mobi Like completo de fábrica para o segmento, com o menor custo de manutenção do pátio. Primeiro carro sem dor de cabeça.",
     featured: false,
-    photoTags: "fiat,mobi,compact car",
+    photoTags: "fiat,mobi,compact",
   },
   {
     slug: "volkswagen-polo-highline-2023",
@@ -233,7 +233,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "S10 LTZ diesel 4x4 com tração reduzida e capota marítima. Rodou estrada, e a manutenção está toda documentada.",
     featured: true,
-    photoTags: "chevrolet,s10,pickup truck",
+    photoTags: "chevrolet,s10,pickup",
   },
   {
     slug: "hyundai-hb20-comfort-2022",
@@ -318,7 +318,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Hilux SRV diesel com histórico completo de revisões na concessionária. Picape que aguenta trabalho pesado e continua confortável.",
     featured: false,
-    photoTags: "toyota,hilux,pickup truck",
+    photoTags: "toyota,hilux,pickup",
   },
   {
     slug: "toyota-yaris-xls-2021",
@@ -444,7 +444,7 @@ export const DEMO_STOCK: DemoVehicle[] = [
     description:
       "Kwid Intense quase zero, com 15 mil km rodados. O menor consumo do pátio e altura de SUV para as ruas ruins.",
     featured: false,
-    photoTags: "renault,kwid,compact car",
+    photoTags: "renault,kwid,compact",
   },
   {
     slug: "renault-duster-iconic-2022",

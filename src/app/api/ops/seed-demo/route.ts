@@ -41,7 +41,48 @@ const FOTOS_POR_VEICULO = 3;
  * distintos como se fossem o mesmo veículo.
  */
 function photoUrl(tags: string, lock: number, size: { w: number; h: number }): string {
-  return `https://loremflickr.com/${size.w}/${size.h}/${encodeURIComponent(tags)}?lock=${lock}`;
+  /*
+   * Tag com ESPAÇO faz o serviço responder 403.
+   *
+   * "pickup truck" derrubou a semeadura no segundo veículo, e o erro chegou
+   * como 500 genérico — nada apontava para a tag. Aqui qualquer coisa que não
+   * seja letra ou número vira separador de tag.
+   */
+  const limpas = tags
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .join(",");
+  return `https://loremflickr.com/${size.w}/${size.h}/${limpas}?lock=${lock}`;
+}
+
+/**
+ * Tentativas, da mais específica para a mais genérica.
+ *
+ * Nem toda combinação de marca e modelo tem foto no acervo, e uma tag sem
+ * resultado derruba o veículo inteiro. Melhor um carro genérico do que um
+ * anúncio sem foto nenhuma — e melhor ainda não interromper a semeadura por
+ * causa de um.
+ */
+function tentativas(tags: string): string[] {
+  const partes = tags.split(/[^a-zA-Z0-9]+/).filter(Boolean);
+  return [partes.join(","), partes.slice(0, 2).join(","), partes[0] ?? "car", "car"];
+}
+
+async function fetchFoto(tags: string, lock: number, size: { w: number; h: number }) {
+  let ultimoErro = "";
+  for (const tentativa of tentativas(tags)) {
+    const resposta = await fetch(photoUrl(tentativa, lock, size), { redirect: "follow" });
+    if (resposta.ok) return await resposta.arrayBuffer();
+    ultimoErro = `${resposta.status} em "${tentativa}"`;
+  }
+
+  // último recurso: fonte que nunca recusa, para a semeadura não parar
+  const reserva = await fetch(`https://picsum.photos/seed/${lock}/${size.w}/${size.h}`, {
+    redirect: "follow",
+  });
+  if (reserva.ok) return await reserva.arrayBuffer();
+
+  throw new Error(`nenhuma foto respondeu (${ultimoErro})`);
 }
 
 async function addPhotos(tenantId: string, vehicleId: string, demo: DemoVehicle) {
@@ -54,12 +95,7 @@ async function addPhotos(tenantId: string, vehicleId: string, demo: DemoVehicle)
     const variants: Record<string, string> = {};
 
     for (const [variant, size] of Object.entries(TAMANHOS)) {
-      const resposta = await fetch(photoUrl(demo.photoTags, lock, size), {
-        redirect: "follow",
-      });
-      if (!resposta.ok) throw new Error(`foto ${variant} respondeu ${resposta.status}`);
-
-      const bytes = await resposta.arrayBuffer();
+      const bytes = await fetchFoto(demo.photoTags, lock, size);
       const key = vehiclePhotoKey(
         tenantId,
         vehicleId,

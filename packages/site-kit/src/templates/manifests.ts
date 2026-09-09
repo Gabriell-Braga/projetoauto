@@ -50,7 +50,6 @@ export const TEMPLATE_MANIFESTS: TemplateManifest[] = [
     status: "ready",
     defaultTheme: {
       primary: "#0F5FD7",
-      primaryHover: "#0B4CAE",
       primaryForeground: "#FFFFFF",
       accent: "#0F5FD7",
       text: "#101828",
@@ -75,7 +74,6 @@ export const TEMPLATE_MANIFESTS: TemplateManifest[] = [
     status: "ready",
     defaultTheme: {
       primary: "#4164F5",
-      primaryHover: "#2F4FD8",
       primaryForeground: "#FFFFFF",
       accent: "#4164F5",
       text: "#0C1424",
@@ -100,7 +98,6 @@ export const TEMPLATE_MANIFESTS: TemplateManifest[] = [
     status: "ready",
     defaultTheme: {
       primary: "#0E7A4B",
-      primaryHover: "#0A613C",
       primaryForeground: "#FFFFFF",
       accent: "#0E7A4B",
       text: "#111827",

@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { BodyType, Fuel, Transmission, VehicleStatus } from "../lib/catalog";
+import { hoverShade } from "../lib/color";
 
 /**
  * CONTRATO DOS TEMPLATES.
@@ -22,10 +23,14 @@ import type { BodyType, Fuel, Transmission, VehicleStatus } from "../lib/catalog
  * nenhuma: `loadSiteData` funde o que a revenda salvou por cima do padrão.
  */
 export type ThemeTokens = {
-  /** Cor da marca: botão principal, link, destaque. */
+  /**
+   * Cor da marca: botão principal, link, destaque.
+   *
+   * O hover NÃO é um token: sai daí, calculado por `hoverShade`. Já foi um
+   * campo próprio, e o resultado era um botão azul que ficava verde ao passar
+   * o mouse — o azul veio da revenda, o verde ficou do desenho do template.
+   */
   primary: string;
-  /** A mesma cor um passo mais escura, para hover e estado pressionado. */
-  primaryHover: string;
   /** O que fica legível EM CIMA da cor da marca. */
   primaryForeground: string;
   accent: string;
@@ -348,7 +353,6 @@ export type TemplateModule = {
 
 export const DEFAULT_THEME: ThemeTokens = {
   primary: "#2563eb",
-  primaryHover: "#1d4ed8",
   primaryForeground: "#ffffff",
   accent: "#0ea5e9",
   text: "#101828",
@@ -404,7 +408,8 @@ export const WHATSAPP_GREEN = "#16A34A";
 export function themeToCssVariables(theme: ThemeTokens): Record<string, string> {
   return {
     "--site-primary": theme.primary,
-    "--site-primary-hover": theme.primaryHover,
+    // derivado, nunca guardado: hover que não acompanha a cor da marca é hover errado
+    "--site-primary-hover": hoverShade(theme.primary),
     "--site-primary-foreground": theme.primaryForeground,
     "--site-accent": theme.accent,
     "--site-text": theme.text,

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { ThemeTokens } from "./contract";
 import { DEFAULT_THEME, WHATSAPP_GREEN, composeTheme, themeToCssVariables } from "./contract";
+import { hoverShade } from "../lib/color";
 
 /**
  * O tema é o contrato entre a revenda e o template.
@@ -27,17 +29,44 @@ describe("tema dos templates", () => {
     ).toEqual([]);
   });
 
-  it("não emite variável que não venha de um token", () => {
-    // exceto o verde do WhatsApp, que é fixo de propósito
+  it("não emite variável que não venha de um token nem de um cálculo", () => {
     const conhecidos = new Set(
       Object.keys(DEFAULT_THEME).map(
         (token) => `--site-${token.replace(/[A-Z]/g, (letra) => `-${letra.toLowerCase()}`)}`,
       ),
     );
+    // o verde do WhatsApp é fixo de propósito
     conhecidos.add("--site-whatsapp");
+    // e o hover é derivado da cor da marca, não guardado
+    conhecidos.add("--site-primary-hover");
 
     const sobrando = Object.keys(vars).filter((nome) => !conhecidos.has(nome));
     expect(sobrando).toEqual([]);
+  });
+
+  /**
+   * O hover ACOMPANHA a cor da marca.
+   *
+   * Enquanto ele foi um campo guardado, ninguém no painel mexia nele: a revenda
+   * pintava o botão de azul e o hover continuava verde, herdado do desenho do
+   * Marketplace. Aparecia só passando o mouse no site publicado.
+   */
+  it("o hover sai da cor da marca, e não de um campo guardado", () => {
+    const azul = themeToCssVariables({ ...DEFAULT_THEME, primary: "#2563eb" });
+    const verde = themeToCssVariables({ ...DEFAULT_THEME, primary: "#0E7A4B" });
+
+    expect(azul["--site-primary-hover"]).toBe(hoverShade("#2563eb"));
+    expect(verde["--site-primary-hover"]).toBe(hoverShade("#0E7A4B"));
+    expect(azul["--site-primary-hover"]).not.toBe(verde["--site-primary-hover"]);
+  });
+
+  it("hover guardado no banco antigo não volta a valer", () => {
+    // linhas de produção ainda têm `primaryHover` no JSON do tema
+    const tema = composeTheme(
+      { primary: "#0E7A4B", primaryHover: "#0A613C" } as Partial<ThemeTokens>,
+      { primary: "#2563eb" },
+    );
+    expect(themeToCssVariables(tema)["--site-primary-hover"]).toBe(hoverShade("#2563eb"));
   });
 
   it("nenhum valor padrão vem vazio", () => {

@@ -23,8 +23,8 @@ export const siteSettingsSchema = z.object({
   templateId: optional(z.string().trim().min(1)),
   theme: optional(
     z.object({
+      // sem primaryHover: o hover sai de `primary`, calculado em `hoverShade`
       primary: optional(hexColor),
-      primaryHover: optional(hexColor),
       primaryForeground: optional(hexColor),
       accent: optional(hexColor),
       text: optional(hexColor),
@@ -36,7 +36,7 @@ export const siteSettingsSchema = z.object({
       fontHeading: optional(z.string().trim().max(120)),
       fontBody: optional(z.string().trim().max(120)),
       // com unidade: "12" sozinho é ignorado pelo border-radius e o card sai quadrado
-      radius: optional(z.string().trim().regex(/^d{1,2}px$/, "Use algo como 12px")),
+      radius: optional(z.string().trim().regex(/^\d{1,2}px$/, "Use algo como 12px")),
     }),
   ),
   phone: optional(z.string().trim().max(20)),

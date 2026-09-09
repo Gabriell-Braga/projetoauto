@@ -182,5 +182,19 @@ export const MIGRATIONS: BundledMigration[] = [
     "statements": [
       "ALTER TABLE `tenant_sites` ADD `reviews` text;"
     ]
+  },
+  {
+    "tag": "0014_license_plate",
+    "statements": [
+      "ALTER TABLE `vehicles` ADD `license_plate` text;",
+      "ALTER TABLE `vehicle_appraisals` ADD `license_plate` text;",
+      "CREATE INDEX `vehicles_tenant_plate_idx` ON `vehicles` (`tenant_id`,`license_plate`);"
+    ]
+  },
+  {
+    "tag": "0015_retire_old_templates",
+    "statements": [
+      "-- Os cinco templates anteriores ao Figma sairam do codigo.\n--\n-- `getTemplate` cai no padrao quando nao acha o id, entao a revenda nao ficaria\n-- fora do ar. Mas ela amanheceria com outro desenho e o painel mostraria uma\n-- escolha que nao existe mais na lista: o campo diria \"template-2-dark\" e a\n-- tela nao teria esse cartao para marcar.\nUPDATE `tenants`\nSET `template_id` = 'vitrine'\nWHERE `template_id` NOT IN ('vitrine', 'showroom', 'marketplace');"
+    ]
   }
 ];

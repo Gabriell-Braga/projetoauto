@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { SiteLinks, VehicleView } from "../contract";
+import { MessageCircle } from "lucide-react";
 
 /**
  * Card do Showroom.
@@ -49,8 +50,14 @@ export function VehicleCard({
           )}
         </div>
 
-        {/* o selo é da CURADORIA, não do status: é o que o desenho destaca */}
-        <span className="absolute left-4 top-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--site-primary)]">
+        {/*
+          O selo é da CURADORIA, não do status: é o que o desenho destaca.
+
+          Ele tem uma pastilha atrás, como no Figma. Sem ela o texto cai
+          direto sobre a foto do carro, e o contraste vira sorte: numa foto
+          clara some, numa escura briga.
+        */}
+        <span className="absolute left-3 top-3 rounded-[var(--site-radius)] bg-[var(--site-surface)]/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--site-primary)] backdrop-blur-sm">
           {vehicle.featured ? "Curadoria da loja" : vehicle.statusLabel}
         </span>
       </Link>
@@ -92,9 +99,9 @@ export function VehicleCard({
               href={whatsapp}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[var(--site-radius)] bg-[var(--site-success)] px-3 py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[var(--site-radius)] bg-[var(--site-whatsapp)] px-3 py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden="true" />
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
               WhatsApp
             </a>
           ) : null}

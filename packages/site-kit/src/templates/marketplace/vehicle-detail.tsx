@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, MapPin } from "lucide-react";
+import { Check, MapPin, MessageCircle } from "lucide-react";
 import type { VehicleDetailProps, VehicleView } from "../contract";
 import { mapsEmbedUrl } from "../../lib/maps";
 import { PhotoGallery } from "../shared/gallery";
@@ -117,8 +117,10 @@ export function VehicleDetail({ site, links, vehicle, related }: VehicleDetailPr
                 href={whatsapp}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex w-full items-center justify-center rounded-[var(--site-radius)] bg-[var(--site-primary)] px-5 py-3 text-[13px] font-medium text-[var(--site-primary-foreground)] transition-colors hover:bg-[var(--site-primary-hover)]"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-[var(--site-radius)] px-5 py-3 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: "var(--site-whatsapp)" }}
               >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
                 Falar no WhatsApp
               </a>
             ) : null}

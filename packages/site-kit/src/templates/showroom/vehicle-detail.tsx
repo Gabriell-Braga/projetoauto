@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, MessageCircle } from "lucide-react";
 import type { VehicleDetailProps, VehicleView } from "../contract";
 import { formatCurrency } from "../../lib/format";
 import { mapsEmbedUrl } from "../../lib/maps";
@@ -116,9 +116,9 @@ export function VehicleDetail({
                   href={whatsapp}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-[var(--site-radius)] bg-[var(--site-success)] px-5 py-3 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-[var(--site-radius)] bg-[var(--site-whatsapp)] px-5 py-3 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden="true" />
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
                   Falar no WhatsApp
                 </a>
               ) : null}
@@ -341,9 +341,9 @@ export function VehicleDetail({
               href={whatsapp}
               target="_blank"
               rel="noreferrer"
-              className="mt-auto inline-flex w-fit items-center gap-2 rounded-[var(--site-radius)] bg-[var(--site-success)] px-5 py-3 pt-3 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+              className="mt-auto inline-flex w-fit items-center gap-2 rounded-[var(--site-radius)] bg-[var(--site-whatsapp)] px-5 py-3 pt-3 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden="true" />
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
               Falar no WhatsApp
             </a>
           ) : null}

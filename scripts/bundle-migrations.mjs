@@ -11,15 +11,43 @@ import { join } from "node:path";
 const MIGRATIONS_DIR = "drizzle";
 const OUTPUT = "src/db/migrations.generated.ts";
 
+/**
+ * A ordem vem do journal do Drizzle, que é quem sabe a sequência correta.
+ *
+ * Mas o journal só conhece o que o `drizzle-kit generate` criou. Migração
+ * escrita à mão — que é como as nossas nascem — não entra nele sozinha, e
+ * antes disto ela era simplesmente IGNORADA: o arquivo ficava na pasta, o
+ * bundle saía sem ela, o deploy subia, e o banco de produção ficava sem a
+ * coluna. Foi o que aconteceu com a migração da placa.
+ *
+ * Agora sobra é erro. Falhar aqui custa trinta segundos; descobrir em produção
+ * custa uma coluna faltando num banco que já está recebendo escrita.
+ */
 function readOrder() {
   const journalPath = join(MIGRATIONS_DIR, "meta", "_journal.json");
-  if (existsSync(journalPath)) {
-    const journal = JSON.parse(readFileSync(journalPath, "utf8"));
-    return journal.entries.map((entry) => `${entry.tag}.sql`);
-  }
-  return readdirSync(MIGRATIONS_DIR)
+  const naPasta = readdirSync(MIGRATIONS_DIR)
     .filter((file) => file.endsWith(".sql"))
     .sort();
+
+  if (!existsSync(journalPath)) return naPasta;
+
+  const journal = JSON.parse(readFileSync(journalPath, "utf8"));
+  const noJournal = journal.entries.map((entry) => `${entry.tag}.sql`);
+
+  const fora = naPasta.filter((file) => !noJournal.includes(file));
+  if (fora.length > 0) {
+    throw new Error(
+      `Migração fora do journal, e por isso fora do bundle: ${fora.join(", ")}.\n` +
+        `Acrescente uma entrada em ${journalPath} com o mesmo tag (sem .sql).`,
+    );
+  }
+
+  const sumidas = noJournal.filter((file) => !naPasta.includes(file));
+  if (sumidas.length > 0) {
+    throw new Error(`Journal cita migração que não existe na pasta: ${sumidas.join(", ")}.`);
+  }
+
+  return noJournal;
 }
 
 const files = readOrder();

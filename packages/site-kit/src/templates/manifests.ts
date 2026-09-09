@@ -32,9 +32,12 @@ export type TemplateManifest = {
 
 export const TEMPLATE_MANIFESTS: TemplateManifest[] = [
   /*
-   * Os três desenhados no Figma vêm primeiro: são os que a revenda deve
-   * escolher hoje. Os cinco antigos continuam na lista enquanto houver
-   * revenda usando, e saem quando todas migrarem.
+   * Os três desenhados no Figma, e mais duas vagas reservadas.
+   *
+   * Os cinco templates anteriores saíram: eles eram de antes da decisão de
+   * usar só o que vem do Figma, e manter na lista um desenho que ninguém vai
+   * mais evoluir só dá à revenda uma escolha que ela vai se arrepender de
+   * fazer.
    */
   {
     id: "vitrine",
@@ -112,35 +115,8 @@ export const TEMPLATE_MANIFESTS: TemplateManifest[] = [
     },
   },
   {
-    id: "template-1-clean",
-    name: "Clean",
-    description: "Layout claro e arejado, foco nas fotos e na leitura rápida da ficha.",
-    vibe: "Claro · minimalista",
-    preview: { background: "#f8fafc", foreground: "#0f172a", accent: "#2563eb" },
-    supports: ["primary", "accent", "surface", "fontHeading", "fontBody"],
-    status: "ready",
-  },
-  {
-    id: "template-2-dark",
-    name: "Sport",
-    description: "Visual escuro e agressivo, estilo loja de esportivos e seminovos premium.",
-    vibe: "Escuro · alto contraste",
-    preview: { background: "#0b0b0f", foreground: "#fafafa", accent: "#f43f5e" },
-    supports: ["primary", "accent", "surface", "fontHeading", "fontBody"],
-    status: "ready",
-  },
-  {
-    id: "template-3",
-    name: "Template 3",
-    description: "Reservado para o próximo design.",
-    vibe: "A definir",
-    preview: { background: "#eef2ff", foreground: "#1e1b4b", accent: "#6366f1" },
-    supports: ["primary", "accent"],
-    status: "coming_soon",
-  },
-  {
     id: "template-4",
-    name: "Template 4",
+    name: "Template 04",
     description: "Reservado para o próximo design.",
     vibe: "A definir",
     preview: { background: "#ecfdf5", foreground: "#052e16", accent: "#10b981" },
@@ -149,7 +125,7 @@ export const TEMPLATE_MANIFESTS: TemplateManifest[] = [
   },
   {
     id: "template-5",
-    name: "Template 5",
+    name: "Template 05",
     description: "Reservado para o próximo design.",
     vibe: "A definir",
     preview: { background: "#fff7ed", foreground: "#431407", accent: "#f97316" },
@@ -158,7 +134,7 @@ export const TEMPLATE_MANIFESTS: TemplateManifest[] = [
   },
 ];
 
-export const DEFAULT_TEMPLATE_ID = "template-1-clean";
+export const DEFAULT_TEMPLATE_ID = "vitrine";
 
 export const TEMPLATE_IDS = TEMPLATE_MANIFESTS.map((template) => template.id);
 

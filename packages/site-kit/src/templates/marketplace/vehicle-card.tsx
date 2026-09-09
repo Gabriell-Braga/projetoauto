@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MessageCircle } from "lucide-react";
 import type { SiteData, SiteLinks, VehicleView } from "../contract";
 import { ServiceCard } from "./chrome";
 
@@ -49,7 +50,8 @@ export function VehicleCard({
           )}
         </div>
 
-        <span className="absolute left-4 top-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--site-primary)]">
+        {/* pastilha atras do selo: sobre a foto, texto solto perde contraste */}
+        <span className="absolute left-3 top-3 rounded-[var(--site-radius)] bg-[var(--site-surface)]/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--site-primary)] backdrop-blur-sm">
           {vehicle.featured ? "Mais buscado" : vehicle.statusLabel}
         </span>
       </Link>
@@ -88,8 +90,13 @@ export function VehicleCard({
               href={whatsapp}
               target="_blank"
               rel="noreferrer"
-              className="flex-1 rounded-[var(--site-radius)] border border-[var(--site-primary)] px-3 py-2.5 text-center text-[13px] font-medium text-[var(--site-primary)] transition-colors hover:bg-[var(--site-primary)]/5"
+              /* verde fixo: o WhatsApp e marca de terceiro, e uma revenda que
+                 pintasse o botao com a cor dela perderia o reconhecimento
+                 instantaneo que e justamente o valor dele */
+              style={{ borderColor: "var(--site-whatsapp)", color: "var(--site-whatsapp)" }}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[var(--site-radius)] border px-3 py-2.5 text-center text-[13px] font-medium transition-opacity hover:opacity-80"
             >
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
               WhatsApp
             </a>
           ) : null}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, MessageCircle, X } from "lucide-react";
 export type MenuItem = { label: string; href: string };
 
 /**
@@ -98,14 +98,33 @@ export function ShowroomHeader({
   const categorias = categories;
 
   return (
-    <header
-      className={[
-        "fixed inset-x-0 top-0 z-40 transition-colors duration-300",
-        solido
-          ? "bg-[var(--site-surface)] text-[var(--site-text)] shadow-[0_1px_0_0_var(--site-border)]"
-          : "bg-transparent text-white",
-      ].join(" ")}
-    >
+    <>
+      {/*
+        A cortina fica FORA do cabeçalho, numa camada abaixo dele.
+
+        Dentro, ela escurecia a própria barra: o fundo de um elemento pinta
+        antes dos filhos posicionados, então nenhum `z-index` no conteúdo
+        salvava o fundo do cabeçalho — "Fechar", a marca e o telefone ficavam
+        sobre uma faixa cinza. Do lado de fora, o cabeçalho inteiro fica por
+        cima e só a página escurece, que é o que o desenho mostra.
+      */}
+      {aberto ? (
+        <button
+          type="button"
+          aria-label="Fechar menu"
+          onClick={() => setAberto(false)}
+          className="fixed inset-0 z-30 h-screen w-screen cursor-default bg-black/40"
+        />
+      ) : null}
+
+      <header
+        className={[
+          "fixed inset-x-0 top-0 z-40 transition-colors duration-300",
+          solido
+            ? "bg-[var(--site-surface)] text-[var(--site-text)] shadow-[0_1px_0_0_var(--site-border)]"
+            : "bg-transparent text-white",
+        ].join(" ")}
+      >
       <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center gap-4 px-6">
         <button
           type="button"
@@ -134,16 +153,23 @@ export function ShowroomHeader({
 
         <div className="ml-auto flex items-center gap-5">
           {phone ? (
-            <span className="hidden text-sm md:inline">{phone}</span>
+            /* telefone e para ligar: no celular o toque disca, no desktop abre
+               o aplicativo de chamada */
+            <a
+              href={`tel:${phone.replace(/\D/g, "")}`}
+              className="hidden text-sm transition-opacity hover:opacity-80 md:inline"
+            >
+              {phone}
+            </a>
           ) : null}
           {whatsapp ? (
             <a
               href={whatsapp}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-[var(--site-radius)] bg-[var(--site-success)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-[var(--site-radius)] bg-[var(--site-whatsapp)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden="true" />
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
               Falar no WhatsApp
             </a>
           ) : null}
@@ -160,7 +186,9 @@ export function ShowroomHeader({
                   Navegação
                 </p>
 
-                <div className="mt-5 grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2">
+                {/* preenche por coluna, como o desenho: Inicio/Estoque/
+                    Financiamento de um lado, o resto do outro */}
+                <div className="mt-5 grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-flow-col sm:grid-cols-2 sm:grid-rows-3">
                   {navegacao.map((item) => (
                     <Link
                       key={item.href}
@@ -210,7 +238,7 @@ export function ShowroomHeader({
                     href={whatsapp}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-5 inline-flex w-full items-center justify-center rounded-[var(--site-radius)] bg-[var(--site-success)] px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                    className="mt-5 inline-flex w-full items-center justify-center rounded-[var(--site-radius)] bg-[var(--site-whatsapp)] px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
                   >
                     Falar no WhatsApp
                   </a>
@@ -219,16 +247,10 @@ export function ShowroomHeader({
             </div>
           </div>
 
-          {/* clicar fora fecha; é a saída que a pessoa tenta antes de procurar o × */}
-          <button
-            type="button"
-            aria-label="Fechar menu"
-            onClick={() => setAberto(false)}
-            className="fixed inset-0 -z-10 h-screen w-screen cursor-default bg-black/40"
-          />
         </>
       ) : null}
-    </header>
+      </header>
+    </>
   );
 }
 

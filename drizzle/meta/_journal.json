@@ -99,6 +99,20 @@
       "when": 1788883544976,
       "tag": "0013_site_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1788883545976,
+      "tag": "0014_license_plate",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1788883546976,
+      "tag": "0015_retire_old_templates",
+      "breakpoints": true
     }
   ]
 }

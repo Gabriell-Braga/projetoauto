@@ -46,8 +46,24 @@ async function buscar(termo: string, largura: number, limite: number): Promise<M
     `&gsrnamespace=6&gsrlimit=${limite}` +
     `&prop=imageinfo&iiprop=url|mime&iiurlwidth=${largura}&format=json`;
 
-  const resposta = await fetch(url, { headers: { "user-agent": USER_AGENT } });
-  if (!resposta.ok) return new Map();
+  let resposta = await fetch(url, { headers: { "user-agent": USER_AGENT } });
+
+  /*
+   * Uma segunda chance depois de uma pausa.
+   *
+   * As buscas saíam em paralelo e o Wikimedia recusava a rajada; como um erro
+   * virava mapa vazio em silêncio, o resultado aparecia como "este carro não
+   * existe no acervo" — que é um diagnóstico completamente diferente e mandou
+   * a investigação para o lado errado.
+   */
+  if (!resposta.ok) {
+    await new Promise((r) => setTimeout(r, 700));
+    resposta = await fetch(url, { headers: { "user-agent": USER_AGENT } });
+  }
+
+  if (!resposta.ok) {
+    throw new Error(`Commons respondeu ${resposta.status} para "${termo}" (${largura}px)`);
+  }
 
   const corpo = (await resposta.json()) as { query?: Resultado };
   const pages = Object.values(corpo.query?.pages ?? {});
@@ -79,10 +95,18 @@ export async function buscarFotos(
 ): Promise<FotoDemo[]> {
   for (const termo of termos) {
     const nomes = Object.keys(larguras);
-    // uma busca por largura; a API é quem sabe qual tamanho existe
-    const porLargura = await Promise.all(
-      nomes.map((nome) => buscar(termo, larguras[nome], quantas + 4)),
-    );
+    /*
+     * Uma busca por largura, EM SÉRIE.
+     *
+     * Em paralelo eram três chamadas simultâneas por veículo, mais os nove
+     * downloads do veículo anterior — o Wikimedia recusava a rajada. Três
+     * chamadas em fila custam cerca de um segundo a mais por carro e não
+     * derrubam nada.
+     */
+    const porLargura: Map<string, string>[] = [];
+    for (const nome of nomes) {
+      porLargura.push(await buscar(termo, larguras[nome], quantas + 4));
+    }
 
     // só serve o arquivo que existe em TODAS as larguras
     const [primeira, ...resto] = porLargura;

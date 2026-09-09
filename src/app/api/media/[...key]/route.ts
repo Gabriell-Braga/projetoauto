@@ -60,7 +60,7 @@ async function serve(
   const cacheKey = new Request(new URL(request.url).toString(), { method: "GET" });
 
   // 1 + 2: o cache do edge responde sem tocar no bucket
-  const cached = await edgeCache?.match(cacheKey);
+  const cached = await cacheMatch(edgeCache, cacheKey);
   if (cached) {
     if (knownEtag && normalizeEtag(cached.headers.get("etag")) === knownEtag) {
       return notModified(cached.headers);
@@ -105,9 +105,9 @@ async function serve(
   headers.set("content-length", String(object.size));
   const response = new Response(object.body as unknown as ReadableStream, { headers });
 
-  if (edgeCache) {
+  if (edgeCache && !cacheProibido) {
     const context = await getCloudflareContextSafe();
-    context?.ctx.waitUntil(edgeCache.put(cacheKey, response.clone()));
+    context?.ctx.waitUntil(cachePut(edgeCache, cacheKey, response.clone()));
   }
 
   return response;
@@ -134,9 +134,41 @@ type EdgeCache = {
   put: (request: Request, response: Response) => Promise<void>;
 };
 
-/** `caches.default` só existe no runtime de Workers. */
+/**
+ * O cache do edge existe, mas pode ser proibido.
+ *
+ * No Webflow Cloud, `caches.default` ESTÁ lá — só que qualquer chamada estoura
+ * com "This Worker is not permitted to access the default cache". Testar a
+ * existência do objeto não bastava: ele existe. Foi assim que as fotos ficaram
+ * fora do ar sem ninguém entender o motivo.
+ *
+ * Depois da primeira recusa a resposta fica guardada, para não pagar uma
+ * exceção por requisição pelo resto da vida do isolate.
+ */
+let cacheProibido = false;
+
 function getEdgeCache(): EdgeCache | null {
+  if (cacheProibido) return null;
   return (globalThis as { caches?: { default?: EdgeCache } }).caches?.default ?? null;
+}
+
+/** Cache é otimização: quando ele recusa, a resposta certa é seguir sem ele. */
+async function cacheMatch(cache: EdgeCache | null, key: Request): Promise<Response | undefined> {
+  if (!cache) return undefined;
+  try {
+    return await cache.match(key);
+  } catch {
+    cacheProibido = true;
+    return undefined;
+  }
+}
+
+async function cachePut(cache: EdgeCache, key: Request, response: Response): Promise<void> {
+  try {
+    await cache.put(key, response);
+  } catch {
+    cacheProibido = true;
+  }
 }
 
 async function getCloudflareContextSafe() {

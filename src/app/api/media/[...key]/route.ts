@@ -17,6 +17,37 @@ const MAX_AGE = 31536000;
  *   3. leitura no R2 (condicional) e gravação no cache do edge.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ key: string[] }> }) {
+  try {
+    return await serve(request, params);
+  } catch (error) {
+    /*
+     * Sem isto, qualquer exceção aqui virava 500 de CORPO VAZIO.
+     *
+     * Foi o que aconteceu em produção: as fotos sumiram do site e a resposta
+     * não dizia nada. Pior, chave inexistente devolvia 500 em vez de 404 — o
+     * que apagava a única pista de que a falha era ANTES da leitura, e não na
+     * leitura.
+     *
+     * A rota é pública, então a mensagem é curta e não descreve a
+     * infraestrutura. O detalhe fica em /api/ops/bindings, atrás do segredo.
+     */
+    const detail = error instanceof Error ? error.message : String(error);
+    return new Response(`Não consegui servir este arquivo.\n${resumo(detail)}`, {
+      status: 500,
+      headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+    });
+  }
+}
+
+/** Uma linha, sem caminho de arquivo nem pilha — a rota é pública. */
+function resumo(detail: string): string {
+  return detail.split("\n")[0].slice(0, 120);
+}
+
+async function serve(
+  request: Request,
+  params: Promise<{ key: string[] }>,
+): Promise<Response> {
   const { key } = await params;
   const objectKey = key.map((segment) => decodeURIComponent(segment)).join("/");
 
@@ -38,6 +69,20 @@ export async function GET(request: Request, { params }: { params: Promise<{ key:
   }
 
   const { MEDIA } = await getBindings();
+
+  /*
+   * Binding ausente é problema de instalação, não do pedido.
+   *
+   * Sem esta checagem, `MEDIA.get` estoura em cima de `undefined` e o erro que
+   * chega é "cannot read properties of undefined" — que não diz a ninguém que
+   * falta configurar o bucket no painel do Webflow Cloud.
+   */
+  if (!MEDIA) {
+    return new Response("Armazenamento de imagens não configurado nesta instalação.", {
+      status: 503,
+      headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+    });
+  }
 
   // Get condicional: o R2 devolve o objeto sem corpo quando o etag ainda vale.
   // Montado à mão porque o Headers do Next não é a classe que o binding espera.

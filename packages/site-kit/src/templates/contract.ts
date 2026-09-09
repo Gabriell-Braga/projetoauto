@@ -113,6 +113,8 @@ export type SiteData = {
   name: string;
   slug: string;
   logoUrl: string | null;
+  /** Ícone da aba do navegador; o site cai no padrão quando é nulo. */
+  faviconUrl: string | null;
   theme: ThemeTokens;
   contact: SiteContact;
   aboutTitle: string | null;

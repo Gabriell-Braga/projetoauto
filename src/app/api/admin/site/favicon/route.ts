@@ -6,12 +6,12 @@ export const dynamic = "force-dynamic";
 
 export const POST = withApi(async (request: Request) => {
   const context = await requireApiTenant("site:write");
-  const key = await saveSiteAsset(context, request, "logo");
+  const key = await saveSiteAsset(context, request, "favicon");
   return jsonOk({ key });
 });
 
 export const DELETE = withApi(async (request: Request) => {
   const context = await requireApiTenant("site:write");
-  await removeSiteAsset(context, request, "logo");
+  await removeSiteAsset(context, request, "favicon");
   return jsonOk({ ok: true });
 });

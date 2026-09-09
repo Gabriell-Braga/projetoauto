@@ -97,6 +97,7 @@ async function loadSiteData(slug: string): Promise<CachedSite | null> {
     name: row.tenant.name,
     slug: row.tenant.slug,
     logoUrl: mediaUrl(site?.logoKey),
+    faviconUrl: mediaUrl(site?.faviconKey),
     theme,
     aboutTitle: site?.aboutTitle ?? null,
     aboutText: site?.aboutText ?? null,

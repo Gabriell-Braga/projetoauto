@@ -15,6 +15,7 @@ import { mediaUrl } from "@/lib/paths";
 export type IdentityValues = {
   templateId: string;
   logoKey: string | null;
+  faviconKey: string | null;
   theme: {
     primary: string;
     primaryForeground: string;
@@ -43,10 +44,12 @@ export function IdentityPanel({
   const router = useRouter();
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+  const faviconRef = useRef<HTMLInputElement>(null);
 
   const [templateId, setTemplateId] = useState(initial.templateId);
   const [theme, setTheme] = useState(initial.theme);
   const [logoKey, setLogoKey] = useState(initial.logoKey);
+  const [faviconKey, setFaviconKey] = useState(initial.faviconKey);
   const [busy, setBusy] = useState(false);
 
   function updateTheme(key: keyof IdentityValues["theme"], value: string) {
@@ -76,6 +79,45 @@ export function IdentityPanel({
     if (inputRef.current) inputRef.current.value = "";
   }
 
+  /*
+   * O favicon NAO passa pelo redimensionamento.
+   *
+   * `resizeSingle` desenha num canvas e devolve raster; um SVG entraria como
+   * PNG de tamanho fixo e perderia justamente o que faz dele um bom icone —
+   * resolver em qualquer tamanho. Como o arquivo e pequeno por natureza, ele
+   * sobe como veio.
+   */
+  async function handleFavicon(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+    const result = await apiUpload<{ key: string }>("/api/admin/site/favicon", formData);
+
+    if (!result.ok) {
+      toast.error(result.error);
+    } else {
+      setFaviconKey(result.data.key);
+      router.refresh();
+    }
+
+    setBusy(false);
+    if (faviconRef.current) faviconRef.current.value = "";
+  }
+
+  async function handleRemoveFavicon() {
+    setBusy(true);
+    const result = await apiDelete("/api/admin/site/favicon");
+    setBusy(false);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    setFaviconKey(null);
+    router.refresh();
+  }
+
   async function handleRemoveLogo() {
     setBusy(true);
     const result = await apiDelete("/api/admin/site/logo");
@@ -102,6 +144,7 @@ export function IdentityPanel({
   }
 
   const logoUrl = mediaUrl(logoKey);
+  const faviconUrl = mediaUrl(faviconKey);
 
   return (
     <div className="flex flex-col gap-4">
@@ -147,6 +190,60 @@ export function IdentityPanel({
                   variant="outlineDanger"
                   disabled={readOnly || busy}
                   onClick={handleRemoveLogo}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remover
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Ícone do site (favicon)</CardTitle>
+          <CardDescription>
+            É o ícone que aparece na aba do navegador e nos favoritos. Quadrado, a partir de
+            48&nbsp;px; SVG e PNG funcionam. Sem ele, a aba mostra o ícone genérico de página.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-5">
+            {/* fundo xadrez claro: favicon costuma ter fundo transparente */}
+            <div className="flex h-20 w-20 items-center justify-center rounded border border-border bg-surface-2">
+              {faviconUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={faviconUrl} alt="Favicon" className="h-10 w-10 object-contain" />
+              ) : (
+                <span className="text-center text-xs text-faint">Sem ícone</span>
+              )}
+            </div>
+
+            <input
+              ref={faviconRef}
+              type="file"
+              accept="image/png,image/webp,image/svg+xml,image/x-icon"
+              className="hidden"
+              disabled={readOnly || busy}
+              onChange={(event) => handleFavicon(event.target.files?.[0])}
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={readOnly || busy}
+                onClick={() => faviconRef.current?.click()}
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Enviar ícone
+              </Button>
+              {faviconKey ? (
+                <Button
+                  type="button"
+                  variant="outlineDanger"
+                  disabled={readOnly || busy}
+                  onClick={handleRemoveFavicon}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Remover

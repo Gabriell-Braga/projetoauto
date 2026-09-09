@@ -8,6 +8,7 @@ import { syncVehiclePhotoState } from "@/lib/services/vehicles";
 import { DEMO_STOCK, type DemoVehicle } from "@/lib/dev/demo-stock";
 import { DEMO_SITE } from "@/lib/dev/demo-site";
 import { baixar, buscarFotos } from "@/lib/dev/demo-photos";
+import { faviconSvg, iniciaisDe, logoSvg } from "@/lib/dev/demo-brand";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +105,18 @@ async function addBanners(tenantId: string): Promise<number> {
   return criados;
 }
 
+/**
+ * Grava um SVG de marca no bucket e devolve a chave.
+ *
+ * A chave e derivada do tipo, e nao de um uuid: reexecutar a semeadura
+ * sobrescreve o mesmo arquivo em vez de deixar um orfao por rodada.
+ */
+async function gravarMarca(tenantId: string, kind: "logo" | "favicon", svg: string) {
+  const key = tenantAssetKey(tenantId, kind, "demo", "svg");
+  await putObject(key, new TextEncoder().encode(svg).buffer as ArrayBuffer, "image/svg+xml");
+  return key;
+}
+
 export const POST = withApi(async (request: Request) => {
   assertOpsSecret(request);
 
@@ -121,7 +134,7 @@ export const POST = withApi(async (request: Request) => {
 
   const db = await getDb();
   const [tenant] = await db
-    .select({ id: tenants.id })
+    .select({ id: tenants.id, name: tenants.name })
     .from(tenants)
     .where(eq(tenants.slug, body.slug))
     .limit(1);
@@ -169,6 +182,8 @@ export const POST = withApi(async (request: Request) => {
       legalPrivacy: DEMO_SITE.legalPrivacy,
       legalTerms: DEMO_SITE.legalTerms,
       legalUpdatedAt: new Date(),
+      logoKey: await gravarMarca(tenant.id, "logo", logoSvg(tenant.name, iniciaisDe(tenant.name))),
+      faviconKey: await gravarMarca(tenant.id, "favicon", faviconSvg(iniciaisDe(tenant.name))),
     })
     .where(eq(tenantSites.tenantId, tenant.id));
 

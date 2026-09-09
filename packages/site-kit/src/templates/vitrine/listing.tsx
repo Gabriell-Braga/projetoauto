@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import type { ListingProps, StockFacets } from "../contract";
 import type { BodyType, Fuel, Transmission } from "../../lib/catalog";
 import { BODY_TYPE_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from "../../lib/catalog";
+import { AutoSubmitSelect } from "../shared/auto-submit-select";
 import { CategoryChips, SHELL, Shell, WhatsappBand, WhatsappButton, categoryShortcuts } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
@@ -403,7 +404,11 @@ export function Listing({
               {total} {total === 1 ? "veículo encontrado" : "veículos encontrados"}
             </p>
 
-            {/* trocar a ordem preserva os filtros: o form reenvia todos eles */}
+            {/*
+              Trocar a ordem preserva os filtros: o form reenvia todos eles.
+              O select aplica sozinho — o botao "Ordenar" que existia ao lado
+              fazia a pessoa escolher, olhar a lista igual, e achar que quebrou.
+            */}
             <form action={links.stock} method="get" className="flex items-center gap-2">
               {Object.entries({
                 q: filters.search,
@@ -419,27 +424,14 @@ export function Listing({
                 .map(([name, value]) => (
                   <input key={name} type="hidden" name={name} value={String(value)} />
                 ))}
-              <label className="sr-only" htmlFor="ordem">
-                Ordenar
-              </label>
-              <select
-                id="ordem"
+              <AutoSubmitSelect
                 name="ordem"
-                defaultValue={filters.sort}
-                className="h-11 rounded-lg border border-[var(--site-border)] bg-[var(--site-surface)] px-3 text-sm text-[var(--site-text)] outline-none focus:border-[var(--site-primary)]"
-              >
-                {SORTS.map((sort) => (
-                  <option key={sort.value} value={sort.value}>
-                    {sort.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="rounded-lg border border-[var(--site-border)] px-3 py-2.5 text-sm text-[var(--site-text)] transition-colors hover:border-[var(--site-primary)]"
-              >
-                Ordenar
-              </button>
+                label="Ordenar"
+                value={filters.sort}
+                options={SORTS}
+                submitLabel="Ordenar"
+                className="h-11 rounded-lg border border-[var(--site-border)] bg-[var(--site-surface)] px-3 text-sm text-[var(--site-text)] outline-none transition-colors focus:border-[var(--site-primary)]"
+              />
             </form>
           </div>
 
@@ -488,7 +480,15 @@ export function Listing({
             </div>
           ) : (
             <>
-              <VehicleGrid vehicles={vehicles} links={links} storeName={site.name} columns={3} />
+              {/*
+                A chave inclui a página e a ordem: o React remonta o bloco
+                quando qualquer uma das duas muda, e a animação de entrada roda
+                de novo. Sem isso, virar a página trocaria o conteúdo sem
+                nenhum sinal de que algo aconteceu.
+              */}
+              <div key={`${page}-${filters.sort}`} className="site-enter">
+                <VehicleGrid vehicles={vehicles} links={links} storeName={site.name} columns={3} />
+              </div>
 
               {pages > 1 ? (
                 <nav className="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="Paginação">

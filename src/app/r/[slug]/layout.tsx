@@ -28,6 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // sem isso o Next resolve URLs relativas (og:image) contra localhost
     metadataBase: new URL(origin),
     title: { default: site.name, template: `%s · ${site.name}` },
+    // o icone da aba e o da revenda, nao o do painel
+    icons: site.faviconUrl ? { icon: site.faviconUrl } : undefined,
     description,
     alternates: { canonical: url },
     openGraph: {

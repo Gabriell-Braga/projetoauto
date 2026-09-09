@@ -33,21 +33,40 @@ export function PhotoGallery({
     );
   }
 
-  const current = photos[Math.min(index, photos.length - 1)];
-
   function step(direction: -1 | 1) {
     setIndex((value) => (value + direction + photos.length) % photos.length);
   }
 
   return (
     <div>
-      <div className="relative overflow-hidden rounded-xl bg-black/5">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={current.full}
-          alt={title}
-          className="aspect-4/3 w-full bg-black/5 object-cover"
-        />
+      <div className="relative aspect-4/3 overflow-hidden rounded-xl bg-black/5">
+        {/*
+          As fotos ficam TODAS montadas, empilhadas, e o que muda é a opacidade.
+
+          Antes era uma <img> só com o `src` trocado no clique: o navegador
+          começava a baixar a foto nova naquele instante, então havia uma espera
+          visível e um corte seco no meio. Empilhadas, elas já estão carregadas
+          quando a pessoa clica, e a troca é uma transição de opacidade.
+
+          A primeira carrega com prioridade porque é a que aparece; as outras
+          ficam para depois, para não disputar banda com ela no primeiro
+          desenho da página.
+        */}
+        {photos.map((photo, photoIndex) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={photo.id}
+            src={photo.full}
+            alt={photoIndex === index ? title : ""}
+            aria-hidden={photoIndex !== index}
+            loading={photoIndex === 0 ? "eager" : "lazy"}
+            decoding="async"
+            className={cn(
+              "absolute inset-0 h-full w-full bg-black/5 object-cover transition-opacity duration-300",
+              photoIndex === index ? "opacity-100" : "opacity-0",
+            )}
+          />
+        ))}
 
         {photos.length > 1 ? (
           <>

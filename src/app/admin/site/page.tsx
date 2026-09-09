@@ -89,6 +89,7 @@ export default async function SitePage({
           initial={{
             templateId: context.tenant.templateId,
             logoKey: site?.logoKey ?? null,
+            faviconKey: site?.faviconKey ?? null,
             theme: {
               primary: site?.theme?.primary ?? DEFAULT_THEME.primary,
               primaryForeground:

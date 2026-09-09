@@ -25,6 +25,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: { default: site.name, template: `%s · ${site.name}` },
+    /*
+     * O icone da aba e o da REVENDA.
+     *
+     * Sem isto o navegador cai no /favicon.ico do dominio, que nao existe — e
+     * a aba fica com o icone generico de pagina, que num site de loja passa a
+     * impressao de coisa improvisada.
+     */
+    icons: site.faviconUrl ? { icon: site.faviconUrl } : undefined,
     description,
     openGraph: {
       siteName: site.name,

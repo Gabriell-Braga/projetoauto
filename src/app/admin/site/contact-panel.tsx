@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox, FormField, Input } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { apiPatch } from "@/lib/client/api";
+import { usePublishConfirm } from "./use-publish-confirm";
 
 export type ContactValues = {
   phone: string;
@@ -43,6 +44,7 @@ export function ContactPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const confirmPublish = usePublishConfirm();
   const [values, setValues] = useState(initial);
   const [hours, setHours] = useState(() =>
     WEEKDAYS.map((_, weekday) => {
@@ -62,6 +64,8 @@ export function ContactPanel({
   }
 
   async function handleSave() {
+    if (!(await confirmPublish("Os dados de contato, endereço e horários"))) return;
+
     setBusy(true);
 
     const result = await apiPatch("/api/admin/site", {

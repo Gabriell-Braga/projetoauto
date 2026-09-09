@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { apiPost } from "@/lib/client/api";
 import { THEME_LABELS, THEME_PREFERENCES, type ThemePreference } from "@/lib/theme";
@@ -19,9 +19,39 @@ function paintTheme(preference: ThemePreference) {
   if (preference !== "system") root.classList.add(preference);
 }
 
+/**
+ * O tema que está pintado agora, lido do próprio documento.
+ *
+ * A classe no `<html>` é uma representação completa da preferência: `dark`,
+ * `light`, ou nenhuma classe quando é "sistema" e o CSS decide. Isso vale
+ * tanto para o que o servidor renderizou quanto para o que `paintTheme`
+ * escreveu depois.
+ */
+function readPaintedTheme(): ThemePreference {
+  const root = document.documentElement;
+  if (root.classList.contains("dark")) return "dark";
+  if (root.classList.contains("light")) return "light";
+  return "system";
+}
+
 /** Três opções em um seletor segmentado, do jeito de ferramenta: sem menu extra. */
 export function ThemeToggle({ current }: { current: ThemePreference }) {
   const [preference, setPreference] = useState<ThemePreference>(current);
+
+  /*
+   * Ao remontar, o estado vem do DOM, e não da prop.
+   *
+   * `current` é o valor que o servidor mandou no carregamento da página, e ele
+   * envelhece assim que alguém troca o tema sem recarregar. O menu do usuário
+   * desmonta este componente ao fechar: reabrir marcava de novo a opção
+   * antiga, enquanto a tela continuava pintada com a escolha nova. O tema
+   * estava certo; só o seletor mentia.
+   *
+   * Roda uma vez, na montagem: depois disso quem manda é o clique.
+   */
+  useEffect(() => {
+    setPreference(readPaintedTheme());
+  }, []);
 
   async function handleSelect(next: ThemePreference) {
     const previous = preference;

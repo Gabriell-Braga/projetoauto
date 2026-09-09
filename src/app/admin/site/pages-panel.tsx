@@ -10,6 +10,7 @@ import { FormField, Input, Select, Textarea } from "@/components/ui/field";
 import { IntegerInput } from "@/components/ui/number-field";
 import { useToast } from "@/components/ui/toast";
 import { apiPatch } from "@/lib/client/api";
+import { usePublishConfirm } from "./use-publish-confirm";
 
 /** "24, 36, x, 48" -> [24, 36, 48]. Sem repetir e em ordem. */
 function parseTerms(text: string): number[] {
@@ -42,6 +43,7 @@ export function PagesPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const confirmPublish = usePublishConfirm();
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
   /**
@@ -59,6 +61,8 @@ export function PagesPanel({
   }
 
   async function handleSave() {
+    if (!(await confirmPublish("Os números, depoimentos e textos das páginas"))) return;
+
     setSaving(true);
 
     const result = await apiPatch("/api/admin/site", {

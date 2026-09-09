@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPatch, apiUpload } from "@/lib/client/api";
 import { ACCEPTED_INPUT, blobFileName, resizeSingle } from "@/lib/client/images";
 import { mediaUrl } from "@/lib/paths";
+import { usePublishConfirm } from "./use-publish-confirm";
 
 export type IdentityValues = {
   templateId: string;
@@ -43,6 +44,7 @@ export function IdentityPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const confirmPublish = usePublishConfirm();
   const inputRef = useRef<HTMLInputElement>(null);
   const faviconRef = useRef<HTMLInputElement>(null);
 
@@ -131,6 +133,8 @@ export function IdentityPanel({
   }
 
   async function handleSave() {
+    if (!(await confirmPublish("As cores e fontes do site"))) return;
+
     setBusy(true);
 
     const result = await apiPatch("/api/admin/site", { templateId, theme });

@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPatch, apiUpload } from "@/lib/client/api";
 import { ACCEPTED_INPUT, blobFileName, resizeSingle } from "@/lib/client/images";
 import { mediaUrl } from "@/lib/paths";
+import { usePublishConfirm } from "./use-publish-confirm";
 
 export type BannerItem = {
   id: string;
@@ -40,6 +41,7 @@ export function ContentPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const confirmPublish = usePublishConfirm();
   const confirm = useConfirm();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +53,8 @@ export function ContentPanel({
   }
 
   async function handleSave() {
+    if (!(await confirmPublish("Os textos do site"))) return;
+
     setBusy(true);
 
     const result = await apiPatch("/api/admin/site", {

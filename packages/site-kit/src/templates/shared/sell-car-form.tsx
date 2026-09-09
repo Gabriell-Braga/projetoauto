@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { apiPost } from "../../lib/client-api";
 import { readUtm } from "./utm";
+import { maskInteger, maskPhone } from "../../lib/masks";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -35,6 +36,8 @@ export function SellCarForm({
   initial?: { brandModel?: string; years?: string; mileageKm?: string };
 }) {
   const [sent, setSent] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [km, setKm] = useState(initial?.mileageKm ?? "");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -142,9 +145,10 @@ export function SellCarForm({
           id="sell-km"
           name="mileageKm"
           inputMode="numeric"
-          defaultValue={initial?.mileageKm ?? ""}
-          placeholder="45.000 km"
+          placeholder="45.000"
           className={field}
+          value={km}
+          onChange={(event) => setKm(maskInteger(event.target.value))}
         />
       </div>
 
@@ -165,6 +169,8 @@ export function SellCarForm({
           inputMode="tel"
           placeholder="(31) 99999-9999"
           className={field}
+          value={phone}
+          onChange={(event) => setPhone(maskPhone(event.target.value))}
         />
       </div>
 

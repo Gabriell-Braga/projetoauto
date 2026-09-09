@@ -279,7 +279,9 @@ export function VehicleDetail({
                 )}
               </div>
 
-              <div className="rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] p-6">
+              {/* coluna: o botao desce para o pe do card em vez de deixar um
+                  vazio embaixo dele quando a loja tem poucos horarios */}
+              <div className="flex flex-col rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] p-6">
                 <p
                   className="text-lg font-bold uppercase tracking-tight text-[var(--site-text)]"
                   style={{ fontFamily: "var(--site-font-heading)" }}
@@ -305,7 +307,7 @@ export function VehicleDetail({
                   ))}
                 </ul>
 
-                <div className="mt-5">
+                <div className="mt-auto pt-5">
                   <WhatsappButton href={whatsapp} className="w-full !rounded-lg" />
                 </div>
               </div>

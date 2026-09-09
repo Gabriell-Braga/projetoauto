@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { apiPost } from "../../lib/client-api";
 import { readUtm } from "./utm";
+import { maskPhone } from "../../lib/masks";
 
 const field =
   "w-full rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-3.5 py-2.5 text-sm text-[var(--site-text)] outline-none transition-colors placeholder:text-[var(--site-muted)] focus:border-[var(--site-primary)]";
@@ -27,6 +28,7 @@ const ASSUNTOS = [
 /** "Envie uma mensagem" — o formulário da página de contato, como no desenho. */
 export function ContactForm({ tenantSlug }: { tenantSlug: string }) {
   const [sent, setSent] = useState(false);
+  const [phone, setPhone] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,6 +90,8 @@ export function ContactForm({ tenantSlug }: { tenantSlug: string }) {
           inputMode="tel"
           placeholder="(31) 99999-9999"
           className={field}
+          value={phone}
+          onChange={(event) => setPhone(maskPhone(event.target.value))}
         />
       </div>
 

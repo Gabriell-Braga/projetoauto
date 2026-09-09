@@ -4,6 +4,7 @@ import { useState } from "react";
 import { apiPost } from "../../lib/client-api";
 import { cn } from "../../lib/format";
 import { readUtm } from "./utm";
+import { maskPhone } from "../../lib/masks";
 
 /**
  * Formulário de lead compartilhado pelos templates.
@@ -21,6 +22,7 @@ export function LeadForm({
   tone?: "light" | "dark";
 }) {
   const [sent, setSent] = useState(false);
+  const [phone, setPhone] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,6 +108,8 @@ export function LeadForm({
           inputMode="tel"
           placeholder="(11) 99999-8888"
           className={fieldClass}
+          value={phone}
+          onChange={(event) => setPhone(maskPhone(event.target.value))}
         />
       </div>
 

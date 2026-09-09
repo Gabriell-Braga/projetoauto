@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiPost } from "../../lib/client-api";
 import { DEFAULT_MONTHLY_RATE, monthlyInstallmentCents } from "../../lib/installment";
 import { formatCurrency } from "../../lib/format";
+import { centsToMoney, maskCpf, maskMoney, maskPhone, moneyToCents } from "../../lib/masks";
+import { setSelectedVehicleLabel, useSelectedVehicleLabel } from "./financing-selection";
 import { SearchableSelect } from "./searchable-select";
 import { readUtm } from "./utm";
 
@@ -60,10 +62,8 @@ export function FinancingEstimator({
   const [vehicleId, setVehicleId] = useState(preselectedVehicleId ?? options[0]?.id ?? "");
   const vehicle = options.find((item) => item.id === vehicleId) ?? null;
 
-  const [priceText, setPriceText] = useState(
-    initialPriceCents ? centsToText(initialPriceCents) : "",
-  );
-  const [downText, setDownText] = useState(initialDownCents ? centsToText(initialDownCents) : "");
+  const [priceText, setPriceText] = useState(centsToMoney(initialPriceCents ?? 0));
+  const [downText, setDownText] = useState(centsToMoney(initialDownCents ?? 0));
   /*
    * Entrada vinda da tela anterior já conta como digitada.
    *
@@ -83,12 +83,22 @@ export function FinancingEstimator({
         : (defaults.terms[0] ?? 48),
   );
 
-  const priceCents = modoEstoque ? (vehicle?.priceCents ?? 0) : parseReais(priceText);
+  const priceCents = modoEstoque ? (vehicle?.priceCents ?? 0) : moneyToCents(priceText);
 
   const downCents = useMemo(() => {
-    if (touchedDown) return parseReais(downText);
+    if (touchedDown) return moneyToCents(downText);
     return Math.round((priceCents * defaults.downPaymentPercent) / 100);
   }, [touchedDown, downText, priceCents, defaults.downPaymentPercent]);
+
+  /*
+   * Anuncia a escolha para o formulario de lead da mesma pagina, INCLUSIVE a
+   * que ja vem marcada. Quem so olha a parcela e envia o formulario mandava um
+   * lead sem veiculo nenhum, e a loja recebia "quero financiar" e nada mais.
+   */
+  useEffect(() => {
+    if (!modoEstoque) return;
+    setSelectedVehicleLabel(vehicle?.label ?? null);
+  }, [modoEstoque, vehicle?.label]);
 
   const financedCents = Math.max(0, priceCents - downCents);
   const installmentCents = monthlyInstallmentCents(
@@ -127,9 +137,9 @@ export function FinancingEstimator({
             id="est-price"
             className={field}
             inputMode="decimal"
-            placeholder="R$ 139.990"
+            placeholder="139.990,00"
             value={priceText}
-            onChange={(event) => setPriceText(event.target.value)}
+            onChange={(event) => setPriceText(maskMoney(event.target.value))}
           />
         </div>
       )}
@@ -142,11 +152,11 @@ export function FinancingEstimator({
           id="est-down"
           className={field}
           inputMode="decimal"
-          placeholder="R$ 30.000"
-          value={touchedDown ? downText : centsToText(downCents)}
+          placeholder="30.000,00"
+          value={touchedDown ? downText : centsToMoney(downCents)}
           onChange={(event) => {
             setTouchedDown(true);
-            setDownText(event.target.value);
+            setDownText(maskMoney(event.target.value));
           }}
         />
       </div>
@@ -235,6 +245,20 @@ export function FinancingLeadForm({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [phone, setPhone] = useState("");
+  const [cpf, setCpf] = useState("");
+
+  /*
+   * O veiculo acompanha o simulador ate a pessoa escrever o proprio texto.
+   *
+   * Depois disso ela manda: trocar o campo por baixo apagaria o que ela
+   * digitou, que e o erro que a trava de "entrada" ja evita logo acima.
+   */
+  const selecionado = useSelectedVehicleLabel();
+  const [vehicleText, setVehicleText] = useState(vehicleLabel ?? "");
+  const [vehicleTocado, setVehicleTocado] = useState(false);
+  const vehicleValue = vehicleTocado ? vehicleText : (selecionado ?? vehicleLabel ?? "");
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSending(true);
@@ -299,6 +323,8 @@ export function FinancingLeadForm({
           inputMode="tel"
           placeholder="(31) 99999-9999"
           className={field}
+          value={phone}
+          onChange={(event) => setPhone(maskPhone(event.target.value))}
         />
       </div>
 
@@ -325,6 +351,8 @@ export function FinancingLeadForm({
           placeholder="000.000.000-00"
           autoComplete="off"
           className={field}
+          value={cpf}
+          onChange={(event) => setCpf(maskCpf(event.target.value))}
         />
       </div>
 
@@ -335,7 +363,11 @@ export function FinancingLeadForm({
         <input
           id="fin-vehicle-label"
           name="vehicleLabel"
-          defaultValue={vehicleLabel ?? ""}
+          value={vehicleValue}
+          onChange={(event) => {
+            setVehicleTocado(true);
+            setVehicleText(event.target.value);
+          }}
           placeholder="Jeep Compass Longitude 2024"
           className={field}
         />
@@ -390,16 +422,4 @@ function continueUrl(
   if (params.entrada > 0) query.set("entrada", String(params.entrada));
   query.set("prazo", String(params.prazo));
   return `${base}?${query.toString()}`;
-}
-
-/** "30.000,00" -> 3000000 centavos. Aceita o que a pessoa digitar. */
-function parseReais(text: string): number {
-  const limpo = text.replace(/[^\d,]/g, "").replace(",", ".");
-  const valor = Number(limpo);
-  return Number.isFinite(valor) ? Math.round(valor * 100) : 0;
-}
-
-function centsToText(cents: number): string {
-  if (cents <= 0) return "";
-  return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 }

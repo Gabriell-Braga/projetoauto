@@ -112,10 +112,16 @@ export function PhotoManager({
     }
   }
 
+  /* a capa é a primeira foto, então a marca acompanha a ordem sem esperar o
+     servidor responder — senão o selo fica numa foto e a capa real em outra */
+  function withCover(list: PhotoItem[]): PhotoItem[] {
+    return list.map((photo, index) => ({ ...photo, isCover: index === 0 }));
+  }
+
   async function persistOrder(next: PhotoItem[]) {
     if (!vehicleId) return;
     const previous = items;
-    setItems(next);
+    setItems(withCover(next));
     setBusy(true);
 
     const result = await apiPatch(`/api/admin/vehicles/${vehicleId}/photos`, {
@@ -142,7 +148,10 @@ export function PhotoManager({
   async function handleCover(photoId: string) {
     if (!vehicleId) return;
     const previous = items;
-    setItems((current) => current.map((photo) => ({ ...photo, isCover: photo.id === photoId })));
+    // definir a capa MOVE a foto para a frente, como o servidor faz
+    const escolhida = items.find((photo) => photo.id === photoId);
+    if (!escolhida) return;
+    setItems(withCover([escolhida, ...items.filter((photo) => photo.id !== photoId)]));
     setBusy(true);
 
     const result = await apiPatch(`/api/admin/vehicles/${vehicleId}/photos`, { photoId });

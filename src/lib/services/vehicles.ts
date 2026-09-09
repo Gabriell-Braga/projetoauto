@@ -239,7 +239,24 @@ export async function deleteVehicle(tenantId: string, id: string): Promise<Vehic
   return vehicle;
 }
 
-/** Recalcula capa e contagem após qualquer mudança nas fotos. */
+/**
+ * Recalcula capa, contagem e ORDEM depois de qualquer mudança nas fotos.
+ *
+ * Duas invariantes, e as duas nasceram de defeito visto no site publicado:
+ *
+ * 1. As posições são densas: 0, 1, 2, ... sem buraco. Apagar uma foto do meio
+ *    deixava um vão, e o envio seguinte calculava a posição pela CONTAGEM —
+ *    então reusava um número já ocupado. Duas fotos com a mesma posição saem
+ *    na ordem que o banco escolher, e ela muda entre uma consulta e outra.
+ *
+ * 2. A foto da posição 0 é a capa. O painel já promete isso na tela ("A
+ *    primeira foto é a capa"), mas quem definia a capa só marcava a foto sem
+ *    movê-la: o card do estoque mostrava a terceira foto e a galeria da ficha
+ *    abria na primeira. Duas imagens diferentes para o mesmo carro.
+ *
+ * Deriva `isCover` da posição, e não o contrário. Quem quer trocar a capa mexe
+ * na ordem — é o que `setCoverPhoto` faz.
+ */
 export async function syncVehiclePhotoState(tenantId: string, vehicleId: string): Promise<void> {
   const db = await getDb();
   const photos = await db
@@ -251,9 +268,20 @@ export async function syncVehiclePhotoState(tenantId: string, vehicleId: string)
     })
     .from(vehiclePhotos)
     .where(eq(vehiclePhotos.vehicleId, vehicleId))
-    .orderBy(asc(vehiclePhotos.position));
+    // desempate por criação: sem ele, duas fotos empatadas trocam de lugar sozinhas
+    .orderBy(asc(vehiclePhotos.position), asc(vehiclePhotos.createdAt));
 
-  const cover = photos.find((photo) => photo.isCover) ?? photos[0];
+  for (const [indice, photo] of photos.entries()) {
+    const capa = indice === 0;
+    // só escreve o que mudou: o caso comum é nada mudar
+    if (photo.position === indice && photo.isCover === capa) continue;
+    await db
+      .update(vehiclePhotos)
+      .set({ position: indice, isCover: capa })
+      .where(eq(vehiclePhotos.id, photo.id));
+  }
+
+  const cover = photos[0];
 
   await db
     .update(vehicles)
@@ -262,10 +290,6 @@ export async function syncVehiclePhotoState(tenantId: string, vehicleId: string)
       coverPhotoKey: cover ? (cover.variants as PhotoVariants).card : null,
     })
     .where(and(eq(vehicles.tenantId, tenantId), eq(vehicles.id, vehicleId)));
-
-  if (cover && !cover.isCover) {
-    await db.update(vehiclePhotos).set({ isCover: true }).where(eq(vehiclePhotos.id, cover.id));
-  }
 }
 
 export async function reorderPhotos(
@@ -290,31 +314,31 @@ export async function reorderPhotos(
   return true;
 }
 
+/**
+ * Define a capa MOVENDO a foto para a frente.
+ *
+ * Antes isto só acendia uma marca, e a foto continuava no meio da fila: o card
+ * do estoque mostrava uma imagem e a galeria da ficha abria em outra. Capa é
+ * primeira foto, nos dois lugares e no feed dos portais.
+ */
 export async function setCoverPhoto(
   tenantId: string,
   vehicleId: string,
   photoId: string,
 ): Promise<boolean> {
   const db = await getDb();
-  const found = await db
+  const photos = await db
     .select({ id: vehiclePhotos.id })
     .from(vehiclePhotos)
-    .where(
-      and(
-        eq(vehiclePhotos.tenantId, tenantId),
-        eq(vehiclePhotos.vehicleId, vehicleId),
-        eq(vehiclePhotos.id, photoId),
-      ),
-    )
-    .limit(1);
+    .where(and(eq(vehiclePhotos.tenantId, tenantId), eq(vehiclePhotos.vehicleId, vehicleId)))
+    .orderBy(asc(vehiclePhotos.position), asc(vehiclePhotos.createdAt));
 
-  if (!found[0]) return false;
+  if (!photos.some((photo) => photo.id === photoId)) return false;
 
-  await db
-    .update(vehiclePhotos)
-    .set({ isCover: false })
-    .where(eq(vehiclePhotos.vehicleId, vehicleId));
-  await db.update(vehiclePhotos).set({ isCover: true }).where(eq(vehiclePhotos.id, photoId));
+  const ordem = [photoId, ...photos.map((photo) => photo.id).filter((id) => id !== photoId)];
+  for (const [indice, id] of ordem.entries()) {
+    await db.update(vehiclePhotos).set({ position: indice }).where(eq(vehiclePhotos.id, id));
+  }
 
   await syncVehiclePhotoState(tenantId, vehicleId);
   return true;

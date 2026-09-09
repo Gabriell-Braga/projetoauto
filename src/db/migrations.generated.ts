@@ -196,5 +196,17 @@ export const MIGRATIONS: BundledMigration[] = [
     "statements": [
       "-- Os cinco templates anteriores ao Figma sairam do codigo.\n--\n-- `getTemplate` cai no padrao quando nao acha o id, entao a revenda nao ficaria\n-- fora do ar. Mas ela amanheceria com outro desenho e o painel mostraria uma\n-- escolha que nao existe mais na lista: o campo diria \"template-2-dark\" e a\n-- tela nao teria esse cartao para marcar.\nUPDATE `tenants`\nSET `template_id` = 'vitrine'\nWHERE `template_id` NOT IN ('vitrine', 'showroom', 'marketplace');"
     ]
+  },
+  {
+    "tag": "0016_photo_order_cover_first",
+    "statements": [
+      "-- A capa passa a ser a PRIMEIRA foto, e as posicoes ficam densas.\n--\n-- Ate aqui definir a capa so acendia `is_cover` e deixava a foto onde estava:\n-- o card do estoque mostrava uma imagem e a galeria da ficha abria em outra.\n-- E apagar uma foto do meio deixava buraco na numeracao, que o envio seguinte\n-- reusava — duas fotos com a mesma posicao saem na ordem que o banco escolher.\n--\n-- O codigo novo mantem as duas invariantes a cada mudanca. Isto aqui conserta\n-- o que ja esta gravado, sem esperar que alguem reabra cada veiculo.\n--\n-- A nova ordem e calculada numa tabela auxiliar, e nao direto no UPDATE. Nao e\n-- capricho: um UPDATE com subconsulta correlacionada le a propria tabela ENQUANTO\n-- a altera, entao uma foto ja renumerada volta a ser contada e duas terminam com\n-- a mesma posicao. Foi o que aconteceu no primeiro teste desta migracao.\nDROP TABLE IF EXISTS `__ordem_fotos`;",
+      "CREATE TABLE `__ordem_fotos` (\n  `id` text PRIMARY KEY NOT NULL,\n  `pos` integer NOT NULL\n);",
+      "-- A capa vai para a frente; o resto mantem a ordem relativa. `created_at` e\n-- depois `id` desempatam as posicoes repetidas que os buracos criaram.\nINSERT INTO `__ordem_fotos` (`id`, `pos`)\nSELECT\n  `id`,\n  ROW_NUMBER() OVER (\n    PARTITION BY `vehicle_id`\n    ORDER BY `is_cover` DESC, `position` ASC, `created_at` ASC, `id` ASC\n  ) - 1\nFROM `vehicle_photos`;",
+      "UPDATE `vehicle_photos`\nSET `position` = (\n  SELECT `pos` FROM `__ordem_fotos` WHERE `__ordem_fotos`.`id` = `vehicle_photos`.`id`\n);",
+      "-- A marca de capa passa a sair da posicao, e nao o contrario.\nUPDATE `vehicle_photos`\nSET `is_cover` = CASE WHEN `position` = 0 THEN 1 ELSE 0 END;",
+      "-- O card do estoque le `cover_photo_key`; alinha com a foto que ficou na\n-- frente, senao a lista continua mostrando a imagem antiga.\nUPDATE `vehicles`\nSET `cover_photo_key` = (\n  SELECT json_extract(`foto`.`variants`, '$.card')\n  FROM `vehicle_photos` AS `foto`\n  WHERE `foto`.`vehicle_id` = `vehicles`.`id`\n    AND `foto`.`position` = 0\n)\nWHERE EXISTS (\n  SELECT 1 FROM `vehicle_photos` AS `foto` WHERE `foto`.`vehicle_id` = `vehicles`.`id`\n);",
+      "DROP TABLE `__ordem_fotos`;"
+    ]
   }
 ];

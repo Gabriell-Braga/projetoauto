@@ -85,7 +85,7 @@ export function whatsappLink(phone: string, message: string): string {
 export const DEFAULT_TEMPLATES: { name: string; body: string }[] = [
   {
     name: "Primeiro contato",
-    body: "Olá {{primeiro_nome}}! Aqui é {{vendedor}}, da {{revenda}}. Vi que você se interessou pelo {{veiculo}}. Ele está disponível — quer combinar um horário para ver de perto?",
+    body: "Olá {{primeiro_nome}}! Aqui é {{vendedor}}, da {{revenda}}. Vi que você se interessou pelo {{veiculo}}. Ele está disponível. Quer combinar um horário para ver de perto?",
   },
   {
     name: "Retomar contato",

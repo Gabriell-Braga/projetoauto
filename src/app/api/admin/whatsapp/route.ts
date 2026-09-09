@@ -21,7 +21,7 @@ const schema = z.object({
   verifyToken: z
     .string()
     .trim()
-    .min(8, "Use pelo menos 8 caracteres — este token protege o webhook"),
+    .min(8, "Use pelo menos 8 caracteres: este token protege o webhook"),
 });
 
 export const GET = withApi(async () => {

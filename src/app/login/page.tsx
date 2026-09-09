@@ -117,7 +117,7 @@ export default async function LoginPage({
               O painel de quem vende carro.
             </p>
             <p className="mt-3.5 max-w-sm text-sm leading-relaxed text-muted">
-              Estoque, fotos, leads e o site da revenda no mesmo lugar — feito para uso diário, não
+              Estoque, fotos, leads e o site da revenda no mesmo lugar, feito para uso diário, não
               para demonstração.
             </p>
           </div>

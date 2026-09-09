@@ -19,7 +19,7 @@ export default async function AppraisalsPage() {
         <PageHeader title="Avaliações" description="Quanto pagar no carro do cliente." />
         <FeatureLocked
           title="Avaliação de veículos não está no plano desta revenda"
-          description="Ela parte da tabela FIPE, desconta o que o carro precisa e registra a oferta feita — com o nome de quem decidiu."
+          description="Ela parte da tabela FIPE, desconta o que o carro precisa e registra a oferta feita, com o nome de quem decidiu."
         />
       </>
     );

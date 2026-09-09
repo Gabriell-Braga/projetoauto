@@ -92,7 +92,7 @@ export function PaymentsPanel({ tenantId }: { tenantId: string }) {
       production
         ? {
             title: "Dar baixa manual",
-            description: `${formatCurrency(payment.valueCents)} serão registrados como recebidos. Use só quando o dinheiro entrou por fora do gateway — o Asaas passa a considerar a cobrança quitada.`,
+            description: `${formatCurrency(payment.valueCents)} serão registrados como recebidos. Use só quando o dinheiro entrou por fora do gateway. O Asaas passa a considerar a cobrança quitada.`,
             confirmLabel: "Registrar recebimento",
             tone: "danger",
           }

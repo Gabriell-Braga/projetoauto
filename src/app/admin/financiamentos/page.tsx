@@ -19,7 +19,7 @@ export default async function FinancingsPage() {
         <PageHeader title="Financiamentos" description="Propostas enviadas aos bancos." />
         <FeatureLocked
           title="Gestão de financiamentos não está no plano desta revenda"
-          description="Ela acompanha cada proposta — banco, entrada, parcelas e resposta — junto do lead e do veículo."
+          description="Ela acompanha cada proposta (banco, entrada, parcelas e resposta) junto do lead e do veículo."
         />
       </>
     );

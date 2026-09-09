@@ -156,7 +156,7 @@ export function LeadDetail({
             <CardHeader>
               <CardTitle>Histórico</CardTitle>
               <CardDescription>
-                Tudo o que aconteceu com este lead, na ordem — conversas e movimentações juntas.
+                Tudo o que aconteceu com este lead, na ordem, com conversas e movimentações juntas.
               </CardDescription>
             </CardHeader>
             <CardContent>

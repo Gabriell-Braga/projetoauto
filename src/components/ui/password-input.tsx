@@ -94,7 +94,7 @@ export function PasswordRequirements({
             {touched && check.ok ? <Check className="h-2 w-2" strokeWidth={4} /> : null}
           </span>
           {check.label}
-          <span className="sr-only">{touched && check.ok ? " — atendido" : " — pendente"}</span>
+          <span className="sr-only">{touched && check.ok ? ", atendido" : ", pendente"}</span>
         </li>
       ))}
     </ul>

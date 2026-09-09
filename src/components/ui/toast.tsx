@@ -120,7 +120,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
 function loudFallback(): ToastApi {
   const warn = (tone: string) => (title: string, description?: string) => {
     console.error(
-      `[toast:${tone}] sem ToastProvider na árvore — mensagem não exibida:`,
+      `[toast:${tone}] sem ToastProvider na árvore: mensagem não exibida:`,
       title,
       description ?? "",
     );

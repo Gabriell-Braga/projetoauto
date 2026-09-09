@@ -97,7 +97,7 @@ export function PagesPanel({
         <CardHeader>
           <CardTitle>Números da loja</CardTitle>
           <CardDescription>
-            Aparecem numa faixa na home e no Sobre. São até três, e o texto é livre — o
+            Aparecem numa faixa na home e no Sobre. São até três, e o texto é livre: o
             {" "}
             <span className="font-medium text-text">+300</span>, o{" "}
             <span className="font-medium text-text">4,9/5</span> e o{" "}
@@ -168,7 +168,7 @@ export function PagesPanel({
         <CardHeader>
           <CardTitle>Avaliações de clientes</CardTitle>
           <CardDescription>
-            Aparecem na página Sobre nós. São depoimentos que você cadastra — não vêm do Google
+            Aparecem na página Sobre nós. São depoimentos que você cadastra, e não vêm do Google
             nem de outro site. Sem nenhum cadastrado, a seção não aparece: um espaço reservado
             vazio trabalha contra a loja.
           </CardDescription>
@@ -265,7 +265,7 @@ export function PagesPanel({
         <CardHeader>
           <CardTitle>Simulação de financiamento</CardTitle>
           <CardDescription>
-            O site mostra apenas quanto sobra para financiar — nunca o valor da parcela, que
+            O site mostra apenas quanto sobra para financiar, nunca o valor da parcela, que
             depende da análise do banco. Cada simulação enviada vira uma proposta em rascunho em
             Financiamentos.
           </CardDescription>
@@ -314,7 +314,7 @@ export function PagesPanel({
         <CardHeader>
           <CardTitle>Privacidade e termos</CardTitle>
           <CardDescription>
-            São textos da sua empresa, não nossos — quem responde por eles é a loja. Enquanto
+            São textos da sua empresa, não nossos: quem responde por eles é a loja. Enquanto
             estiverem vazios, a página não existe e o link some do rodapé, em vez de levar a uma
             página em branco.
           </CardDescription>

@@ -308,7 +308,7 @@ function ConnectDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
         <FormField
           label="Access Token"
           htmlFor="wa-token"
-          hint="Use o token permanente de um usuário de sistema — o temporário expira em 24 horas."
+          hint="Use o token permanente de um usuário de sistema. O temporário expira em 24 horas."
           error={errors.accessToken}
         >
           <Input

@@ -114,7 +114,7 @@ export function FinancingEstimator({
             onChange={setVehicleId}
             options={options.map((item) => ({
               id: item.id,
-              label: `${item.label} — ${formatCurrency(item.priceCents)}`,
+              label: `${item.label} · ${formatCurrency(item.priceCents)}`,
             }))}
           />
         </div>

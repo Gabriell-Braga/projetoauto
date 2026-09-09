@@ -31,7 +31,7 @@ export default async function PlatformUsersPage() {
           <CardHeader>
             <CardTitle>Pedidos de redefinição de senha</CardTitle>
             <CardDescription>
-              O link é gerado com token de uso único e o banco guarda só o hash — nem a plataforma
+              O link é gerado com token de uso único e o banco guarda só o hash, então nem a plataforma
               consegue recuperá-lo. Para destravar alguém sem e-mail configurado, use o botão
               &quot;Redefinir senha&quot; no cadastro da pessoa.
             </CardDescription>

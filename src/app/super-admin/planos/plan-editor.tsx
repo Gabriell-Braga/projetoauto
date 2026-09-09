@@ -38,7 +38,7 @@ export type PlanRow = {
 };
 
 const STATUS_NOTE: Record<string, string> = {
-  em_construcao: "Em construção — ligar aqui ainda não entrega nada à revenda.",
+  em_construcao: "Em construção: ligar aqui ainda não entrega nada à revenda.",
   depende_de_fornecedor: "Depende de fornecedor externo.",
 };
 

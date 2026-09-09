@@ -133,7 +133,7 @@ export function BillingPanel({
       {drifted ? (
         <Alert tone={effectiveStatus === "suspenso" ? "danger" : "warning"}>
           Pelo vencimento, esta revenda já conta como{" "}
-          <strong className="font-medium">{BILLING_STATUS_LABELS[effectiveStatus]}</strong> — e o
+          <strong className="font-medium">{BILLING_STATUS_LABELS[effectiveStatus]}</strong>, e o
           bloqueio já está valendo. O registro só será atualizado no próximo giro da régua de
           cobrança.
         </Alert>

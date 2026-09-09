@@ -80,7 +80,7 @@ export function PortalsPanel({
       {!vaultReady ? (
         <Alert tone="danger" className="mb-4">
           O cofre de credenciais não está configurado nesta instalação. Conectar um portal está
-          bloqueado — guardar senha de terceiros sem cifra não é uma opção.
+          bloqueado: guardar senha de terceiros sem cifra não é uma opção.
         </Alert>
       ) : null}
 

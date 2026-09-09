@@ -63,7 +63,7 @@ export function SettingsForm({
           <CardTitle>Cobrança</CardTitle>
           <CardDescription>
             Multa e juros vão para o gateway no momento em que a assinatura é criada. Assinatura já
-            existente mantém o que foi pactuado — mudar aqui não reescreve contrato em andamento.
+            existente mantém o que foi pactuado: mudar aqui não reescreve contrato em andamento.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -152,7 +152,7 @@ export function SettingsForm({
             <span>
               Deixar o gateway avisar o pagador
               <span className="block text-xs text-faint">
-                Desligado, ninguém recebe aviso de vencimento — a revenda descobre a dívida quando o
+                Desligado, ninguém recebe aviso de vencimento, e a revenda descobre a dívida quando o
                 painel bloqueia.
               </span>
             </span>

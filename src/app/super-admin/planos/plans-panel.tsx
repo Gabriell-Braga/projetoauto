@@ -75,7 +75,7 @@ export function PlansPanel({ plans, coupons }: { plans: PlanRow[]; coupons: Coup
             <CardTitle>Planos comerciais</CardTitle>
             <CardDescription>
               Alterar limites e funcionalidades vale na hora para quem já está no plano. O preço só
-              afeta contratações novas — quem já assinou mantém o valor pactuado no gateway.
+              afeta contratações novas; quem já assinou mantém o valor pactuado no gateway.
             </CardDescription>
           </div>
           <Button type="button" onClick={() => setCreating(true)} className="shrink-0">

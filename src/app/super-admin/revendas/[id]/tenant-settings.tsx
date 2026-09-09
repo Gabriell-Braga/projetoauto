@@ -131,7 +131,7 @@ export function TenantSettingsForm({ tenant }: { tenant: TenantSettingsValues })
         <CardHeader>
           <CardTitle>Template do site</CardTitle>
           <CardDescription>
-            Trocar o template muda só a apresentação — estoque, fotos e leads seguem intactos.
+            Trocar o template muda só a apresentação: estoque, fotos e leads seguem intactos.
           </CardDescription>
         </CardHeader>
         <CardContent>

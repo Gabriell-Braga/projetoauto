@@ -122,7 +122,7 @@ export function DomainsPanel({
             <CardTitle>Endereço do site</CardTitle>
             <CardDescription>
               Use o domínio da sua loja. Você cadastra aqui, cria um registro no painel onde
-              comprou o domínio, e o site passa a responder nele — com certificado de segurança
+              comprou o domínio, e o site passa a responder nele, com certificado de segurança
               emitido automaticamente.
             </CardDescription>
           </div>
@@ -360,7 +360,7 @@ function AddDomainDialog({ onClose, onSaved }: { onClose: () => void; onSaved: (
           label="Endereço do site"
           htmlFor="domain"
           error={error}
-          hint="Pode colar com https:// — eu limpo."
+          hint="Pode colar com https://, que eu limpo."
         >
           <Input
             id="domain"
@@ -389,7 +389,7 @@ function AddDomainDialog({ onClose, onSaved }: { onClose: () => void; onSaved: (
           <Alert tone="info" className="mt-4">
             Depois cadastre também <span className="font-mono">{pair}</span>. Quem digita o
             endereço com e sem <span className="font-mono">www</span> precisa chegar no mesmo
-            lugar — só um dos dois cadastrado deixa metade das pessoas na página de erro.
+            lugar. Só um dos dois cadastrado deixa metade das pessoas na página de erro.
           </Alert>
         ) : null}
       </form>

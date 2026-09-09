@@ -136,7 +136,7 @@ export function IntegrationsPanel({
       {freshKey ? (
         <Alert tone="warning" className="mb-4">
           <p className="mb-2 font-medium">
-            Guarde esta chave agora — ela não será mostrada de novo.
+            Guarde esta chave agora: ela não será mostrada de novo.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <code className="break-all rounded-sm bg-surface-2 px-2 py-1 text-xs">{freshKey}</code>
@@ -154,7 +154,7 @@ export function IntegrationsPanel({
       {freshSecret ? (
         <Alert tone="warning" className="mb-4">
           <p className="mb-2 font-medium">
-            Segredo do webhook — use para conferir a assinatura das chamadas. Não será mostrado de
+            Segredo do webhook. Use para conferir a assinatura das chamadas. Não será mostrado de
             novo.
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -183,7 +183,7 @@ export function IntegrationsPanel({
             <CardTitle>Chaves de API</CardTitle>
             <CardDescription>
               Envie em <code className="text-xs">Authorization: Bearer</code> para ler seu estoque e
-              seus leads. Guardamos apenas o hash — a chave em claro aparece uma única vez.
+              seus leads. Guardamos apenas o hash: a chave em claro aparece uma única vez.
             </CardDescription>
           </div>
           <Button type="button" className="shrink-0" onClick={() => setCreatingKey(true)}>
@@ -369,7 +369,7 @@ export function IntegrationsPanel({
           open
           onClose={() => setCreatingKey(false)}
           title="Nova chave de API"
-          description="Dê um nome que diga onde ela será usada — facilita revogar a certa depois."
+          description="Dê um nome que diga onde ela será usada, o que facilita revogar a certa depois."
           footer={
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setCreatingKey(false)}>
@@ -552,7 +552,7 @@ function StockFeedCard({
         <CardTitle>Feed de estoque</CardTitle>
         <CardDescription>
           Entregue um destes endereços ao portal de classificados. Ele busca sozinho e mantém os
-          anúncios em dia. Só entram veículos disponíveis e reservados — rascunho e vendido ficam
+          anúncios em dia. Só entram veículos disponíveis e reservados; rascunho e vendido ficam
           de fora.
         </CardDescription>
       </CardHeader>

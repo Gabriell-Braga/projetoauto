@@ -136,7 +136,7 @@ function diagnose(state: {
     return "O webhook está cadastrado e ativo, mas nenhuma entrega chegou até agora. Pode ser fila do gateway ainda em trânsito.";
   }
   if (state.eventCount === 0) {
-    return "Entregas chegaram e foram aceitas, mas nenhuma virou evento — provavelmente eventos que não mapeamos.";
+    return "Entregas chegaram e foram aceitas, mas nenhuma virou evento, provavelmente de tipos que não mapeamos.";
   }
   return "Webhook ativo e recebendo eventos.";
 }

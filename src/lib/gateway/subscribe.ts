@@ -97,7 +97,7 @@ export async function contractSubscription(input: ContractInput) {
   /* ---------------------------------------------------- plano com gateway */
   const cpfCnpj = onlyDigits(row.tenant.cnpj ?? "");
   if (cpfCnpj.length !== 14 && cpfCnpj.length !== 11) {
-    throw badRequest("Informe o CNPJ da revenda antes de contratar — o gateway exige.");
+    throw badRequest("Informe o CNPJ da revenda antes de contratar: o gateway exige.");
   }
 
   const customerInput = {
@@ -124,7 +124,7 @@ export async function contractSubscription(input: ContractInput) {
     valueCents: priceCents,
     nextDueDate,
     cycle: plan.cycle as AsaasCycle,
-    description: `${plan.name} — ${row.tenant.name}`,
+    description: `${plan.name} · ${row.tenant.name}`,
     externalReference: row.tenant.id,
     finePercent: settings.finePercent,
     interestPercent: settings.interestPercent,

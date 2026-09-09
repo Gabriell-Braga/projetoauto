@@ -114,7 +114,7 @@ export function SubscriptionPanel({
     const confirmed = await confirm({
       title: "Cancelar assinatura",
       description:
-        "A cobrança automática para no gateway e a revenda volta ao controle manual. O acesso não é cortado agora — quem decide isso é a régua de vencimento.",
+        "A cobrança automática para no gateway e a revenda volta ao controle manual. O acesso não é cortado agora: quem decide isso é a régua de vencimento.",
       confirmLabel: "Cancelar assinatura",
       cancelLabel: "Manter assinatura",
       tone: "danger",
@@ -158,7 +158,7 @@ export function SubscriptionPanel({
               />
               {/*
                 O valor sai da cobrança, não do preço de catálogo do plano.
-                Enterprise vale zero na tabela porque é negociado caso a caso —
+                Enterprise vale zero na tabela porque é negociado caso a caso,
                 mostrar esse zero aqui contradizia a mensalidade ao lado.
               */}
               <Field
@@ -236,7 +236,7 @@ export function SubscriptionPanel({
                     >
                       {plans.map((plan) => (
                         <option key={plan.id} value={plan.id}>
-                          {plan.name} — {formatCurrency(plan.priceCents)}
+                          {plan.name} · {formatCurrency(plan.priceCents)}
                           {plan.billingMode === "manual" ? " (negociado)" : ""}
                         </option>
                       ))}
@@ -293,7 +293,7 @@ export function SubscriptionPanel({
 
                 {selectedPlan && selectedPlan.trialDays > 0 ? (
                   <p className="mb-4 text-[13px] text-muted">
-                    Este plano tem {selectedPlan.trialDays} dias de teste — a primeira cobrança só
+                    Este plano tem {selectedPlan.trialDays} dias de teste, e a primeira cobrança só
                     sai depois disso.
                   </p>
                 ) : null}

@@ -54,7 +54,7 @@ export const DEMO_SITE = {
   aboutText:
     "A Gabriel Braga Andrade trabalha com seminovos selecionados em Betim há mais de dez anos. " +
     "Cada carro do pátio passa por revisão antes de ser anunciado, e a ficha do site mostra o que " +
-    "encontramos — inclusive o que precisa de atenção. Aqui você fala direto com quem decide o " +
+    "encontramos, inclusive o que precisa de atenção. Aqui você fala direto com quem decide o " +
     "preço, sem intermediário e sem proposta que muda na hora de fechar.",
 
   stats: [
@@ -96,7 +96,7 @@ export const DEMO_SITE = {
     "do veículo de interesse ou do veículo que você quer vender. Não usamos os dados para nenhuma " +
     "finalidade além de responder ao seu contato.\n\n" +
     "Com quem compartilhamos\n" +
-    "Com ninguém, exceto quando a negociação exigir — por exemplo, o envio da proposta a uma " +
+    "Com ninguém, exceto quando a negociação exigir, como o envio da proposta a uma " +
     "instituição financeira que você mesmo escolheu para o financiamento.\n\n" +
     "Por quanto tempo guardamos\n" +
     "Enquanto durar o atendimento e pelo prazo que a lei exigir depois disso.\n\n" +

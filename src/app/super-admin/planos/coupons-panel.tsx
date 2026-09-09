@@ -66,7 +66,7 @@ export function CouponsPanel({ coupons, plans }: { coupons: CouponRow[]; plans: 
       willDeactivate
         ? {
             title: "Desativar cupom",
-            description: `"${coupon.code}" já foi usado ${coupon.redemptions}x, então ele é desativado em vez de excluído — quem está pagando com esse desconto continua com o registro.`,
+            description: `"${coupon.code}" já foi usado ${coupon.redemptions}x, então ele é desativado em vez de excluído: quem está pagando com esse desconto continua com o registro.`,
             confirmLabel: "Desativar cupom",
           }
         : {
@@ -97,7 +97,7 @@ export function CouponsPanel({ coupons, plans }: { coupons: CouponRow[]; plans: 
           <div>
             <CardTitle>Cupons</CardTitle>
             <CardDescription>
-              O Asaas não tem cupom — na contratação o desconto vira o campo de desconto da
+              O Asaas não tem cupom, então na contratação o desconto vira o campo de desconto da
               assinatura. Mudar o cupom depois não altera quem já contratou.
             </CardDescription>
           </div>

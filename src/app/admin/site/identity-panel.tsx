@@ -258,7 +258,7 @@ export function IdentityPanel({
         <CardHeader>
           <CardTitle>Cores e fontes</CardTitle>
           <CardDescription>
-            As cores viram variáveis CSS no template — nada fica fixo no código.
+            As cores viram variáveis CSS no template, então nada fica fixo no código.
           </CardDescription>
         </CardHeader>
         <CardContent>

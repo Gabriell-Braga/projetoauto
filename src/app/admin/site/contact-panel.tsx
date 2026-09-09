@@ -208,7 +208,7 @@ export function ContactPanel({
               Google e já tinha colado o link dela mantém o comportamento.
             */}
             <p className="text-[13px] text-muted lg:col-span-3">
-              O mapa do site é montado com o endereço acima — não precisa
+              O mapa do site é montado com o endereço acima, então não precisa
               cadastrar link nenhum.
             </p>
           </div>

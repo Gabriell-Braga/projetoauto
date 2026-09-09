@@ -88,7 +88,7 @@ export function useConfirm(): ConfirmApi {
 
   return async (options) => {
     console.error(
-      "[confirm] sem ConfirmProvider na árvore — ação negada por segurança:",
+      "[confirm] sem ConfirmProvider na árvore: ação negada por segurança:",
       options.title,
     );
     return false;

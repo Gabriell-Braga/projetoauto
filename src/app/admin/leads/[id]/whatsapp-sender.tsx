@@ -175,7 +175,7 @@ export function WhatsappSender({
         {channel?.conectado && channel.modo === "template" ? (
           <Alert tone="warning" className="mb-4">
             O cliente não escreve há mais de 24 horas. A Meta só deixa reabrir a conversa com um
-            modelo aprovado por ela — o texto abaixo não será usado como está.
+            modelo aprovado por ela. O texto abaixo não será usado como está.
           </Alert>
         ) : null}
 

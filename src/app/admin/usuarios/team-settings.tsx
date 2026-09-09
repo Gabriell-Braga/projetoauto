@@ -43,7 +43,7 @@ export function TeamSettings({ mode, hasStores }: { mode: string; hasStores: boo
       <CardHeader>
         <CardTitle>Distribuição de leads</CardTitle>
         <CardDescription>
-          Quem recebe cada lead que chega pelo site ou pela API. Vale para leads novos — os que já
+          Quem recebe cada lead que chega pelo site ou pela API. Vale para leads novos; os que já
           existem não mudam de dono sozinhos.
         </CardDescription>
       </CardHeader>

@@ -22,7 +22,7 @@ export default function AppError({
         <p className="label-instrument text-danger">Falha inesperada</p>
         <h1 className="mt-2 text-[20px] leading-tight text-text">Algo quebrou nesta tela</h1>
         <p className="mt-3 text-[13px] leading-relaxed text-muted">
-          O erro foi registrado. Tente de novo — se continuar, avise o suporte com o código abaixo.
+          O erro foi registrado. Tente de novo. Se continuar, avise o suporte com o código abaixo.
         </p>
 
         {error.digest ? (

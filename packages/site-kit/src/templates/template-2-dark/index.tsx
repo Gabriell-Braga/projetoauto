@@ -446,7 +446,7 @@ function Home({ site, links, featured, latest, facets, totalVehicles }: HomeProp
           </h1>
           <p className="mt-4 max-w-xl text-base text-white/60">
             {banner?.subtitle ??
-              `${site.name} — seminovos de procedência, revisados e prontos para rodar.`}
+              `${site.name}: seminovos de procedência, revisados e prontos para rodar.`}
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">

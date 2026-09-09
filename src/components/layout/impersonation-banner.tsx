@@ -26,7 +26,7 @@ export function ImpersonationBanner({ tenantName }: { tenantName: string }) {
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent px-3 py-1.5 sm:px-4">
       <span className="flex items-center gap-2 text-xs text-accent-contrast">
         <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
-        Acessando como <strong className="font-semibold">{tenantName}</strong> — cada ação fica
+        Acessando como <strong className="font-semibold">{tenantName}</strong>. Cada ação fica
         registrada na auditoria em seu nome.
       </span>
       <button

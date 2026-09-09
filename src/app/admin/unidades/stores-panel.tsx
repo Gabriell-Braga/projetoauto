@@ -61,7 +61,7 @@ export function StoresPanel({ stores, canWrite }: { stores: StoreRow[]; canWrite
   async function handleDelete(store: StoreRow) {
     const confirmed = await confirm({
       title: "Excluir unidade",
-      description: `"${store.name}" é removida. Veículos e pessoas que estavam nela ficam sem unidade — nada é apagado junto.`,
+      description: `"${store.name}" é removida. Veículos e pessoas que estavam nela ficam sem unidade, mas nada é apagado junto.`,
       confirmLabel: "Excluir unidade",
       tone: "danger",
     });

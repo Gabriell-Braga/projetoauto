@@ -170,7 +170,7 @@ export function ManageMember({
       <form id="manage-member-form" onSubmit={handleSave} noValidate>
         {isSelf ? (
           <Alert tone="info" className="mb-4">
-            Este é o seu acesso. Perfil e permissões não podem ser alterados por você mesmo — peça
+            Este é o seu acesso. Perfil e permissões não podem ser alterados por você mesmo. Peça
             a outro administrador.
           </Alert>
         ) : null}
@@ -225,7 +225,7 @@ export function ManageMember({
                 <span>
                   Entra no rodízio de leads
                   <span className="block text-xs text-faint">
-                    Desmarque para quem está de férias ou não atende — o rodízio pula essa pessoa.
+                    Desmarque para quem está de férias ou não atende: o rodízio pula essa pessoa.
                   </span>
                 </span>
               </label>

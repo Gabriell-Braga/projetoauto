@@ -207,7 +207,7 @@ export function domainVerdict(domain: string, state: VercelDomainState): DomainV
     return {
       status: "pendente",
       message:
-        "O domínio é seu, mas ainda não aponta para cá. Crie o registro abaixo e aguarde — a propagação leva de minutos a algumas horas.",
+        "O domínio é seu, mas ainda não aponta para cá. Crie o registro abaixo e aguarde: a propagação leva de minutos a algumas horas.",
       pendingRecords: state.missing.length > 0 ? state.missing : [dnsInstructionsFor(domain)],
     };
   }

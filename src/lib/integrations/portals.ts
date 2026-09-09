@@ -53,7 +53,7 @@ export const PORTALS: PortalDefinition[] = [
       },
     ],
     howToConnect:
-      "Entre no Webmotors com o login da loja, abra o chat de atendimento e peça a criação de um usuário de API para integração de anúncios. Eles devolvem as credenciais — cole aqui e não precisa voltar lá.",
+      "Entre no Webmotors com o login da loja, abra o chat de atendimento e peça a criação de um usuário de API para integração de anúncios. Eles devolvem as credenciais. Cole aqui e não precisa voltar lá.",
   },
   {
     key: "icarros",

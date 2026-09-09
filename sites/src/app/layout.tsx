@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
+import { Archivo, Barlow_Condensed, DM_Sans, Manrope } from "next/font/google";
 import { themeToCssVariables } from "@projetoauto/site-kit/contract";
 import { GoogleTagManager } from "@projetoauto/site-kit/shared/gtm";
 import { fetchSite } from "~/lib/panel";
@@ -56,12 +56,46 @@ const dmSans = DM_Sans({
   variable: "--font-dm-sans",
 });
 
+/*
+ * Uma fonte por template desenhado: DM Sans no Vitrine, Manrope no Showroom,
+ * Archivo com Barlow Condensed no Marketplace.
+ *
+ * Todas com `preload: false`, pelo mesmo motivo da primeira: um site usa UMA
+ * delas, e pre-carregar as quatro gastaria banda do visitante em arquivo que a
+ * pagina nao referencia. Quem escolhe e o tema do template, via CSS.
+ */
+const manrope = Manrope({
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  variable: "--font-manrope",
+});
+
+const archivo = Archivo({
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  variable: "--font-archivo",
+});
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+  preload: false,
+  variable: "--font-barlow-condensed",
+});
+
+const FONTES = [dmSans, manrope, archivo, barlowCondensed]
+  .map((fonte) => fonte.variable)
+  .join(" ");
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const slug = await currentSlug();
   const { site, gtmCode, available } = await fetchSite(slug);
 
   return (
-    <html lang="pt-BR" className={dmSans.variable}>
+    <html lang="pt-BR" className={FONTES}>
       <body style={themeToCssVariables(site.theme) as React.CSSProperties}>
         {/* GTM so carrega em site no ar — pagina de indisponibilidade nao dispara tag */}
         {available ? <GoogleTagManager containerId={gtmCode} /> : null}

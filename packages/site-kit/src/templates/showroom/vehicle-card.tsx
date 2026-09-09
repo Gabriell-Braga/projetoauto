@@ -1,0 +1,133 @@
+import Link from "next/link";
+import type { SiteLinks, VehicleView } from "../contract";
+
+/**
+ * Card do Showroom.
+ *
+ * Menos ruído que o do Vitrine, como pede o desenho: a foto ocupa a maior
+ * parte, o selo fica sobre ela, e embaixo vêm nome, medidas, preço e dois
+ * botões lado a lado — "Ver detalhes" na cor da marca e WhatsApp em verde.
+ *
+ * Os dois botões dividem a linha porque as duas ações competem de verdade:
+ * quem já decidiu quer falar agora, quem ainda compara quer a ficha.
+ */
+export function VehicleCard({
+  vehicle,
+  links,
+  storeName,
+}: {
+  vehicle: VehicleView;
+  links: SiteLinks;
+  storeName: string;
+}) {
+  const whatsapp = links.whatsapp(
+    `Olá! Tenho interesse no ${vehicle.title} ${vehicle.yearLabel} anunciado no site da ${storeName}.`,
+  );
+
+  const medidas = [vehicle.mileageLabel, vehicle.transmissionLabel, vehicle.fuelLabel]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <article className="flex flex-col overflow-hidden rounded-[var(--site-radius)] bg-[var(--site-surface)]">
+      <Link href={links.vehicle(vehicle.slug)} className="group relative block">
+        <div className="aspect-4/3 overflow-hidden bg-[var(--site-background)]">
+          {vehicle.coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={vehicle.coverUrl}
+              alt={vehicle.title}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-[11px] uppercase tracking-wider text-[var(--site-muted)]">
+              Foto do veículo
+            </div>
+          )}
+        </div>
+
+        {/* o selo é da CURADORIA, não do status: é o que o desenho destaca */}
+        <span className="absolute left-4 top-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--site-primary)]">
+          {vehicle.featured ? "Curadoria da loja" : vehicle.statusLabel}
+        </span>
+      </Link>
+
+      <div className="flex flex-1 flex-col px-4 pb-4 pt-4">
+        <Link
+          href={links.vehicle(vehicle.slug)}
+          className="text-[15px] leading-snug transition-colors hover:text-[var(--site-primary)]"
+          style={{ fontFamily: "var(--site-font-heading)" }}
+        >
+          {vehicle.title} {vehicle.yearModel}
+        </Link>
+
+        {medidas ? (
+          <p className="mt-1.5 text-[12px] text-[var(--site-muted)]">{medidas}</p>
+        ) : null}
+
+        <p
+          className="mt-2.5 text-[22px] font-semibold leading-none"
+          style={{ fontFamily: "var(--site-font-heading)" }}
+        >
+          {vehicle.priceLabel}
+        </p>
+
+        {!vehicle.priceOnRequest ? (
+          <p className="mt-1.5 text-[12px] text-[var(--site-primary)]">Financiamento disponível</p>
+        ) : null}
+
+        {/* mt-auto: cards de alturas diferentes terminam com os botões alinhados */}
+        <div className="mt-auto flex gap-2 pt-4">
+          <Link
+            href={links.vehicle(vehicle.slug)}
+            className="flex-1 rounded-[var(--site-radius)] bg-[var(--site-primary)] px-3 py-2.5 text-center text-[13px] font-medium text-[var(--site-primary-foreground)] transition-colors hover:bg-[var(--site-primary-hover)]"
+          >
+            Ver detalhes
+          </Link>
+          {whatsapp ? (
+            <a
+              href={whatsapp}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[var(--site-radius)] bg-[var(--site-success)] px-3 py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden="true" />
+              WhatsApp
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function VehicleGrid({
+  vehicles,
+  links,
+  storeName,
+  columns = 4,
+}: {
+  vehicles: VehicleView[];
+  links: SiteLinks;
+  storeName: string;
+  columns?: 3 | 4;
+}) {
+  const grade =
+    columns === 3
+      ? "sm:grid-cols-2 lg:grid-cols-3"
+      : "sm:grid-cols-2 lg:grid-cols-4";
+
+  return (
+    <div className={`grid grid-cols-1 gap-5 ${grade}`}>
+      {vehicles.map((vehicle) => (
+        <VehicleCard
+          key={vehicle.id}
+          vehicle={vehicle}
+          links={links}
+          storeName={storeName}
+        />
+      ))}
+    </div>
+  );
+}

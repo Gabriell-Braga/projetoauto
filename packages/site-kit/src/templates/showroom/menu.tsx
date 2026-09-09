@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import type { SiteData, SiteLinks } from "../contract";
-import { headlineHours } from "../shared/hours";
+export type MenuItem = { label: string; href: string };
 
 /**
  * Cabeçalho do Showroom: sobreposto ao herói, com menu em gaveta.
@@ -21,13 +20,33 @@ import { headlineHours } from "../shared/hours";
  * topo ficar com três coisas apenas — menu, marca e contato — que é o ponto do
  * desenho: a foto do carro é a protagonista, não o menu.
  */
+/*
+ * Recebe TEXTO, e nao o objeto de links.
+ *
+ * `SiteLinks` carrega funcoes (`stockWith`, `whatsapp`, `vehicle`), e funcao nao
+ * atravessa a fronteira servidor -> cliente: o React recusa a serializacao e a
+ * pagina inteira responde 500. Quem monta os enderecos e a moldura, que roda
+ * no servidor; aqui chegam strings prontas.
+ */
 export function ShowroomHeader({
-  site,
-  links,
+  storeName,
+  logoUrl,
+  phone,
+  homeHref,
+  whatsappHref,
+  todayHours,
+  nav,
+  categories,
   overlay,
 }: {
-  site: SiteData;
-  links: SiteLinks;
+  storeName: string;
+  logoUrl: string | null;
+  phone: string | null;
+  homeHref: string;
+  whatsappHref: string | null;
+  todayHours: string | null;
+  nav: MenuItem[];
+  categories: MenuItem[];
   /** A página tem banner atrás do cabeçalho? Só a home tem. */
   overlay: boolean;
 }) {
@@ -73,26 +92,10 @@ export function ShowroomHeader({
   }, [aberto]);
 
   const solido = !overlay || rolou || aberto;
-  const whatsapp = links.whatsapp(`Olá! Vim pelo site da ${site.name}.`);
-  const hoje = headlineHours(site.contact.businessHours);
-
-  const navegacao = [
-    { label: "Início", href: links.home },
-    { label: "Estoque", href: links.stock },
-    { label: "Financiamento", href: links.financing },
-    { label: "Venda seu carro", href: links.sellCar },
-    { label: "Sobre nós", href: links.about },
-    { label: "Contato", href: links.contact },
-  ];
-
-  const categorias = [
-    { label: "Todos os veículos", href: links.stock },
-    { label: "SUVs", href: links.stockWith({ carroceria: "suv" }) },
-    { label: "Hatches", href: links.stockWith({ carroceria: "hatch" }) },
-    { label: "Sedãs", href: links.stockWith({ carroceria: "sedan" }) },
-    { label: "Picapes", href: links.stockWith({ carroceria: "picape" }) },
-    { label: "Ofertas", href: links.stockWith({ ordem: "preco-asc" }) },
-  ];
+  const whatsapp = whatsappHref;
+  const hoje = todayHours;
+  const navegacao = nav;
+  const categorias = categories;
 
   return (
     <header
@@ -117,21 +120,21 @@ export function ShowroomHeader({
         {/* a marca fica no centro ótico, e não no fluxo: assim ela não desloca
             quando o texto do botão muda de "Menu" para "Fechar" */}
         <Link
-          href={links.home}
+          href={homeHref}
           className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold uppercase tracking-[0.18em]"
           style={{ fontFamily: "var(--site-font-heading)" }}
         >
-          {site.logoUrl ? (
+          {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={site.logoUrl} alt={site.name} className="h-8 w-auto object-contain" />
+            <img src={logoUrl} alt={storeName} className="h-8 w-auto object-contain" />
           ) : (
-            site.name
+            storeName
           )}
         </Link>
 
         <div className="ml-auto flex items-center gap-5">
-          {site.contact.phone ? (
-            <span className="hidden text-sm md:inline">{site.contact.phone}</span>
+          {phone ? (
+            <span className="hidden text-sm md:inline">{phone}</span>
           ) : null}
           {whatsapp ? (
             <a
@@ -197,8 +200,8 @@ export function ShowroomHeader({
                   Fale direto com a loja
                 </p>
 
-                {site.contact.phone ? (
-                  <p className="mt-4 text-lg font-medium">{site.contact.phone}</p>
+                {phone ? (
+                  <p className="mt-4 text-lg font-medium">{phone}</p>
                 ) : null}
                 {hoje ? <p className="mt-1 text-[13px] text-[var(--site-muted)]">{hoje}</p> : null}
 

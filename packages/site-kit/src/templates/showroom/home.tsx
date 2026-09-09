@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { HomeProps } from "../contract";
 import { formatCurrency } from "../../lib/format";
-import { RuledRow, SHELL, SectionHeading, Shell, TalkBand } from "./chrome";
+import { HERO_GRADIENT, HERO_VARS, RuledRow, SHELL, SectionHeading, Shell, TalkBand } from "./chrome";
 import { SearchCard } from "./search-card";
 import { VehicleGrid } from "./vehicle-card";
 
@@ -62,7 +62,10 @@ export function Home({ site, links, featured, latest, facets, totalVehicles }: H
   return (
     <Shell site={site} links={links} overlay>
       {/* ----------------------------------------------------------- herói */}
-      <section className="relative bg-[linear-gradient(180deg,var(--site-text)_0%,#5B6E8C_55%,var(--site-background)_100%)] pb-32 pt-28 text-white">
+      <section
+        className={"relative pb-32 pt-28 text-white " + HERO_GRADIENT}
+        style={HERO_VARS}
+      >
         <div className={`${SHELL} text-center`}>
           <h1
             className="mx-auto max-w-[20ch] text-[40px] leading-[1.12] sm:text-[52px]"
@@ -75,7 +78,8 @@ export function Home({ site, links, featured, latest, facets, totalVehicles }: H
             fim.
           </p>
 
-          <div className="mt-10 aspect-video overflow-hidden rounded-[var(--site-radius)] bg-white/15">
+          {/* proporcao do desenho: faixa larga e baixa, nao 16:9 */}
+          <div className="mt-10 aspect-[38/10] overflow-hidden rounded-[var(--site-radius)] bg-white/15">
             {banner ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={banner} alt={site.name} className="h-full w-full object-cover" />

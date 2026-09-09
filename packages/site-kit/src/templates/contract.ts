@@ -184,6 +184,19 @@ export type SiteLinks = {
 };
 
 export type StockFacets = {
+  /**
+   * Quantos veiculos em cada categoria.
+   *
+   * O Template 03 mostra a contagem ao lado de cada atalho. Ela sai das mesmas
+   * linhas que ja montam as facetas, entao nao custa consulta.
+   */
+  counts: {
+    bodyTypes: Record<string, number>;
+    transmissions: Record<string, number>;
+    fuels: Record<string, number>;
+    /** Chave = teto em reais; valor = quantos cabem nele. */
+    priceUpTo: Record<string, number>;
+  };
   brands: { brand: string; models: string[] }[];
   transmissions: (Transmission | null)[];
   fuels: (Fuel | null)[];

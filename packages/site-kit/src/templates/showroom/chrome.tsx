@@ -1,7 +1,24 @@
 import Link from "next/link";
 import type { SiteData, SiteLinks } from "../contract";
-import { summarizeHours } from "../shared/hours";
+import { headlineHours, summarizeHours } from "../shared/hours";
 import { ShowroomHeader } from "./menu";
+
+/**
+ * Gradiente do herói.
+ *
+ * O desenho vai de um azul-acinzentado médio até o branco. Em vez de cravar os
+ * hex do Figma, ele é derivado do tema: a revenda que trocar a cor da marca
+ * continua com o mesmo desenho, que é a promessa do white-label.
+ *
+ * `--site-hero` é a mistura de marca e texto que dá a base; os passos vão
+ * clareando até o fundo da página.
+ */
+export const HERO_GRADIENT =
+  "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--site-hero)_92%,white)_0%,color-mix(in_srgb,var(--site-hero)_62%,white)_26%,color-mix(in_srgb,var(--site-hero)_28%,white)_62%,color-mix(in_srgb,var(--site-hero)_6%,white)_88%,var(--site-surface)_100%)]";
+
+export const HERO_VARS = {
+  "--site-hero": "color-mix(in srgb, var(--site-primary) 42%, var(--site-text) 58%)",
+} as React.CSSProperties;
 
 /** Largura útil do desenho: 1280 com respiro de 24. */
 export const SHELL = "mx-auto w-full max-w-[1280px] px-6";
@@ -26,7 +43,33 @@ export function Shell({
 }) {
   return (
     <div className="min-h-screen bg-[var(--site-surface)] text-[var(--site-text)]">
-      <ShowroomHeader site={site} links={links} overlay={overlay} />
+      {/* a moldura roda no servidor e monta os enderecos: o cabecalho e
+          componente de cliente e nao pode receber funcao */}
+      <ShowroomHeader
+        storeName={site.name}
+        logoUrl={site.logoUrl}
+        phone={site.contact.phone}
+        homeHref={links.home}
+        whatsappHref={links.whatsapp(`Olá! Vim pelo site da ${site.name}.`)}
+        todayHours={headlineHours(site.contact.businessHours)}
+        nav={[
+          { label: "Início", href: links.home },
+          { label: "Estoque", href: links.stock },
+          { label: "Financiamento", href: links.financing },
+          { label: "Venda seu carro", href: links.sellCar },
+          { label: "Sobre nós", href: links.about },
+          { label: "Contato", href: links.contact },
+        ]}
+        categories={[
+          { label: "Todos os veículos", href: links.stock },
+          { label: "SUVs", href: links.stockWith({ carroceria: "suv" }) },
+          { label: "Hatches", href: links.stockWith({ carroceria: "hatch" }) },
+          { label: "Sedãs", href: links.stockWith({ carroceria: "sedan" }) },
+          { label: "Picapes", href: links.stockWith({ carroceria: "picape" }) },
+          { label: "Ofertas", href: links.stockWith({ ordem: "preco-asc" }) },
+        ]}
+        overlay={overlay}
+      />
       <main className={overlay ? "" : "pt-16"}>{children}</main>
       <Footer site={site} links={links} />
     </div>

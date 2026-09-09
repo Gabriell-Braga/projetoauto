@@ -6,7 +6,7 @@ import { mapsEmbedUrl } from "../../lib/maps";
 import { PhotoGallery } from "../shared/gallery";
 import { summarizeHours } from "../shared/hours";
 import { SHELL, SectionHeading, Shell, TalkBand } from "./chrome";
-import { Tabs } from "./tabs";
+import { Tabs } from "../shared/tabs";
 import { VehicleGrid } from "./vehicle-card";
 
 function specBoxes(vehicle: VehicleView) {

@@ -3,7 +3,7 @@ import type { AppliedFilters, ListingProps, SiteLinks, StockFacets } from "../co
 import { BODY_TYPE_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from "../../lib/catalog";
 import type { BodyType, Fuel, Transmission } from "../../lib/catalog";
 import { AutoSubmitSelect } from "../shared/auto-submit-select";
-import { SHELL, Shell, TalkBand } from "./chrome";
+import { HERO_GRADIENT, HERO_VARS, SHELL, Shell, TalkBand } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
 const SORTS = [
@@ -41,7 +41,7 @@ export function Listing({
   return (
     <Shell site={site} links={links} overlay>
       {/* ----------------------------------------------------------- herói */}
-      <section className="bg-[linear-gradient(180deg,var(--site-text)_0%,#5B6E8C_60%,#8595AC_100%)] pb-16 pt-28 text-white">
+      <section className={"pb-16 pt-28 text-white " + HERO_GRADIENT} style={HERO_VARS}>
         <div className={`${SHELL} text-center`}>
           <h1
             className="text-[36px] leading-tight sm:text-[44px]"

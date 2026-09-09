@@ -2,6 +2,7 @@ import type { TemplateModule } from "./contract";
 import { DEFAULT_TEMPLATE_ID, TEMPLATE_MANIFESTS } from "./manifests";
 import vitrine from "./vitrine";
 import showroom from "./showroom";
+import marketplace from "./marketplace";
 import templateClean from "./template-1-clean";
 import templateDark from "./template-2-dark";
 import template3 from "./template-3";
@@ -16,6 +17,7 @@ import template5 from "./template-5";
 export const TEMPLATE_REGISTRY: Record<string, TemplateModule> = {
   vitrine,
   showroom,
+  marketplace,
   "template-1-clean": templateClean,
   "template-2-dark": templateDark,
   "template-3": template3,

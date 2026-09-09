@@ -3,7 +3,10 @@
 import { useId, useState } from "react";
 
 /**
- * Abas da ficha do veículo, como no desenho: Informações, Galeria, Opcionais.
+ * Abas da ficha do veículo: Informações, Galeria, Opcionais.
+ *
+ * Mora em `shared` porque os Templates 02 e 03 pedem as mesmas três — o
+ * segundo desenho confirmou que não era um recurso de um template só.
  *
  * O conteúdo das três vem montado do servidor e fica no HTML desde o começo —
  * o que muda é qual está visível. Assim o buscador lê a ficha inteira, e quem

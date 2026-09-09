@@ -31,7 +31,9 @@ export function VehicleCard({
   return (
     <article className="flex flex-col overflow-hidden rounded-[var(--site-radius)] bg-[var(--site-surface)]">
       <Link href={links.vehicle(vehicle.slug)} className="group relative block">
-        <div className="aspect-4/3 overflow-hidden bg-[var(--site-background)]">
+        {/* tom proprio para a area da foto: no fundo da secao, que e a mesma
+            cor do fundo do site, o espaco reservado sumia */}
+        <div className="aspect-4/3 overflow-hidden bg-[color-mix(in_srgb,var(--site-primary)_8%,var(--site-background))]">
           {vehicle.coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

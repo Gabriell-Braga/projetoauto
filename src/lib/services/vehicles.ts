@@ -408,7 +408,36 @@ export async function listStockFacets(tenantId: string, onlyPublished = true) {
     brands.get(row.brand)!.add(row.model);
   }
 
+  /*
+   * Contagem por categoria.
+   *
+   * Sai das MESMAS linhas ja carregadas, entao nao custa consulta nenhuma. O
+   * Template 03 mostra "84 veiculos" ao lado de cada atalho, e um numero
+   * inventado ali leva a pessoa a uma lista vazia — a pior primeira impressao
+   * possivel num site de loja.
+   */
+  const contar = <T extends string>(valores: (T | null)[]) => {
+    const mapa: Record<string, number> = {};
+    for (const valor of valores) {
+      if (!valor) continue;
+      mapa[valor] = (mapa[valor] ?? 0) + 1;
+    }
+    return mapa;
+  };
+
+  const PRECO_FAIXAS = [50000, 80000, 120000, 180000];
+  const priceUpTo: Record<string, number> = {};
+  for (const faixa of PRECO_FAIXAS) {
+    priceUpTo[String(faixa)] = rows.filter((row) => row.priceCents <= faixa * 100).length;
+  }
+
   return {
+    counts: {
+      bodyTypes: contar(rows.map((row) => row.bodyType)),
+      transmissions: contar(rows.map((row) => row.transmission)),
+      fuels: contar(rows.map((row) => row.fuel)),
+      priceUpTo,
+    },
     brands: Array.from(brands.entries())
       .map(([brand, models]) => ({ brand, models: Array.from(models).sort() }))
       .sort((a, b) => a.brand.localeCompare(b.brand)),

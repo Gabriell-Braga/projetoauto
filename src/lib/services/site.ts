@@ -16,6 +16,7 @@ import {
   VEHICLE_STATUS_LABELS,
 } from "@/lib/catalog/labels";
 import { OPTION_LABELS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
+import { formatPhoneBR } from "@projetoauto/site-kit/format";
 import { plateEnd } from "@/lib/format/plate";
 import { mediaUrl } from "@/lib/paths";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
@@ -102,8 +103,16 @@ async function loadSiteData(slug: string): Promise<CachedSite | null> {
     aboutTitle: site?.aboutTitle ?? null,
     aboutText: site?.aboutText ?? null,
     contact: {
-      phone: site?.phone ?? null,
-      whatsapp: site?.whatsapp ?? null,
+      /*
+       * Telefone formatado AQUI, e nao no template.
+       *
+       * A revenda digita como quiser — so digitos, com o 55 na frente, com
+       * hifen. O site mostrava esse texto cru, e um "31973065499" ao lado de
+       * um "(31) 3555-0199" no card seguinte faz a pagina parecer mal montada.
+       * Formatar no servico vale para os dois apps e para todo template.
+       */
+      phone: formatPhoneBR(site?.phone),
+      whatsapp: formatPhoneBR(site?.whatsapp),
       whatsappDigits: site?.whatsapp ? normalizeWhatsapp(site.whatsapp) : null,
       email: site?.email ?? null,
       address: {

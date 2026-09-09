@@ -127,7 +127,6 @@ export default async function SitePage({
         <PagesPanel
           readOnly={readOnly}
           hasFinancing={Boolean(template.Financing)}
-          hasSellCar={Boolean(template.SellCar)}
           initial={{
             stats: site?.stats ?? [],
             reviews: (site?.reviews ?? []).map((review) => ({

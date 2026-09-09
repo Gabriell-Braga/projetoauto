@@ -34,13 +34,11 @@ export function PagesPanel({
   initial,
   readOnly,
   hasFinancing,
-  hasSellCar,
 }: {
   initial: PagesValues;
   readOnly?: boolean;
   /** O template escolhido implementa a página? Sem ela, o campo não faz nada. */
   hasFinancing: boolean;
-  hasSellCar: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -310,20 +308,6 @@ export function PagesPanel({
           </div>
         </CardContent>
       </Card>
-
-      {/* ------------------------------------------------ venda seu carro */}
-      {hasSellCar ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Venda seu carro</CardTitle>
-            <CardDescription>
-              A página já está no ar e não precisa de configuração. O que o cliente enviar vira
-              uma avaliação em rascunho, com o veículo preenchido, pronta para você consultar a
-              FIPE e fechar o valor.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
 
       {/* -------------------------------------------------------- legais */}
       <Card>

@@ -1,0 +1,85 @@
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { logAuditFor } from "@/lib/audit";
+import { requireApiTenant } from "@/lib/auth/guards";
+import { ApiError } from "@/lib/http";
+import { portalApp } from "@/lib/integrations/portal-apps";
+import {
+  OAUTH_STATE_COOKIE,
+  exchangeCode,
+  verifyOauthState,
+} from "@/lib/integrations/portal-oauth";
+import { getPortal, oauthCallbackPath } from "@/lib/integrations/portals";
+import { withBasePath } from "@/lib/paths";
+import { getOrigin } from "@/lib/seo/urls";
+import { connectOauthPortal } from "@/lib/services/portals";
+
+export const dynamic = "force-dynamic";
+
+type Params = { params: Promise<{ portal: string }> };
+
+/**
+ * Para onde o portal manda a pessoa depois de autorizar.
+ *
+ * É esta URL (com o mount path na frente) que se cadastra no app do portal:
+ *   https://<host>/app/api/portals/<portal>/callback
+ *
+ * Quem chega aqui é um navegador, não uma API — então erro não vira JSON:
+ * volta para a tela de portais com a mensagem, que é onde a pessoa estava.
+ */
+export async function GET(request: Request, { params }: Params) {
+  const { portal: key } = await params;
+  const origin = await getOrigin();
+  const back = (query: Record<string, string>) => {
+    const url = new URL(withBasePath("/admin/portais"), origin);
+    for (const [name, value] of Object.entries(query)) url.searchParams.set(name, value);
+    return NextResponse.redirect(url);
+  };
+
+  const portal = getPortal(key);
+  if (!portal || !portal.oauth) return back({ portal: key, erro: "Portal desconhecido." });
+
+  try {
+    const query = new URL(request.url).searchParams;
+    const store = await cookies();
+    const stateToken = store.get(OAUTH_STATE_COOKIE)?.value;
+    store.delete({ name: OAUTH_STATE_COOKIE, path: withBasePath(oauthCallbackPath(key)) });
+
+    const state = stateToken ? await verifyOauthState(stateToken) : null;
+    if (!state || state.portal !== key || state.nonce !== query.get("state")) {
+      throw new ApiError(400, "A autorização expirou ou não começou aqui. Tente conectar de novo.");
+    }
+
+    // a sessão precisa ser a mesma revenda que começou: o cookie prova o
+    // navegador, a sessão prova quem está nele
+    const context = await requireApiTenant("tenant:settings");
+    if (context.tenant.id !== state.tenantId) {
+      throw new ApiError(403, "A autorização foi iniciada por outra revenda.");
+    }
+
+    if (query.get("error")) {
+      const reason = query.get("error_description") ?? query.get("error") ?? "";
+      throw new ApiError(400, `${portal.name} não autorizou o acesso. ${reason}`.trim());
+    }
+    const code = query.get("code");
+    if (!code) throw new ApiError(400, `${portal.name} voltou sem o código de autorização.`);
+
+    const app = portalApp(portal);
+    if (!app) throw new ApiError(409, `${portal.name} ainda não está liberado para integração.`);
+
+    const redirectUri = `${origin}${withBasePath(oauthCallbackPath(key))}`;
+    const tokens = await exchangeCode(portal, app, redirectUri, code);
+    await connectOauthPortal(context.tenant.id, context.user.id, key, tokens);
+
+    await logAuditFor(
+      context,
+      { action: "portal.connect", entity: "portal_connection", entityId: key },
+      request,
+    );
+    return back({ portal: key, conectado: "1" });
+  } catch (error) {
+    if (error instanceof ApiError) return back({ portal: key, erro: error.message });
+    console.error("[portais] retorno OAuth falhou:", error);
+    return back({ portal: key, erro: "Não consegui concluir a conexão. Tente de novo." });
+  }
+}

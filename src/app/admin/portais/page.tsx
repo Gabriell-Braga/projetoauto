@@ -4,7 +4,7 @@ import { FeatureLocked } from "@/components/admin/feature-locked";
 import { requireTenantPage } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/rbac";
 import { tenantHasFeature } from "@/lib/api/feature-guard";
-import { PORTALS } from "@/lib/integrations/portals";
+import { portalCards } from "@/lib/integrations/portal-apps";
 import { isVaultConfigured } from "@/lib/security/vault";
 import { listConnections, publicationSummary } from "@/lib/services/portals";
 import { PortalsPanel } from "./portals-panel";
@@ -12,7 +12,12 @@ import { PortalsPanel } from "./portals-panel";
 export const metadata: Metadata = { title: "Portais" };
 export const dynamic = "force-dynamic";
 
-export default async function PortalsPage() {
+export default async function PortalsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ portal?: string; conectado?: string; erro?: string }>;
+}) {
+  const { portal, conectado, erro } = await searchParams;
   const context = await requireTenantPage("vehicles:read");
 
   if (!(await tenantHasFeature(context.tenant.id, "integracao_classificados"))) {
@@ -39,7 +44,8 @@ export default async function PortalsPage() {
         description="Conecte a conta da loja uma vez. Depois, publicar e remover acontece por aqui."
       />
       <PortalsPanel
-        portals={PORTALS}
+        portals={portalCards()}
+        notice={portal && (conectado || erro) ? { portal, error: erro ?? null } : null}
         vaultReady={isVaultConfigured()}
         canWrite={can(context.role, "tenant:settings")}
         tenantSlug={context.tenant.slug}

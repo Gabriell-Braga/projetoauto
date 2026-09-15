@@ -15,7 +15,13 @@ export type ConnectionMethod =
   /** O portal só busca o nosso feed; não há o que conectar. */
   | "feed";
 
-/** Se dá para conectar hoje ou se falta acordo comercial nosso com o portal. */
+/**
+ * Se dá para conectar hoje ou se falta acordo comercial nosso com o portal.
+ *
+ * Não é fixo no catálogo: vira "pronto" quando as credenciais do NOSSO app
+ * naquele portal estão no ambiente (ver portal-apps.ts). Liberar um portal é
+ * cadastrar duas variáveis, sem deploy.
+ */
 export type PortalAvailability = "pronto" | "aguardando_acesso";
 
 export type PortalField = {
@@ -26,25 +32,41 @@ export type PortalField = {
   hint?: string;
 };
 
+/** Endereços do fluxo OAuth 2.0 (authorization code) do portal. */
+export type PortalOauth = {
+  authorizeUrl: string;
+  tokenUrl: string;
+  /** Separado por espaço, como o portal espera no `scope`. */
+  scope?: string;
+};
+
 export type PortalDefinition = {
   key: string;
   name: string;
   method: ConnectionMethod;
-  availability: PortalAvailability;
+  /**
+   * Prefixo das variáveis com as credenciais do nosso app no portal
+   * (`<PREFIXO>_CLIENT_ID` e `<PREFIXO>_CLIENT_SECRET`). Sem prefixo, o
+   * portal ainda não tem acesso de integrador e fica em "aguardando".
+   */
+  appEnvPrefix?: string;
+  oauth?: PortalOauth;
   fields: PortalField[];
   /** O que a revenda precisa fazer, uma única vez, para conseguir o acesso. */
   howToConnect: string;
 };
+
+/** O que a tela recebe: a definição mais o que o ambiente decidiu. */
+export type PortalCard = PortalDefinition & { availability: PortalAvailability };
 
 export const PORTALS: PortalDefinition[] = [
   {
     key: "webmotors",
     name: "Webmotors",
     method: "credentials",
-    availability: "aguardando_acesso",
+    // o client id/secret são do integrador (nós), não da loja: ficam no ambiente
+    appEnvPrefix: "WEBMOTORS",
     fields: [
-      { key: "clientId", label: "Client ID", secret: false },
-      { key: "clientSecret", label: "Client Secret", secret: true },
       {
         key: "dealerId",
         label: "Código da loja",
@@ -53,13 +75,12 @@ export const PORTALS: PortalDefinition[] = [
       },
     ],
     howToConnect:
-      "Entre no Webmotors com o login da loja, abra o chat de atendimento e peça a criação de um usuário de API para integração de anúncios. Eles devolvem as credenciais. Cole aqui e não precisa voltar lá.",
+      "Entre no Webmotors com o login da loja, abra o chat de atendimento e peça para liberar a integração de anúncios pelo ProjetoAuto. Depois informe aqui o código da loja e não precisa voltar lá.",
   },
   {
     key: "icarros",
     name: "iCarros",
     method: "oauth",
-    availability: "aguardando_acesso",
     fields: [],
     howToConnect:
       "Clique em conectar: você é levado ao login do iCarros, autoriza o acesso e volta para cá. Nenhuma configuração acontece dentro do portal.",
@@ -68,7 +89,12 @@ export const PORTALS: PortalDefinition[] = [
     key: "olx",
     name: "OLX Autos",
     method: "oauth",
-    availability: "aguardando_acesso",
+    appEnvPrefix: "OLX",
+    oauth: {
+      authorizeUrl: "https://auth.olx.com.br/oauth",
+      tokenUrl: "https://auth.olx.com.br/oauth/token",
+      scope: "basic_user_info autoupload",
+    },
     fields: [],
     howToConnect:
       "Clique em conectar e autorize com a conta da loja na OLX. A autorização é única e pode ser revogada por aqui.",
@@ -77,7 +103,11 @@ export const PORTALS: PortalDefinition[] = [
     key: "mercadolivre",
     name: "Mercado Livre",
     method: "oauth",
-    availability: "aguardando_acesso",
+    appEnvPrefix: "MERCADOLIVRE",
+    oauth: {
+      authorizeUrl: "https://auth.mercadolivre.com.br/authorization",
+      tokenUrl: "https://api.mercadolibre.com/oauth/token",
+    },
     fields: [],
     howToConnect:
       "Clique em conectar e autorize com a conta da loja no Mercado Livre. A autorização é única e pode ser revogada por aqui.",
@@ -86,7 +116,6 @@ export const PORTALS: PortalDefinition[] = [
     key: "feed",
     name: "Outros portais (por feed)",
     method: "feed",
-    availability: "pronto",
     fields: [],
     howToConnect:
       "Para portais sem API, entregue o endereço do feed de estoque. Eles buscam sozinhos e mantêm os anúncios em dia. O endereço está na tela de API e webhooks.",
@@ -99,6 +128,10 @@ export function getPortal(key: string): PortalDefinition | undefined {
 
 export const PORTAL_KEYS = PORTALS.map((portal) => portal.key);
 
+/** Caminho (sem o mount path) que o portal chama de volta depois da autorização. */
+export function oauthCallbackPath(portalKey: string): string {
+  return `/api/portals/${portalKey}/callback`;
+}
 /* ------------------------------------------------------------------------ */
 /* Estado da publicação                                                      */
 /* ------------------------------------------------------------------------ */

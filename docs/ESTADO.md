@@ -164,6 +164,13 @@ IP, o painel veria todos os leads chegando dos endereços da Vercel.
 `FIGMA_TOKEN`, `VERCEL_TOKEN`, `SITES_API_KEY`, e (pendente)
 `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`.
 
+Portais de classificados: `WEBMOTORS_CLIENT_ID`/`_SECRET`, `OLX_CLIENT_ID`/`_SECRET`,
+`MERCADOLIVRE_CLIENT_ID`/`_SECRET`. São do nosso app no portal (integrador), não
+da revenda. Um portal só aparece como "pronto" na tela de portais quando o par
+dele existe. Para os de OAuth, a URL de retorno a cadastrar no app do portal é
+`https://projetoauto.webflow.io/app/api/portals/<portal>/callback`
+(`olx`, `mercadolivre`).
+
 ### App dos sites (`sites/.env.local` local, Environment Variables na Vercel)
 
 | Variável | Valor |

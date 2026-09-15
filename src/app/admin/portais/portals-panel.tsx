@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Link2, Link2Off, Rss } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
@@ -12,7 +12,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { FormField, Input } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { apiDelete, apiPost } from "@/lib/client/api";
-import { PUBLICATION_LABELS, type PortalDefinition } from "@/lib/integrations/portals";
+import { PUBLICATION_LABELS, type PortalCard } from "@/lib/integrations/portals";
 import { formatDateTime } from "@/lib/utils";
 
 type Connection = {
@@ -39,21 +39,53 @@ export function PortalsPanel({
   vaultReady,
   canWrite,
   tenantSlug,
+  notice,
 }: {
-  portals: PortalDefinition[];
+  portals: PortalCard[];
   connections: Connection[];
   summary: Summary[];
   vaultReady: boolean;
   canWrite: boolean;
   tenantSlug: string;
+  /** Resultado do retorno do OAuth, lido da URL pela página. */
+  notice: { portal: string; error: string | null } | null;
 }) {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
-  const [connecting, setConnecting] = useState<PortalDefinition | null>(null);
+  const [connecting, setConnecting] = useState<PortalCard | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const noticeShown = useRef(false);
 
-  async function handleDisconnect(portal: PortalDefinition) {
+  // o portal devolve a pessoa numa URL com o resultado; mostra uma vez e limpa
+  useEffect(() => {
+    if (!notice || noticeShown.current) return;
+    noticeShown.current = true;
+    const name = portals.find((portal) => portal.key === notice.portal)?.name ?? notice.portal;
+    if (notice.error) toast.error(`Não consegui conectar ${name}`, notice.error);
+    else toast.success(`${name} conectado`, "O estoque entra na fila de publicação.");
+    router.replace("/admin/portais");
+    // só na chegada: o toast não deve repetir a cada render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleConnect(portal: PortalCard) {
+    if (portal.method !== "oauth") {
+      setConnecting(portal);
+      return;
+    }
+    setBusy(portal.key);
+    const result = await apiPost<{ url: string }>(`/api/admin/portals/${portal.key}/oauth`, {});
+    if (!result.ok) {
+      setBusy(null);
+      toast.error("Não consegui conectar", result.error);
+      return;
+    }
+    // a autorização acontece no portal; ele traz a pessoa de volta pelo callback
+    window.location.assign(result.data.url);
+  }
+
+  async function handleDisconnect(portal: PortalCard) {
     const confirmed = await confirm({
       title: `Desconectar ${portal.name}`,
       description:
@@ -153,7 +185,8 @@ export function PortalsPanel({
                         type="button"
                         size="sm"
                         disabled={!vaultReady || portal.availability === "aguardando_acesso"}
-                        onClick={() => setConnecting(portal)}
+                        loading={busy === portal.key}
+                        onClick={() => handleConnect(portal)}
                       >
                         <Link2 className="h-3.5 w-3.5" />
                         Conectar conta
@@ -191,7 +224,7 @@ function StatusBadge({
   portal,
   connected,
 }: {
-  portal: PortalDefinition;
+  portal: PortalCard;
   connected: boolean;
 }) {
   if (portal.method === "feed") return <Badge tone="info">Sempre disponível</Badge>;
@@ -216,7 +249,7 @@ function ConnectDialog({
   onClose,
   onSaved,
 }: {
-  portal: PortalDefinition;
+  portal: PortalCard;
   onClose: () => void;
   onSaved: () => void;
 }) {

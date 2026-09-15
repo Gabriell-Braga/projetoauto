@@ -7,6 +7,8 @@ import {
   type PortalConnection,
 } from "@/db/schema";
 import { badRequest, conflict } from "@/lib/http";
+import { portalAvailability } from "@/lib/integrations/portal-apps";
+import type { OauthTokens } from "@/lib/integrations/portal-oauth";
 import {
   getPortal,
   shouldBePublished,
@@ -50,8 +52,11 @@ export async function connectPortal(
 ): Promise<void> {
   const definition = getPortal(portal);
   if (!definition) throw badRequest("Portal desconhecido");
-  if (definition.method === "feed") {
-    throw badRequest("Este portal usa o feed de estoque; não há conta para conectar.");
+  if (definition.method !== "credentials") {
+    throw badRequest(`${definition.name} não se conecta com credenciais coladas.`);
+  }
+  if (portalAvailability(definition) !== "pronto") {
+    throw conflict(`${definition.name} ainda não está liberado para integração.`);
   }
 
   const missing = definition.fields
@@ -59,7 +64,33 @@ export async function connectPortal(
     .map((field) => field.label);
   if (missing.length > 0) throw badRequest(`Faltou preencher: ${missing.join(", ")}`);
 
-  const sealed = await seal(JSON.stringify(credentials));
+  await storeConnection(tenantId, userId, portal, credentials);
+}
+
+/**
+ * Liga a conta depois que o portal devolveu os tokens no retorno do OAuth.
+ *
+ * A validação do fluxo (estado, nonce, sessão) é de quem chama: aqui só entra
+ * o que o portal já aceitou.
+ */
+export async function connectOauthPortal(
+  tenantId: string,
+  userId: string | null,
+  portal: string,
+  tokens: OauthTokens,
+): Promise<void> {
+  const definition = getPortal(portal);
+  if (!definition || definition.method !== "oauth") throw badRequest("Portal desconhecido");
+  await storeConnection(tenantId, userId, portal, tokens);
+}
+
+async function storeConnection(
+  tenantId: string,
+  userId: string | null,
+  portal: string,
+  secrets: Record<string, string | undefined>,
+): Promise<void> {
+  const sealed = await seal(JSON.stringify(secrets));
   const db = await getDb();
   const existing = await getConnection(tenantId, portal);
 

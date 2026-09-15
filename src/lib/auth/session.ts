@@ -24,7 +24,8 @@ export type SessionInput = Omit<SessionClaims, "jti" | "iat" | "exp"> & { jti?: 
 
 const DEV_SECRET = "dev-secret-projetoauto-nao-usar-em-producao";
 
-function getSecretKey(): Uint8Array {
+/** Assina a sessão e também o estado do OAuth dos portais — um segredo, uma rotação. */
+export function sessionSecretKey(): Uint8Array {
   const secret = process.env.AUTH_SECRET || (process.env.NODE_ENV !== "production" ? DEV_SECRET : "");
   if (!secret) {
     throw new Error("AUTH_SECRET não configurado nas variáveis de ambiente do Webflow Cloud.");
@@ -46,13 +47,13 @@ export async function createSessionToken(input: SessionInput): Promise<string> {
     .setJti(input.jti ?? crypto.randomUUID())
     .setIssuedAt(now)
     .setExpirationTime(now + SESSION_TTL_SECONDS)
-    .sign(getSecretKey());
+    .sign(sessionSecretKey());
 }
 
 /** Verificação puramente criptográfica — não toca no banco (usada também no middleware Edge). */
 export async function verifySessionToken(token: string): Promise<SessionClaims | null> {
   try {
-    const { payload } = await jwtVerify(token, getSecretKey(), { algorithms: ["HS256"] });
+    const { payload } = await jwtVerify(token, sessionSecretKey(), { algorithms: ["HS256"] });
     if (!payload.sub || !payload.jti || !payload.exp || !payload.iat) return null;
     return {
       sub: payload.sub,

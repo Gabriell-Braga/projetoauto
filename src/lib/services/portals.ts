@@ -81,7 +81,9 @@ export async function connectOauthPortal(
 ): Promise<void> {
   const definition = getPortal(portal);
   if (!definition || definition.method !== "oauth") throw badRequest("Portal desconhecido");
-  await storeConnection(tenantId, userId, portal, tokens);
+  // o id da conta fica fora do cofre: é como o webhook do portal acha a revenda
+  const settings = tokens.externalUserId ? { externalUserId: tokens.externalUserId } : undefined;
+  await storeConnection(tenantId, userId, portal, tokens, settings);
 }
 
 async function storeConnection(
@@ -89,6 +91,7 @@ async function storeConnection(
   userId: string | null,
   portal: string,
   secrets: Record<string, string | undefined>,
+  settings?: Record<string, unknown>,
 ): Promise<void> {
   const sealed = await seal(JSON.stringify(secrets));
   const db = await getDb();
@@ -99,6 +102,7 @@ async function storeConnection(
     status: "conectado" as const,
     connectedByUserId: userId,
     lastError: null,
+    ...(settings ? { settings } : {}),
   };
 
   if (existing) {

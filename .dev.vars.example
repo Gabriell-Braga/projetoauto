@@ -31,6 +31,8 @@ OPS_SECRET="troque-por-outro-segredo-longo"
 # A URL de retorno (callback) a cadastrar no app do portal e:
 #   https://projetoauto.webflow.io/app/api/portals/<portal>/callback
 # com <portal> = olx | mercadolivre
+# O Mercado Livre tambem pede a URL de notificacoes (webhook) do app:
+#   https://projetoauto.webflow.io/app/api/webhooks/mercadolivre
 # WEBMOTORS_CLIENT_ID="..."
 # WEBMOTORS_CLIENT_SECRET="..."
 # OLX_CLIENT_ID="..."

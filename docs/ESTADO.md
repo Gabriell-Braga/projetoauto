@@ -169,7 +169,9 @@ Portais de classificados: `WEBMOTORS_CLIENT_ID`/`_SECRET`, `OLX_CLIENT_ID`/`_SEC
 da revenda. Um portal só aparece como "pronto" na tela de portais quando o par
 dele existe. Para os de OAuth, a URL de retorno a cadastrar no app do portal é
 `https://projetoauto.webflow.io/app/api/portals/<portal>/callback`
-(`olx`, `mercadolivre`).
+(`olx`, `mercadolivre`). O Mercado Livre pede ainda a URL de notificações do app:
+`https://projetoauto.webflow.io/app/api/webhooks/mercadolivre` — ela só grava o
+aviso em `webhook_events`; quem busca o recurso é a sincronização.
 
 ### App dos sites (`sites/.env.local` local, Environment Variables na Vercel)
 

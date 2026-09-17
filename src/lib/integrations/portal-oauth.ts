@@ -24,6 +24,11 @@ export type OauthState = {
    * carregar no estado é o que garante isso mesmo se o host mudar no caminho.
    */
   redirectUri: string;
+  /**
+   * Verificador do PKCE, cifrado pelo cofre. O estado vai na URL e fica no
+   * histórico do navegador; o verificador em claro ali anularia o PKCE.
+   */
+  codeVerifier?: string;
 };
 
 /**
@@ -41,6 +46,7 @@ export async function signOauthState(state: OauthState): Promise<string> {
     portal: state.portal,
     tenantId: state.tenantId,
     redirectUri: state.redirectUri,
+    ...(state.codeVerifier ? { codeVerifier: state.codeVerifier } : {}),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setJti(crypto.randomUUID())
@@ -59,10 +65,32 @@ export async function verifyOauthState(token: string): Promise<OauthState | null
     ) {
       return null;
     }
-    return { portal: payload.portal, tenantId: payload.tenantId, redirectUri: payload.redirectUri };
+    return {
+      portal: payload.portal,
+      tenantId: payload.tenantId,
+      redirectUri: payload.redirectUri,
+      ...(typeof payload.codeVerifier === "string" ? { codeVerifier: payload.codeVerifier } : {}),
+    };
   } catch {
     return null;
   }
+}
+
+/* ------------------------------------------------------------------------ */
+/* PKCE (RFC 7636)                                                           */
+/* ------------------------------------------------------------------------ */
+
+function base64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** Verificador aleatório (43 chars base64url) e o desafio S256 dele. */
+export async function createPkce(): Promise<{ verifier: string; challenge: string }> {
+  const verifier = base64Url(crypto.getRandomValues(new Uint8Array(32)));
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return { verifier, challenge: base64Url(new Uint8Array(digest)) };
 }
 
 export function authorizeUrl(
@@ -70,6 +98,7 @@ export function authorizeUrl(
   app: PortalApp,
   redirectUri: string,
   state: string,
+  codeChallenge?: string,
 ): string {
   const url = new URL(oauth.authorizeUrl);
   url.searchParams.set("response_type", "code");
@@ -77,6 +106,10 @@ export function authorizeUrl(
   url.searchParams.set("redirect_uri", redirectUri);
   if (oauth.scope) url.searchParams.set("scope", oauth.scope);
   url.searchParams.set("state", state);
+  if (codeChallenge) {
+    url.searchParams.set("code_challenge", codeChallenge);
+    url.searchParams.set("code_challenge_method", "S256");
+  }
   return url.toString();
 }
 
@@ -109,6 +142,7 @@ export async function exchangeCode(
   app: PortalApp,
   redirectUri: string,
   code: string,
+  codeVerifier?: string,
   fetcher: typeof fetch = fetch,
 ): Promise<OauthTokens> {
   if (!portal.oauth) throw badRequest(`${portal.name} não conecta por OAuth`);
@@ -119,6 +153,7 @@ export async function exchangeCode(
     client_secret: app.clientSecret,
     code,
     redirect_uri: redirectUri,
+    ...(codeVerifier ? { code_verifier: codeVerifier } : {}),
   });
 
   const response = await fetcher(portal.oauth.tokenUrl, {
@@ -129,7 +164,8 @@ export async function exchangeCode(
 
   const payload = (await response.json().catch(() => ({}))) as TokenResponse;
   if (!response.ok || !payload.access_token) {
-    const reason = payload.error_description ?? payload.message ?? payload.error ?? `HTTP ${response.status}`;
+    const reason =
+      payload.error_description ?? payload.message ?? payload.error ?? `HTTP ${response.status}`;
     throw new ApiError(502, `${portal.name} não aceitou a autorização: ${reason}`);
   }
 

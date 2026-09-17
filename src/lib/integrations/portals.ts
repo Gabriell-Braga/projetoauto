@@ -38,6 +38,8 @@ export type PortalOauth = {
   tokenUrl: string;
   /** Separado por espaço, como o portal espera no `scope`. */
   scope?: string;
+  /** O portal exige PKCE (code_challenge na ida, code_verifier na troca). */
+  pkce?: boolean;
 };
 
 export type PortalDefinition = {
@@ -107,6 +109,8 @@ export const PORTALS: PortalDefinition[] = [
     oauth: {
       authorizeUrl: "https://auth.mercadolivre.com.br/authorization",
       tokenUrl: "https://api.mercadolibre.com/oauth/token",
+      // sem isso a troca volta "code_verifier is a required param"
+      pkce: true,
     },
     fields: [],
     howToConnect:

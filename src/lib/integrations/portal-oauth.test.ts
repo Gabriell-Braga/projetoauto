@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { portalAvailability, portalApp } from "./portal-apps";
-import { authorizeUrl, exchangeCode, signOauthState, verifyOauthState } from "./portal-oauth";
+import {
+  authorizeUrl,
+  createPkce,
+  exchangeCode,
+  signOauthState,
+  verifyOauthState,
+} from "./portal-oauth";
 import { getPortal, oauthCallbackPath } from "./portals";
 
 const olx = getPortal("olx")!;
@@ -42,6 +48,18 @@ describe("authorizeUrl", () => {
     expect(url.searchParams.get("state")).toBe("estado-assinado");
   });
 
+  it("com PKCE, o desafio vai na ida e o método é S256", async () => {
+    const pkce = await createPkce();
+    expect(pkce.verifier).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(pkce.challenge).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(pkce.challenge).not.toBe(pkce.verifier);
+
+    const ml = getPortal("mercadolivre")!;
+    const url = new URL(authorizeUrl(ml.oauth!, app, redirect, "s", pkce.challenge));
+    expect(url.searchParams.get("code_challenge")).toBe(pkce.challenge);
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+  });
+
   it("o caminho de retorno é fixo por portal — é o que se cadastra lá", () => {
     expect(oauthCallbackPath("olx")).toBe("/api/portals/olx/callback");
   });
@@ -67,7 +85,7 @@ describe("exchangeCode", () => {
 
   it("manda form-urlencoded com o que o portal espera", async () => {
     const fetcher = fetcherReturning(200, { access_token: "tok", token_type: "Bearer" });
-    const tokens = await exchangeCode(olx, app, redirect, "code-1", fetcher);
+    const tokens = await exchangeCode(olx, app, redirect, "code-1", undefined, fetcher);
 
     expect(tokens).toEqual({ accessToken: "tok" });
     const [url, init] = fetcher.mock.calls[0];
@@ -80,6 +98,15 @@ describe("exchangeCode", () => {
     expect(body.get("client_secret")).toBe("segredo");
     expect(body.get("code")).toBe("code-1");
     expect(body.get("redirect_uri")).toBe(redirect);
+    expect(body.has("code_verifier")).toBe(false);
+  });
+
+  it("manda o code_verifier quando o fluxo usou PKCE", async () => {
+    const fetcher = fetcherReturning(200, { access_token: "tok" });
+    await exchangeCode(getPortal("mercadolivre")!, app, redirect, "c", "verificador", fetcher);
+    expect((fetcher.mock.calls[0][1].body as URLSearchParams).get("code_verifier")).toBe(
+      "verificador",
+    );
   });
 
   it("guarda refresh, validade e conta quando o portal devolve (Mercado Livre)", async () => {
@@ -90,7 +117,14 @@ describe("exchangeCode", () => {
       user_id: 987,
     });
     const before = Date.now();
-    const tokens = await exchangeCode(getPortal("mercadolivre")!, app, redirect, "c", fetcher);
+    const tokens = await exchangeCode(
+      getPortal("mercadolivre")!,
+      app,
+      redirect,
+      "c",
+      undefined,
+      fetcher,
+    );
 
     expect(tokens.refreshToken).toBe("ref");
     expect(tokens.externalUserId).toBe("987");
@@ -100,7 +134,7 @@ describe("exchangeCode", () => {
 
   it("erro do portal vira mensagem legível, não 500", async () => {
     const fetcher = fetcherReturning(400, { error: "invalid_grant" });
-    await expect(exchangeCode(olx, app, redirect, "c", fetcher)).rejects.toMatchObject({
+    await expect(exchangeCode(olx, app, redirect, "c", undefined, fetcher)).rejects.toMatchObject({
       status: 502,
       message: "OLX Autos não aceitou a autorização: invalid_grant",
     });

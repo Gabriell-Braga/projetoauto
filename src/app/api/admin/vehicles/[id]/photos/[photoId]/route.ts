@@ -1,6 +1,7 @@
 import { logAuditFor } from "@/lib/audit";
 import { requireApiTenant } from "@/lib/auth/guards";
 import { jsonOk, notFound, withApi } from "@/lib/http";
+import { queueVehicleSync } from "@/lib/services/portals";
 import { deletePhoto } from "@/lib/services/vehicles";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export const DELETE = withApi(async (request: Request, { params }: Params) => {
 
   const removed = await deletePhoto(context.tenant.id, id, photoId);
   if (!removed) throw notFound("Foto não encontrada");
+  await queueVehicleSync(context.tenant.id, id);
 
   await logAuditFor(
     context,

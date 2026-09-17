@@ -6,6 +6,8 @@ import { requireApiTenant } from "@/lib/auth/guards";
 import { badRequest, forbidden, jsonOk, notFound, withApi } from "@/lib/http";
 import { buildVehicleSlug, deleteVehicle, getVehicle } from "@/lib/services/vehicles";
 import { queueVehicleSync } from "@/lib/services/portals";
+import { closePublicationsBeforeDelete, syncInBackground } from "@/lib/services/portal-sync";
+import { getOrigin } from "@/lib/seo/urls";
 import { dispatchTenantEvent } from "@/lib/services/api-access";
 import { checkTenantLimit } from "@/lib/plans/service";
 import { vehicleUpdateSchema } from "@/lib/validation/vehicles";
@@ -68,6 +70,7 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
   // portais e integradores são avisados depois de gravar, nunca antes:
   // portal fora do ar não pode impedir a revenda de salvar o próprio carro
   await queueVehicleSync(context.tenant.id, id);
+  await syncInBackground(context.tenant.id, await getOrigin());
   await dispatchTenantEvent(
     context.tenant.id,
     input.status === "sold" ? "vehicle.sold" : "vehicle.updated",
@@ -92,6 +95,8 @@ export const DELETE = withApi(async (request: Request, { params }: Params) => {
   const context = await requireApiTenant("vehicles:write");
   const { id } = await params;
 
+  // o anúncio no portal fecha antes: apagar leva junto o id que permitiria fechá-lo depois
+  await closePublicationsBeforeDelete(context.tenant.id, id);
   const removed = await deleteVehicle(context.tenant.id, id);
   if (!removed) throw notFound("Veículo não encontrado");
 

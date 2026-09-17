@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Link2Off, Rss } from "lucide-react";
+import Link from "next/link";
+import { Link2, Link2Off, RefreshCw, Rss } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,22 @@ type Connection = {
   lastError: string | null;
 };
 
+type Problem = {
+  portal: string;
+  vehicleId: string;
+  vehicle: string;
+  error: string;
+};
+
+type SyncReport = {
+  portal: string;
+  published: number;
+  updated: number;
+  removed: number;
+  failed: number;
+  error?: string;
+};
+
 type Summary = {
   portal: string;
   pendente: number;
@@ -36,6 +53,7 @@ export function PortalsPanel({
   portals,
   connections,
   summary,
+  problems,
   vaultReady,
   canWrite,
   tenantSlug,
@@ -44,6 +62,7 @@ export function PortalsPanel({
   portals: PortalCard[];
   connections: Connection[];
   summary: Summary[];
+  problems: Problem[];
   vaultReady: boolean;
   canWrite: boolean;
   tenantSlug: string;
@@ -85,6 +104,35 @@ export function PortalsPanel({
     window.location.assign(result.data.url);
   }
 
+  async function handleSync(portal: PortalCard) {
+    setBusy(`sync:${portal.key}`);
+    const result = await apiPost<{ reports: SyncReport[] }>("/api/admin/portals/sync", {});
+    setBusy(null);
+
+    if (!result.ok) {
+      toast.error("Não consegui sincronizar", result.error);
+      return;
+    }
+    const report = result.data.reports.find((item) => item.portal === portal.key);
+    if (!report) {
+      toast.info("Nada para sincronizar", "A fila deste portal está vazia.");
+    } else if (report.error) {
+      toast.error(`${portal.name} parou`, report.error);
+    } else {
+      const parts = [
+        report.published ? `${report.published} publicado(s)` : null,
+        report.updated ? `${report.updated} atualizado(s)` : null,
+        report.removed ? `${report.removed} removido(s)` : null,
+        report.failed ? `${report.failed} com erro` : null,
+      ].filter(Boolean);
+      const summaryText = parts.length > 0 ? parts.join(", ") : "Nada mudou.";
+      if (report.failed > 0)
+        toast.error(`${portal.name}: ${summaryText}`, "Veja os motivos no card.");
+      else toast.success(`${portal.name} sincronizado`, summaryText);
+    }
+    router.refresh();
+  }
+
   async function handleDisconnect(portal: PortalCard) {
     const confirmed = await confirm({
       title: `Desconectar ${portal.name}`,
@@ -120,6 +168,7 @@ export function PortalsPanel({
         {portals.map((portal) => {
           const connection = connections.find((item) => item.portal === portal.key);
           const counts = summary.find((item) => item.portal === portal.key);
+          const portalProblems = problems.filter((item) => item.portal === portal.key);
           const connected = connection?.status === "conectado";
 
           return (
@@ -157,6 +206,22 @@ export function PortalsPanel({
                   </p>
                 ) : null}
 
+                {portalProblems.length > 0 ? (
+                  <ul className="mb-3 space-y-1.5 rounded border border-danger/30 bg-danger/5 p-3 text-[13px]">
+                    {portalProblems.map((problem) => (
+                      <li key={problem.vehicleId}>
+                        <Link
+                          href={`/admin/estoque/${problem.vehicleId}`}
+                          className="font-medium text-text underline-offset-2 hover:underline"
+                        >
+                          {problem.vehicle}
+                        </Link>
+                        <span className="text-muted"> — {problem.error}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+
                 {portal.method === "feed" ? (
                   <a
                     href={`/r/${tenantSlug}/estoque.xml`}
@@ -170,16 +235,27 @@ export function PortalsPanel({
                 ) : canWrite ? (
                   <div className="flex flex-wrap gap-2">
                     {connected ? (
-                      <Button
-                        type="button"
-                        variant="outlineDanger"
-                        size="sm"
-                        loading={busy === portal.key}
-                        onClick={() => handleDisconnect(portal)}
-                      >
-                        <Link2Off className="h-3.5 w-3.5" />
-                        Desconectar
-                      </Button>
+                      <>
+                        <Button
+                          type="button"
+                          size="sm"
+                          loading={busy === `sync:${portal.key}`}
+                          onClick={() => handleSync(portal)}
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Sincronizar agora
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outlineDanger"
+                          size="sm"
+                          loading={busy === portal.key}
+                          onClick={() => handleDisconnect(portal)}
+                        >
+                          <Link2Off className="h-3.5 w-3.5" />
+                          Desconectar
+                        </Button>
+                      </>
                     ) : (
                       <Button
                         type="button"
@@ -220,13 +296,7 @@ export function PortalsPanel({
   );
 }
 
-function StatusBadge({
-  portal,
-  connected,
-}: {
-  portal: PortalCard;
-  connected: boolean;
-}) {
+function StatusBadge({ portal, connected }: { portal: PortalCard; connected: boolean }) {
   if (portal.method === "feed") return <Badge tone="info">Sempre disponível</Badge>;
   if (connected) return <Badge tone="success">Conectado</Badge>;
 
@@ -292,7 +362,12 @@ function ConnectDialog({
     >
       <form id="connect-form" onSubmit={handleSubmit} noValidate autoComplete="off">
         {portal.fields.map((field) => (
-          <FormField key={field.key} label={field.label} htmlFor={`field-${field.key}`} hint={field.hint}>
+          <FormField
+            key={field.key}
+            label={field.label}
+            htmlFor={`field-${field.key}`}
+            hint={field.hint}
+          >
             <Input
               id={`field-${field.key}`}
               type={field.secret ? "password" : "text"}

@@ -4,6 +4,7 @@ import { vehiclePhotos } from "@/db/schema";
 import { logAuditFor } from "@/lib/audit";
 import { requireApiTenant } from "@/lib/auth/guards";
 import { badRequest, jsonOk, notFound, withApi } from "@/lib/http";
+import { queueVehicleSync } from "@/lib/services/portals";
 import {
   reorderPhotos,
   setCoverPhoto,
@@ -92,6 +93,8 @@ export const POST = withApi(async (request: Request, { params }: Params) => {
     .where(eq(vehiclePhotos.vehicleId, id))
     .orderBy(asc(vehiclePhotos.position));
 
+  // foto nova muda o anúncio; o reenvio acontece no próximo salvar ou na passada do agendador
+  await queueVehicleSync(context.tenant.id, id);
   return jsonOk({ photoId, photos });
 });
 
@@ -108,6 +111,7 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
     if (!parsed.success) throw badRequest("Dados inválidos", parsed.error.issues);
     const ok = await reorderPhotos(context.tenant.id, id, parsed.data.photoIds);
     if (!ok) throw notFound("Foto não encontrada neste veículo");
+    await queueVehicleSync(context.tenant.id, id);
     return jsonOk({ id });
   }
 
@@ -115,6 +119,7 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
   if (!parsed.success) throw badRequest("Dados inválidos", parsed.error.issues);
   const ok = await setCoverPhoto(context.tenant.id, id, parsed.data.photoId);
   if (!ok) throw notFound("Foto não encontrada neste veículo");
+  await queueVehicleSync(context.tenant.id, id);
 
   return jsonOk({ id });
 });

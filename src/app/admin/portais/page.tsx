@@ -6,7 +6,11 @@ import { can } from "@/lib/auth/rbac";
 import { tenantHasFeature } from "@/lib/api/feature-guard";
 import { portalCards } from "@/lib/integrations/portal-apps";
 import { isVaultConfigured } from "@/lib/security/vault";
-import { listConnections, publicationSummary } from "@/lib/services/portals";
+import {
+  listConnections,
+  publicationProblems,
+  publicationSummary,
+} from "@/lib/services/portals";
 import { PortalsPanel } from "./portals-panel";
 
 export const metadata: Metadata = { title: "Portais" };
@@ -32,9 +36,10 @@ export default async function PortalsPage({
     );
   }
 
-  const [connections, summary] = await Promise.all([
+  const [connections, summary, problems] = await Promise.all([
     listConnections(context.tenant.id),
     publicationSummary(context.tenant.id),
+    publicationProblems(context.tenant.id),
   ]);
 
   return (
@@ -57,6 +62,12 @@ export default async function PortalsPage({
           lastError: connection.lastError,
         }))}
         summary={summary}
+        problems={problems.map((problem) => ({
+          portal: problem.portal,
+          vehicleId: problem.vehicleId,
+          vehicle: `${problem.brand} ${problem.model} ${problem.yearModel}`,
+          error: problem.error ?? "Erro sem detalhe",
+        }))}
       />
     </>
   );

@@ -218,6 +218,30 @@ export async function queueVehicleSync(tenantId: string, vehicleId: string): Pro
   }
 }
 
+/**
+ * O que travou, com o carro e o motivo.
+ *
+ * "Erro: 2" no card não diz o que corrigir. O motivo vem do portal (foto
+ * faltando, cidade não reconhecida) e é acionável só ao lado do nome.
+ */
+export async function publicationProblems(tenantId: string) {
+  const db = await getDb();
+  return db
+    .select({
+      portal: vehiclePublications.portal,
+      vehicleId: vehiclePublications.vehicleId,
+      error: vehiclePublications.lastError,
+      brand: vehicles.brand,
+      model: vehicles.model,
+      yearModel: vehicles.yearModel,
+    })
+    .from(vehiclePublications)
+    .innerJoin(vehicles, eq(vehicles.id, vehiclePublications.vehicleId))
+    .where(
+      and(eq(vehiclePublications.tenantId, tenantId), eq(vehiclePublications.status, "erro")),
+    );
+}
+
 /** Resumo por portal, para a tela dizer o que está no ar e o que travou. */
 export async function publicationSummary(tenantId: string) {
   const rows = await listPublications(tenantId);

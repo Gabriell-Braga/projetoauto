@@ -178,6 +178,16 @@ dele existe. Para os de OAuth, a URL de retorno a cadastrar no app do portal é
 `https://projetoauto.webflow.io/app/api/webhooks/mercadolivre` — ela só grava o
 aviso em `webhook_events`; quem busca o recurso é a sincronização.
 
+**Publicação no Mercado Livre** (`src/lib/services/portal-sync.ts`): a fila em
+`vehicle_publications` é executada logo depois de salvar o veículo (via
+`waitUntil`, sem segurar a resposta), pelo botão "Sincronizar agora" na tela de
+portais e por `POST /api/ops/sync-portals` (mesmo `x-ops-secret`; agendar junto
+com o billing). O adaptador cria/atualiza/encerra classificados (`MLB1744`),
+renova o token (vence em 6h; refresh de uso único, gravado antes de usar) e
+resolve cidade/estado para os ids do ML uma vez por endereço, guardando em
+`portal_connections.settings`. Exige preço, ao menos uma foto e cidade/estado no
+Site ou na unidade; erros do ML aparecem por carro no card do portal.
+
 ### App dos sites (`sites/.env.local` local, Environment Variables na Vercel)
 
 | Variável | Valor |

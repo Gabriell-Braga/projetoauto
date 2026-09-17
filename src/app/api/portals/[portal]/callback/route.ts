@@ -21,17 +21,11 @@ type Params = { params: Promise<{ portal: string }> };
  *
  * Quem chega aqui é um navegador, não uma API — então erro não vira JSON:
  * volta para a tela de portais com a mensagem, que é onde a pessoa estava.
- *
- * Se o portal devolveu para um host que não é o do painel (o interno do
- * Webflow Cloud, por exemplo), não há sessão aqui: a mesma chamada é
- * reencaminhada para a origem que iniciou o fluxo, e lá ela se resolve.
  */
 export async function GET(request: Request, { params }: Params) {
   const { portal: key } = await params;
-  // a origem para voltar é a mesma que iniciou o fluxo (vem no estado); só
-  // sem estado é que se recorre aos headers
+  // sem estado válido não se sabe de onde veio: aí vale a origem dos headers
   let origin = await getOrigin();
-  const requestUrl = new URL(request.url);
   const back = (query: Record<string, string>) => {
     const url = new URL(withBasePath("/admin/portais"), origin);
     for (const [name, value] of Object.entries(query)) url.searchParams.set(name, value);
@@ -42,24 +36,19 @@ export async function GET(request: Request, { params }: Params) {
   if (!portal || !portal.oauth) return back({ portal: key, erro: "Portal desconhecido." });
 
   try {
-    const query = requestUrl.searchParams;
+    const query = new URL(request.url).searchParams;
     const stateToken = query.get("state");
     const state = stateToken ? await verifyOauthState(stateToken) : null;
     if (!state || state.portal !== key) {
       throw new ApiError(400, "A autorização expirou ou não começou aqui. Tente conectar de novo.");
     }
 
-    const expected = new URL(state.redirectUri);
-    origin = expected.origin;
-    const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-    if (host && host !== expected.host) {
-      const forward = new URL(expected);
-      forward.search = requestUrl.search;
-      return NextResponse.redirect(forward);
-    }
+    // a origem para voltar é a que iniciou o fluxo. Não dá para conferir o
+    // host do request contra ela: atrás do proxy do Webflow o header é o do
+    // worker interno, e a comparação entraria em loop de redirect
+    origin = new URL(state.redirectUri).origin;
 
-    // a sessão precisa ser a mesma revenda que começou: o cookie prova o
-    // navegador, a sessão prova quem está nele
+    // a sessão precisa ser da mesma revenda que começou o fluxo
     const context = await requireApiTenant("tenant:settings");
     if (context.tenant.id !== state.tenantId) {
       throw new ApiError(403, "A autorização foi iniciada por outra revenda.");

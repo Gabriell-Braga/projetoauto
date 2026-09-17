@@ -20,6 +20,12 @@ export type OauthState = {
   portal: string;
   tenantId: string;
   nonce: string;
+  /**
+   * A redirect_uri exata que foi para o portal. A troca do código exige a
+   * mesma string, e o retorno precisa voltar para a mesma origem pública —
+   * carregar no estado é o que garante isso mesmo se o host mudar no caminho.
+   */
+  redirectUri: string;
 };
 
 /**
@@ -29,7 +35,12 @@ export type OauthState = {
  */
 export async function signOauthState(state: OauthState): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  return new SignJWT({ portal: state.portal, tenantId: state.tenantId, nonce: state.nonce })
+  return new SignJWT({
+    portal: state.portal,
+    tenantId: state.tenantId,
+    nonce: state.nonce,
+    redirectUri: state.redirectUri,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt(now)
     .setExpirationTime(now + OAUTH_STATE_TTL_SECONDS)
@@ -42,11 +53,17 @@ export async function verifyOauthState(token: string): Promise<OauthState | null
     if (
       typeof payload.portal !== "string" ||
       typeof payload.tenantId !== "string" ||
-      typeof payload.nonce !== "string"
+      typeof payload.nonce !== "string" ||
+      typeof payload.redirectUri !== "string"
     ) {
       return null;
     }
-    return { portal: payload.portal, tenantId: payload.tenantId, nonce: payload.nonce };
+    return {
+      portal: payload.portal,
+      tenantId: payload.tenantId,
+      nonce: payload.nonce,
+      redirectUri: payload.redirectUri,
+    };
   } catch {
     return null;
   }

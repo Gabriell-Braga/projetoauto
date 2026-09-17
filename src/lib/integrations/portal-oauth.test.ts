@@ -49,12 +49,17 @@ describe("authorizeUrl", () => {
 
 describe("estado assinado", () => {
   it("volta igual quando a assinatura confere", async () => {
-    const token = await signOauthState({ portal: "olx", tenantId: "t1", nonce: "n" });
-    expect(await verifyOauthState(token)).toEqual({ portal: "olx", tenantId: "t1", nonce: "n" });
+    const state = { portal: "olx", tenantId: "t1", nonce: "n", redirectUri: redirect };
+    expect(await verifyOauthState(await signOauthState(state))).toEqual(state);
   });
 
   it("recusa token adulterado", async () => {
-    const token = await signOauthState({ portal: "olx", tenantId: "t1", nonce: "n" });
+    const token = await signOauthState({
+      portal: "olx",
+      tenantId: "t1",
+      nonce: "n",
+      redirectUri: redirect,
+    });
     expect(await verifyOauthState(token.slice(0, -2) + "xx")).toBeNull();
   });
 });

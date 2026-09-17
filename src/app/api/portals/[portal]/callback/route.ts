@@ -29,7 +29,9 @@ type Params = { params: Promise<{ portal: string }> };
  */
 export async function GET(request: Request, { params }: Params) {
   const { portal: key } = await params;
-  const origin = await getOrigin();
+  // a origem para voltar é a mesma que iniciou o fluxo (vem no estado); só
+  // sem estado é que se recorre aos headers
+  let origin = await getOrigin();
   const back = (query: Record<string, string>) => {
     const url = new URL(withBasePath("/admin/portais"), origin);
     for (const [name, value] of Object.entries(query)) url.searchParams.set(name, value);
@@ -49,6 +51,7 @@ export async function GET(request: Request, { params }: Params) {
     if (!state || state.portal !== key || state.nonce !== query.get("state")) {
       throw new ApiError(400, "A autorização expirou ou não começou aqui. Tente conectar de novo.");
     }
+    origin = new URL(state.redirectUri).origin;
 
     // a sessão precisa ser a mesma revenda que começou: o cookie prova o
     // navegador, a sessão prova quem está nele
@@ -67,8 +70,7 @@ export async function GET(request: Request, { params }: Params) {
     const app = portalApp(portal);
     if (!app) throw new ApiError(409, `${portal.name} ainda não está liberado para integração.`);
 
-    const redirectUri = `${origin}${withBasePath(oauthCallbackPath(key))}`;
-    const tokens = await exchangeCode(portal, app, redirectUri, code);
+    const tokens = await exchangeCode(portal, app, state.redirectUri, code);
     await connectOauthPortal(context.tenant.id, context.user.id, key, tokens);
 
     await logAuditFor(

@@ -25,6 +25,11 @@ OPS_SECRET="troque-por-outro-segredo-longo"
 # Opcional: forca o ambiente independentemente do prefixo da chave.
 # ASAAS_ENV="sandbox"
 
+# Origem publica do painel, sem o mount path. Atras do proxy do Webflow Cloud o
+# host do request e o do worker (*.wf-app-prod.cosmic.webflow.services), e toda
+# URL absoluta (e-mail, OAuth dos portais, feed) sairia com ele.
+# APP_ORIGIN="https://projetoauto.webflow.io"
+
 # --- Portais de classificados ------------------------------------------
 # Credenciais do NOSSO app em cada portal (do integrador, valem para todas as
 # revendas). Sem o par, o portal fica "Aguardando acesso" na tela de portais.

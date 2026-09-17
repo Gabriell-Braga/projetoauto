@@ -25,7 +25,7 @@ type Params = { params: Promise<{ portal: string }> };
  * mostrar o erro (portal não liberado, cofre desligado) em vez de despejar a
  * pessoa numa página de JSON.
  */
-export const POST = withApi(async (_request: Request, { params }: Params) => {
+export const POST = withApi(async (request: Request, { params }: Params) => {
   const context = await requireApiTenant("tenant:settings");
   await requireFeature(context.tenant.id, "integracao_classificados");
   const { portal: key } = await params;
@@ -38,8 +38,21 @@ export const POST = withApi(async (_request: Request, { params }: Params) => {
   if (!app) throw conflict(`${portal.name} ainda não está liberado para integração.`);
   if (!isVaultConfigured()) throw conflict("Cofre de credenciais não configurado.");
 
+  // a redirect_uri precisa ser a que está cadastrada no app do portal: a
+  // origem pública. Sem APP_ORIGIN, o header Origin do fetch do navegador é a
+  // fonte mais confiável — ele traz o host que a pessoa está vendo
+  const origin = process.env.APP_ORIGIN
+    ? await getOrigin()
+    : (request.headers.get("origin") ?? (await getOrigin()));
+  const redirectUri = `${origin}${withBasePath(oauthCallbackPath(key))}`;
+
   const nonce = crypto.randomUUID();
-  const state = await signOauthState({ portal: key, tenantId: context.tenant.id, nonce });
+  const state = await signOauthState({
+    portal: key,
+    tenantId: context.tenant.id,
+    nonce,
+    redirectUri,
+  });
 
   const store = await cookies();
   store.set(OAUTH_STATE_COOKIE, state, {
@@ -50,6 +63,5 @@ export const POST = withApi(async (_request: Request, { params }: Params) => {
     maxAge: OAUTH_STATE_TTL_SECONDS,
   });
 
-  const redirectUri = `${await getOrigin()}${withBasePath(oauthCallbackPath(key))}`;
   return jsonOk({ url: authorizeUrl(portal.oauth, app, redirectUri, nonce) });
 });

@@ -164,6 +164,11 @@ IP, o painel veria todos os leads chegando dos endereços da Vercel.
 `FIGMA_TOKEN`, `VERCEL_TOKEN`, `SITES_API_KEY`, e (pendente)
 `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`.
 
+`APP_ORIGIN` (`https://projetoauto.webflow.io`, sem o `/app`): origem pública para
+URLs absolutas. Atrás do proxy do Webflow Cloud o `host` é o do worker interno
+(`*.wf-app-prod.cosmic.webflow.services`) — foi assim que o redirect_uri do
+Mercado Livre saiu errado na primeira tentativa.
+
 Portais de classificados: `WEBMOTORS_CLIENT_ID`/`_SECRET`, `OLX_CLIENT_ID`/`_SECRET`,
 `MERCADOLIVRE_CLIENT_ID`/`_SECRET`. São do nosso app no portal (integrador), não
 da revenda. Um portal só aparece como "pronto" na tela de portais quando o par

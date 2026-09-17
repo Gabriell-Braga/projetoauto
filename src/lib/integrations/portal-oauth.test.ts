@@ -32,14 +32,14 @@ describe("disponibilidade", () => {
 });
 
 describe("authorizeUrl", () => {
-  it("monta a URL que o portal documenta, com o nonce no state", () => {
-    const url = new URL(authorizeUrl(olx.oauth!, app, redirect, "nonce-1"));
+  it("monta a URL que o portal documenta, com o estado assinado no state", () => {
+    const url = new URL(authorizeUrl(olx.oauth!, app, redirect, "estado-assinado"));
     expect(url.origin + url.pathname).toBe("https://auth.olx.com.br/oauth");
     expect(url.searchParams.get("response_type")).toBe("code");
     expect(url.searchParams.get("client_id")).toBe("id-123");
     expect(url.searchParams.get("redirect_uri")).toBe(redirect);
     expect(url.searchParams.get("scope")).toBe("basic_user_info autoupload");
-    expect(url.searchParams.get("state")).toBe("nonce-1");
+    expect(url.searchParams.get("state")).toBe("estado-assinado");
   });
 
   it("o caminho de retorno é fixo por portal — é o que se cadastra lá", () => {
@@ -49,17 +49,12 @@ describe("authorizeUrl", () => {
 
 describe("estado assinado", () => {
   it("volta igual quando a assinatura confere", async () => {
-    const state = { portal: "olx", tenantId: "t1", nonce: "n", redirectUri: redirect };
+    const state = { portal: "olx", tenantId: "t1", redirectUri: redirect };
     expect(await verifyOauthState(await signOauthState(state))).toEqual(state);
   });
 
   it("recusa token adulterado", async () => {
-    const token = await signOauthState({
-      portal: "olx",
-      tenantId: "t1",
-      nonce: "n",
-      redirectUri: redirect,
-    });
+    const token = await signOauthState({ portal: "olx", tenantId: "t1", redirectUri: redirect });
     expect(await verifyOauthState(token.slice(0, -2) + "xx")).toBeNull();
   });
 });

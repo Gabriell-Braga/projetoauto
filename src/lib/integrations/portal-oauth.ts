@@ -13,13 +13,11 @@ import type { PortalDefinition, PortalOauth } from "./portals";
  * (`oauthCallbackPath`) e a origem vem do request, não de configuração.
  */
 
-export const OAUTH_STATE_COOKIE = "pa_portal_oauth";
 export const OAUTH_STATE_TTL_SECONDS = 10 * 60;
 
 export type OauthState = {
   portal: string;
   tenantId: string;
-  nonce: string;
   /**
    * A redirect_uri exata que foi para o portal. A troca do código exige a
    * mesma string, e o retorno precisa voltar para a mesma origem pública —
@@ -29,19 +27,23 @@ export type OauthState = {
 };
 
 /**
- * O estado vai assinado no cookie e o nonce vai na URL de autorização.
- * Quem volta com um `state` que não bate com o cookie não começou o fluxo
- * neste navegador — é CSRF, e o retorno é recusado.
+ * O estado vai assinado no próprio parâmetro `state` da autorização, e o
+ * portal o devolve intacto. Não depende de cookie: o retorno pode chegar num
+ * host que não é o do painel (proxy, URL antiga cadastrada no portal) e ainda
+ * assim saber de onde veio e para onde voltar.
+ *
+ * O que prende o retorno à pessoa certa é a sessão: o callback exige login
+ * na mesma revenda que está no estado. Estado de outra revenda é recusado.
  */
 export async function signOauthState(state: OauthState): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   return new SignJWT({
     portal: state.portal,
     tenantId: state.tenantId,
-    nonce: state.nonce,
     redirectUri: state.redirectUri,
   })
     .setProtectedHeader({ alg: "HS256" })
+    .setJti(crypto.randomUUID())
     .setIssuedAt(now)
     .setExpirationTime(now + OAUTH_STATE_TTL_SECONDS)
     .sign(sessionSecretKey());
@@ -53,17 +55,11 @@ export async function verifyOauthState(token: string): Promise<OauthState | null
     if (
       typeof payload.portal !== "string" ||
       typeof payload.tenantId !== "string" ||
-      typeof payload.nonce !== "string" ||
       typeof payload.redirectUri !== "string"
     ) {
       return null;
     }
-    return {
-      portal: payload.portal,
-      tenantId: payload.tenantId,
-      nonce: payload.nonce,
-      redirectUri: payload.redirectUri,
-    };
+    return { portal: payload.portal, tenantId: payload.tenantId, redirectUri: payload.redirectUri };
   } catch {
     return null;
   }
@@ -73,14 +69,14 @@ export function authorizeUrl(
   oauth: PortalOauth,
   app: PortalApp,
   redirectUri: string,
-  nonce: string,
+  state: string,
 ): string {
   const url = new URL(oauth.authorizeUrl);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", app.clientId);
   url.searchParams.set("redirect_uri", redirectUri);
   if (oauth.scope) url.searchParams.set("scope", oauth.scope);
-  url.searchParams.set("state", nonce);
+  url.searchParams.set("state", state);
   return url.toString();
 }
 

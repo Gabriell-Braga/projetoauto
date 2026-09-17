@@ -15,9 +15,6 @@ import { apiDelete, apiPost } from "@/lib/client/api";
 import { PUBLICATION_LABELS, type PortalCard } from "@/lib/integrations/portals";
 import { formatDateTime } from "@/lib/utils";
 
-/** Canal entre a aba do painel e a aba em que o portal foi autorizado. */
-const OAUTH_CHANNEL = "projetoauto:portal-oauth";
-
 type Connection = {
   portal: string;
   status: string;
@@ -60,42 +57,15 @@ export function PortalsPanel({
   const [busy, setBusy] = useState<string | null>(null);
   const noticeShown = useRef(false);
 
-  function announce(result: { portal: string; error: string | null }) {
-    const name = portals.find((portal) => portal.key === result.portal)?.name ?? result.portal;
-    if (result.error) toast.error(`Não consegui conectar ${name}`, result.error);
-    else toast.success(`${name} conectado`, "O estoque entra na fila de publicação.");
-  }
-
-  // a autorização acontece em outra aba; ela avisa por aqui quando termina,
-  // e esta aba (a que a pessoa está olhando) mostra o resultado e recarrega
-  useEffect(() => {
-    const channel = new BroadcastChannel(OAUTH_CHANNEL);
-    channel.onmessage = (event: MessageEvent<{ portal: string; error: string | null }>) => {
-      setBusy(null);
-      announce(event.data);
-      router.refresh();
-    };
-    return () => channel.close();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // o portal devolve a pessoa numa URL com o resultado. Se esta é a aba
-  // aberta para autorizar, repassa para a aba original e se fecha; senão
-  // (aba única, popup bloqueado) mostra aqui mesmo e limpa a URL
+  // o portal devolve a pessoa numa URL com o resultado; mostra uma vez e limpa
   useEffect(() => {
     if (!notice || noticeShown.current) return;
     noticeShown.current = true;
-
-    const channel = new BroadcastChannel(OAUTH_CHANNEL);
-    channel.postMessage(notice);
-    channel.close();
-
-    if (window.opener) {
-      window.close();
-      // navegador que não deixa fechar: cai no caminho de aba única abaixo
-    }
-    announce(notice);
+    const name = portals.find((portal) => portal.key === notice.portal)?.name ?? notice.portal;
+    if (notice.error) toast.error(`Não consegui conectar ${name}`, notice.error);
+    else toast.success(`${name} conectado`, "O estoque entra na fila de publicação.");
     router.replace("/admin/portais");
+    // só na chegada: o toast não deve repetir a cada render
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -105,29 +75,13 @@ export function PortalsPanel({
       return;
     }
     setBusy(portal.key);
-
-    // a aba precisa ser aberta no clique, antes do await, senão o bloqueador
-    // de popup segura; o endereço entra depois que o painel responder
-    const tab = window.open("", "_blank");
     const result = await apiPost<{ url: string }>(`/api/admin/portals/${portal.key}/oauth`, {});
     if (!result.ok) {
-      tab?.close();
       setBusy(null);
       toast.error("Não consegui conectar", result.error);
       return;
     }
-    if (tab) {
-      tab.location.href = result.data.url;
-      // o botão volta ao normal: se a pessoa fechar a aba sem autorizar,
-      // não pode ficar girando para sempre
-      setBusy(null);
-      toast.info(
-        `Autorize o ${portal.name} na aba que abriu`,
-        "Esta tela atualiza sozinha quando terminar.",
-      );
-      return;
-    }
-    // popup bloqueado: segue na mesma aba, o callback traz de volta
+    // a autorização acontece no portal; ele traz a pessoa de volta pelo callback
     window.location.assign(result.data.url);
   }
 

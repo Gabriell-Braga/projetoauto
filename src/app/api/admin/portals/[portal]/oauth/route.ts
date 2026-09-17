@@ -1,14 +1,8 @@
-import { cookies } from "next/headers";
 import { requireApiTenant } from "@/lib/auth/guards";
 import { requireFeature } from "@/lib/api/feature-guard";
 import { badRequest, conflict, jsonOk, withApi } from "@/lib/http";
 import { portalApp } from "@/lib/integrations/portal-apps";
-import {
-  OAUTH_STATE_COOKIE,
-  OAUTH_STATE_TTL_SECONDS,
-  authorizeUrl,
-  signOauthState,
-} from "@/lib/integrations/portal-oauth";
+import { authorizeUrl, signOauthState } from "@/lib/integrations/portal-oauth";
 import { getPortal, oauthCallbackPath } from "@/lib/integrations/portals";
 import { withBasePath } from "@/lib/paths";
 import { isVaultConfigured } from "@/lib/security/vault";
@@ -46,22 +40,6 @@ export const POST = withApi(async (request: Request, { params }: Params) => {
     : (request.headers.get("origin") ?? (await getOrigin()));
   const redirectUri = `${origin}${withBasePath(oauthCallbackPath(key))}`;
 
-  const nonce = crypto.randomUUID();
-  const state = await signOauthState({
-    portal: key,
-    tenantId: context.tenant.id,
-    nonce,
-    redirectUri,
-  });
-
-  const store = await cookies();
-  store.set(OAUTH_STATE_COOKIE, state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: withBasePath(oauthCallbackPath(key)),
-    maxAge: OAUTH_STATE_TTL_SECONDS,
-  });
-
-  return jsonOk({ url: authorizeUrl(portal.oauth, app, redirectUri, nonce) });
+  const state = await signOauthState({ portal: key, tenantId: context.tenant.id, redirectUri });
+  return jsonOk({ url: authorizeUrl(portal.oauth, app, redirectUri, state) });
 });

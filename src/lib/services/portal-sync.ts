@@ -26,7 +26,7 @@ import {
 } from "@/lib/integrations/mercadolivre";
 import { portalApp } from "@/lib/integrations/portal-apps";
 import type { OauthTokens } from "@/lib/integrations/portal-oauth";
-import { getPortal } from "@/lib/integrations/portals";
+import { getPortal, shouldBePublished } from "@/lib/integrations/portals";
 import { mediaUrl } from "@/lib/paths";
 import { seal } from "@/lib/security/vault";
 import { getConnection, readCredentials } from "./portals";
@@ -108,7 +108,9 @@ async function syncMercadoLivre(connection: PortalConnection, origin: string): P
       and(
         eq(vehiclePublications.tenantId, connection.tenantId),
         eq(vehiclePublications.portal, "mercadolivre"),
-        inArray(vehiclePublications.status, ["pendente", "removendo"]),
+        // erro entra de novo a cada passada: a pessoa corrige a ficha ou a
+        // conta e clica em sincronizar — sem isso, o erro seria definitivo
+        inArray(vehiclePublications.status, ["pendente", "removendo", "erro"]),
       ),
     );
   if (queue.length === 0) return report;
@@ -197,7 +199,20 @@ async function processPublication(
 ): Promise<Outcome> {
   const db = await getDb();
 
-  if (publication.status === "removendo") {
+  const vehicleRows = await db
+    .select()
+    .from(vehicles)
+    .where(eq(vehicles.id, publication.vehicleId))
+    .limit(1);
+  const vehicle = vehicleRows[0];
+  if (!vehicle) throw new ApiError(404, "Veículo não existe mais.");
+
+  // "erro" não diz para que lado estava indo; a situação do carro diz
+  const removing =
+    publication.status === "removendo" ||
+    (publication.status === "erro" && !shouldBePublished(vehicle.status));
+
+  if (removing) {
     if (publication.externalId) await session.client.closeItem(publication.externalId);
     await db
       .update(vehiclePublications)
@@ -206,13 +221,6 @@ async function processPublication(
     return "removed";
   }
 
-  const vehicleRows = await db
-    .select()
-    .from(vehicles)
-    .where(eq(vehicles.id, publication.vehicleId))
-    .limit(1);
-  const vehicle = vehicleRows[0];
-  if (!vehicle) throw new ApiError(404, "Veículo não existe mais.");
   if (vehicle.priceOnRequest || vehicle.priceCents <= 0) {
     throw new ApiError(400, "O Mercado Livre exige preço; este veículo está como 'sob consulta'.");
   }

@@ -23,7 +23,7 @@ export const POST = withApi(async (request: Request) => {
   const pending = await db
     .selectDistinct({ tenantId: vehiclePublications.tenantId })
     .from(vehiclePublications)
-    .where(inArray(vehiclePublications.status, ["pendente", "removendo"]));
+    .where(inArray(vehiclePublications.status, ["pendente", "removendo", "erro"]));
 
   const origin = await getOrigin();
   const results = [];

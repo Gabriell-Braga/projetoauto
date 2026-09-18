@@ -164,7 +164,7 @@ async function syncMercadoLivre(connection: PortalConnection, origin: string): P
       const message = error instanceof Error ? error.message : String(error);
       await db
         .update(vehiclePublications)
-        .set({ status: "erro", lastError: message })
+        .set({ status: "erro", lastError: message, syncedAt: new Date() })
         .where(eq(vehiclePublications.id, publication.id));
     }
   }

@@ -305,7 +305,7 @@ export function describeError(status: number, body: MlError): string {
 
   // cota do tipo de anúncio: a frase do ML não diz o que fazer
   if (/listing type is temporarily unavailable/i.test(details)) {
-    return "O Mercado Livre não aceita mais anúncios do tipo escolhido — a cota de anúncios gratuitos de veículo acabou. Escolha outro tipo em Ver anúncios > Tipo de anúncio.";
+    return "A conta atingiu o limite de anúncios deste tipo no Mercado Livre. Escolha outro tipo de anúncio nesta tela ou contrate um pacote de anúncios de veículos no ML.";
   }
 
   const code = body.message ?? body.error ?? "";

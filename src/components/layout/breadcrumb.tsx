@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { PORTALS } from "@/lib/integrations/portals";
 
 /**
  * Trilha discreta na topbar. Só rótulos conhecidos entram — id cru vira
@@ -32,6 +33,8 @@ const SEGMENT_LABELS: Record<string, string> = {
 
 function labelFor(segment: string): string {
   if (SEGMENT_LABELS[segment]) return SEGMENT_LABELS[segment];
+  const portal = PORTALS.find((item) => item.key === segment);
+  if (portal) return portal.name;
   if (/^[0-9a-f-]{20,}$/i.test(segment)) return "Detalhe";
   return segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
 }

@@ -3,6 +3,7 @@ import { requireFeature } from "@/lib/api/feature-guard";
 import { jsonOk, withApi } from "@/lib/http";
 import { getOrigin } from "@/lib/seo/urls";
 import { syncTenantPortals } from "@/lib/services/portal-sync";
+import { queueTenantStock } from "@/lib/services/portals";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ export const POST = withApi(async () => {
   const context = await requireApiTenant("vehicles:write");
   await requireFeature(context.tenant.id, "integracao_classificados");
 
+  // o estoque inteiro entra na fila antes: o botão sincroniza carros, não só pendências
+  await queueTenantStock(context.tenant.id);
   const reports = await syncTenantPortals(context.tenant.id, await getOrigin());
   return jsonOk({ reports });
 });

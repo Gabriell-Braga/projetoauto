@@ -3,7 +3,7 @@ import { logAuditFor } from "@/lib/audit";
 import { requireApiTenant } from "@/lib/auth/guards";
 import { requireFeature } from "@/lib/api/feature-guard";
 import { badRequest, jsonOk, withApi } from "@/lib/http";
-import { connectPortal, disconnectPortal } from "@/lib/services/portals";
+import { connectPortal, disconnectPortal, queueTenantStock } from "@/lib/services/portals";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,7 @@ export const POST = withApi(async (request: Request, { params }: Params) => {
   if (!parsed.success) throw badRequest("Dados inválidos", parsed.error.issues);
 
   await connectPortal(context.tenant.id, context.user.id, portal, parsed.data.credentials);
+  await queueTenantStock(context.tenant.id);
 
   // o metadata NUNCA leva as credenciais: auditoria é lida por gente
   await logAuditFor(

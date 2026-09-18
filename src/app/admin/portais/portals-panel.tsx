@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Link2, Link2Off, RefreshCw, Rss } from "lucide-react";
+import { ExternalLink, Link2, Link2Off, RefreshCw, Rss } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,14 @@ type Connection = {
   hasCredentials: boolean;
   lastSyncAt: string | null;
   lastError: string | null;
+};
+
+type Listing = {
+  portal: string;
+  vehicleId: string;
+  vehicle: string;
+  url: string | null;
+  note: string | null;
 };
 
 type Problem = {
@@ -53,6 +61,7 @@ export function PortalsPanel({
   portals,
   connections,
   summary,
+  listings,
   problems,
   vaultReady,
   canWrite,
@@ -62,6 +71,7 @@ export function PortalsPanel({
   portals: PortalCard[];
   connections: Connection[];
   summary: Summary[];
+  listings: Listing[];
   problems: Problem[];
   vaultReady: boolean;
   canWrite: boolean;
@@ -169,6 +179,7 @@ export function PortalsPanel({
           const connection = connections.find((item) => item.portal === portal.key);
           const counts = summary.find((item) => item.portal === portal.key);
           const portalProblems = problems.filter((item) => item.portal === portal.key);
+          const portalListings = listings.filter((item) => item.portal === portal.key);
           const connected = connection?.status === "conectado";
 
           return (
@@ -204,6 +215,31 @@ export function PortalsPanel({
                   <p className="mb-3 text-xs text-faint">
                     Última sincronização em {formatDateTime(new Date(connection.lastSyncAt))}
                   </p>
+                ) : null}
+
+                {portalListings.length > 0 ? (
+                  <ul className="mb-3 space-y-1.5 rounded border border-border p-3 text-[13px]">
+                    {portalListings.map((listing) => (
+                      <li key={listing.vehicleId}>
+                        {listing.url ? (
+                          <a
+                            href={listing.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-text underline-offset-2 hover:underline"
+                          >
+                            {listing.vehicle}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <span className="font-medium text-text">{listing.vehicle}</span>
+                        )}
+                        {listing.note ? (
+                          <span className="text-muted"> — {listing.note}</span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
                 ) : null}
 
                 {portalProblems.length > 0 ? (

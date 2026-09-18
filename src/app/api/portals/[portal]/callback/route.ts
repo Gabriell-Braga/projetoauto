@@ -8,7 +8,7 @@ import { getPortal } from "@/lib/integrations/portals";
 import { withBasePath } from "@/lib/paths";
 import { getOrigin } from "@/lib/seo/urls";
 import { open } from "@/lib/security/vault";
-import { connectOauthPortal } from "@/lib/services/portals";
+import { connectOauthPortal, queueTenantStock } from "@/lib/services/portals";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +68,7 @@ export async function GET(request: Request, { params }: Params) {
     const codeVerifier = state.codeVerifier ? await open(state.codeVerifier) : undefined;
     const tokens = await exchangeCode(portal, app, state.redirectUri, code, codeVerifier);
     await connectOauthPortal(context.tenant.id, context.user.id, key, tokens);
+    await queueTenantStock(context.tenant.id);
 
     await logAuditFor(
       context,

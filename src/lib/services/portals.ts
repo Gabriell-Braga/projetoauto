@@ -9,19 +9,12 @@ import {
 import { badRequest, conflict } from "@/lib/http";
 import { portalAvailability } from "@/lib/integrations/portal-apps";
 import type { OauthTokens } from "@/lib/integrations/portal-oauth";
-import {
-  getPortal,
-  shouldBePublished,
-  type PublicationStatus,
-} from "@/lib/integrations/portals";
+import { getPortal, shouldBePublished, type PublicationStatus } from "@/lib/integrations/portals";
 import { open, seal } from "@/lib/security/vault";
 
 export async function listConnections(tenantId: string): Promise<PortalConnection[]> {
   const db = await getDb();
-  return db
-    .select()
-    .from(portalConnections)
-    .where(eq(portalConnections.tenantId, tenantId));
+  return db.select().from(portalConnections).where(eq(portalConnections.tenantId, tenantId));
 }
 
 export async function getConnection(
@@ -106,10 +99,7 @@ async function storeConnection(
   };
 
   if (existing) {
-    await db
-      .update(portalConnections)
-      .set(values)
-      .where(eq(portalConnections.id, existing.id));
+    await db.update(portalConnections).set(values).where(eq(portalConnections.id, existing.id));
     return;
   }
   await db.insert(portalConnections).values({ tenantId, portal, ...values });
@@ -159,10 +149,7 @@ export async function readCredentials(
 export async function listPublications(tenantId: string, vehicleId?: string) {
   const db = await getDb();
   const where = vehicleId
-    ? and(
-        eq(vehiclePublications.tenantId, tenantId),
-        eq(vehiclePublications.vehicleId, vehicleId),
-      )
+    ? and(eq(vehiclePublications.tenantId, tenantId), eq(vehiclePublications.vehicleId, vehicleId))
     : eq(vehiclePublications.tenantId, tenantId);
   return db.select().from(vehiclePublications).where(where);
 }
@@ -237,9 +224,45 @@ export async function publicationProblems(tenantId: string) {
     })
     .from(vehiclePublications)
     .innerJoin(vehicles, eq(vehicles.id, vehiclePublications.vehicleId))
+    .where(and(eq(vehiclePublications.tenantId, tenantId), eq(vehiclePublications.status, "erro")));
+}
+
+/** O que está no portal, com link e a nota da situação lá (revisão, pagamento). */
+export async function publishedListings(tenantId: string) {
+  const db = await getDb();
+  return db
+    .select({
+      portal: vehiclePublications.portal,
+      vehicleId: vehiclePublications.vehicleId,
+      url: vehiclePublications.externalUrl,
+      note: vehiclePublications.lastError,
+      brand: vehicles.brand,
+      model: vehicles.model,
+      yearModel: vehicles.yearModel,
+    })
+    .from(vehiclePublications)
+    .innerJoin(vehicles, eq(vehicles.id, vehiclePublications.vehicleId))
     .where(
-      and(eq(vehiclePublications.tenantId, tenantId), eq(vehiclePublications.status, "erro")),
+      and(eq(vehiclePublications.tenantId, tenantId), eq(vehiclePublications.status, "publicado")),
     );
+}
+
+/**
+ * Põe o estoque inteiro na fila.
+ *
+ * Conectar um portal com carros já cadastrados precisa publicar o que existe,
+ * não só o que for salvo dali em diante — e "Sincronizar agora" é a promessa
+ * de que o portal reflete o estoque, não a fila. Rascunho fica de fora;
+ * vendido com anúncio no ar entra para remoção.
+ */
+export async function queueTenantStock(tenantId: string): Promise<number> {
+  const db = await getDb();
+  const rows = await db
+    .select({ id: vehicles.id })
+    .from(vehicles)
+    .where(eq(vehicles.tenantId, tenantId));
+  for (const row of rows) await queueVehicleSync(tenantId, row.id);
+  return rows.length;
 }
 
 /** Resumo por portal, para a tela dizer o que está no ar e o que travou. */
@@ -248,9 +271,13 @@ export async function publicationSummary(tenantId: string) {
   const byPortal = new Map<string, Record<PublicationStatus, number>>();
 
   for (const row of rows) {
-    const current =
-      byPortal.get(row.portal) ??
-      { pendente: 0, publicado: 0, removendo: 0, removido: 0, erro: 0 };
+    const current = byPortal.get(row.portal) ?? {
+      pendente: 0,
+      publicado: 0,
+      removendo: 0,
+      removido: 0,
+      erro: 0,
+    };
     current[row.status] += 1;
     byPortal.set(row.portal, current);
   }

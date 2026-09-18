@@ -311,6 +311,38 @@ export function describeError(status: number, body: MlError): string {
   return details ? `${head}: ${details}` : head;
 }
 
+export type MlItem = {
+  id: string;
+  permalink?: string;
+  /** active, paused, closed, under_review, payment_required, inactive... */
+  status?: string;
+  sub_status?: string[];
+};
+
+/**
+ * O que a situação do anúncio no ML significa para quem olha o card.
+ * "active" não gera nota: é o esperado. As outras dizem por que o carro
+ * não aparece no site ainda, que é a pergunta que a revenda faz.
+ */
+export function itemStatusNote(item: MlItem): string | null {
+  const sub = item.sub_status?.length ? ` (${item.sub_status.join(", ")})` : "";
+  switch (item.status) {
+    case undefined:
+    case "active":
+      return null;
+    case "payment_required":
+      return "Criado, mas o tipo de anúncio é pago: o Mercado Livre só publica depois do pagamento, em Central de vendedores > Anúncios.";
+    case "under_review":
+      return `Em revisão pelo Mercado Livre${sub}. Costuma liberar em algumas horas.`;
+    case "paused":
+      return `Pausado no Mercado Livre${sub}.`;
+    case "closed":
+      return "Encerrado no Mercado Livre.";
+    default:
+      return `Situação no Mercado Livre: ${item.status}${sub}.`;
+  }
+}
+
 export class MercadoLivreClient {
   constructor(
     private readonly accessToken: string,
@@ -356,7 +388,11 @@ export class MercadoLivreClient {
   }
 
   createItem(payload: ReturnType<typeof itemPayload>) {
-    return this.call<{ id: string; permalink: string }>("POST", "/items", payload);
+    return this.call<MlItem>("POST", "/items", payload);
+  }
+
+  getItem(itemId: string) {
+    return this.call<MlItem>("GET", `/items/${itemId}?attributes=id,permalink,status,sub_status`);
   }
 
   updateItem(itemId: string, payload: ReturnType<typeof updatePayload>) {

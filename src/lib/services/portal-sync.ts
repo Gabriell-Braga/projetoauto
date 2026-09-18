@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   portalConnections,
@@ -17,6 +17,7 @@ import { ApiError } from "@/lib/http";
 import {
   MercadoLivreClient,
   itemPayload,
+  itemStatusNote,
   normalizeName,
   refreshTokens,
   stateName,
@@ -113,8 +114,6 @@ async function syncMercadoLivre(connection: PortalConnection, origin: string): P
         inArray(vehiclePublications.status, ["pendente", "removendo", "erro"]),
       ),
     );
-  if (queue.length === 0) return report;
-
   let session: MlSession;
   try {
     session = await openSession(connection);
@@ -126,6 +125,34 @@ async function syncMercadoLivre(connection: PortalConnection, origin: string): P
       .set({ status: "erro", lastError: message })
       .where(eq(portalConnections.id, connection.id));
     return { ...report, error: message };
+  }
+
+  // publicado com nota (revisão, pagamento): confere se o ML já liberou
+  const watching = await db
+    .select()
+    .from(vehiclePublications)
+    .where(
+      and(
+        eq(vehiclePublications.tenantId, connection.tenantId),
+        eq(vehiclePublications.portal, "mercadolivre"),
+        eq(vehiclePublications.status, "publicado"),
+        isNotNull(vehiclePublications.lastError),
+      ),
+    );
+  for (const publication of watching) {
+    if (!publication.externalId) continue;
+    try {
+      const item = await session.client.getItem(publication.externalId);
+      await db
+        .update(vehiclePublications)
+        .set({
+          lastError: itemStatusNote(item),
+          externalUrl: item.permalink ?? publication.externalUrl,
+        })
+        .where(eq(vehiclePublications.id, publication.id));
+    } catch (error) {
+      console.warn("[portais] não consultou o anúncio", publication.externalId, error);
+    }
   }
 
   for (const publication of queue) {
@@ -245,14 +272,14 @@ async function processPublication(
   const input = { vehicle, pictureUrls, seller, location, listingTypeId };
 
   if (publication.externalId) {
-    await session.client.updateItem(publication.externalId, updatePayload(input));
+    const updated = await session.client.updateItem(publication.externalId, updatePayload(input));
     await session.client.setDescription(
       publication.externalId,
       vehicle.description?.trim() || input.vehicle.model,
     );
     await db
       .update(vehiclePublications)
-      .set({ status: "publicado", lastError: null, syncedAt: new Date() })
+      .set({ status: "publicado", lastError: itemStatusNote(updated), syncedAt: new Date() })
       .where(eq(vehiclePublications.id, publication.id));
     return "updated";
   }
@@ -264,7 +291,8 @@ async function processPublication(
       status: "publicado",
       externalId: created.id,
       externalUrl: created.permalink ?? null,
-      lastError: null,
+      // publicado com nota: o ML aceitou, mas ainda não mostra (revisão, pagamento)
+      lastError: itemStatusNote(created),
       syncedAt: new Date(),
     })
     .where(eq(vehiclePublications.id, publication.id));

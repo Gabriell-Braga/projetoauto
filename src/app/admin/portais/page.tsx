@@ -10,6 +10,7 @@ import {
   listConnections,
   publicationProblems,
   publicationSummary,
+  publishedListings,
 } from "@/lib/services/portals";
 import { PortalsPanel } from "./portals-panel";
 
@@ -36,10 +37,11 @@ export default async function PortalsPage({
     );
   }
 
-  const [connections, summary, problems] = await Promise.all([
+  const [connections, summary, problems, listings] = await Promise.all([
     listConnections(context.tenant.id),
     publicationSummary(context.tenant.id),
     publicationProblems(context.tenant.id),
+    publishedListings(context.tenant.id),
   ]);
 
   return (
@@ -62,6 +64,13 @@ export default async function PortalsPage({
           lastError: connection.lastError,
         }))}
         summary={summary}
+        listings={listings.map((listing) => ({
+          portal: listing.portal,
+          vehicleId: listing.vehicleId,
+          vehicle: `${listing.brand} ${listing.model} ${listing.yearModel}`,
+          url: listing.url,
+          note: listing.note,
+        }))}
         problems={problems.map((problem) => ({
           portal: problem.portal,
           vehicleId: problem.vehicleId,

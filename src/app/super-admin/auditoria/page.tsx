@@ -111,6 +111,7 @@ const ACTION_LABELS: Record<string, string> = {
   "webhook.update": "Webhook atualizado",
   "webhook.delete": "Webhook removido",
   "portal.connect": "Portal conectado",
+  "portal.settings": "Ajustes do portal alterados",
   "portal.disconnect": "Portal desconectado",
   "whatsapp.connect": "WhatsApp conectado",
   "whatsapp.disconnect": "WhatsApp desconectado",

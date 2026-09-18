@@ -303,6 +303,11 @@ export function describeError(status: number, body: MlError): string {
   }
   const details = causes.filter(Boolean).join("; ");
 
+  // cota do tipo de anúncio: a frase do ML não diz o que fazer
+  if (/listing type is temporarily unavailable/i.test(details)) {
+    return "O Mercado Livre não aceita mais anúncios do tipo escolhido — a cota de anúncios gratuitos de veículo acabou. Escolha outro tipo em Ver anúncios > Tipo de anúncio.";
+  }
+
   const code = body.message ?? body.error ?? "";
   const known = KNOWN_ERRORS[code];
   if (known) return details ? `${known} (${code}: ${details})` : `${known} (${code})`;
@@ -335,6 +340,9 @@ export function itemStatusNote(item: MlItem): string | null {
     case "under_review":
       return `Em revisão pelo Mercado Livre${sub}. Costuma liberar em algumas horas.`;
     case "paused":
+      if (item.sub_status?.includes("picture_download_pending")) {
+        return "O Mercado Livre ainda está baixando as fotos; publica sozinho quando terminar.";
+      }
       return `Pausado no Mercado Livre${sub}.`;
     case "closed":
       return "Encerrado no Mercado Livre.";

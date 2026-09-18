@@ -392,6 +392,30 @@ async function resolveListingType(session: MlSession): Promise<string> {
 }
 
 /**
+ * Tipos de anúncio que a conta pode usar, para a revenda escolher.
+ *
+ * O gratuito tem cota pequena em veículos; quando ela acaba o ML recusa
+ * com "listing type temporarily unavailable", e a saída é escolher um pago.
+ */
+export async function mercadoLivreListingTypes(
+  tenantId: string,
+): Promise<{ current: string | null; available: { id: string; name: string }[] } | null> {
+  const connection = await getConnection(tenantId, "mercadolivre");
+  if (!connection || connection.status !== "conectado") return null;
+  const stored = (connection.settings as MlSettings | null)?.listingTypeId ?? null;
+  try {
+    const session = await openSession(connection);
+    const userId = session.settings.externalUserId ?? session.tokens.externalUserId;
+    if (!userId) return { current: stored, available: [] };
+    const { available } = await session.client.availableListingTypes(userId);
+    return { current: stored, available };
+  } catch (error) {
+    console.warn("[portais] não listou os tipos de anúncio", error);
+    return { current: stored, available: [] };
+  }
+}
+
+/**
  * Fecha os anúncios de um veículo que vai ser apagado.
  *
  * Apagar cascateia as publicações — e com elas o id do anúncio no portal.

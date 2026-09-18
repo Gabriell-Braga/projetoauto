@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   portalConnections,
@@ -206,45 +206,46 @@ export async function queueVehicleSync(tenantId: string, vehicleId: string): Pro
 }
 
 /**
- * O que travou, com o carro e o motivo.
+ * Todos os anúncios de um portal, com o carro, para a tela de anúncios.
  *
- * "Erro: 2" no card não diz o que corrigir. O motivo vem do portal (foto
- * faltando, cidade não reconhecida) e é acionável só ao lado do nome.
+ * O motivo (erro do portal ou nota de situação) vem junto: "Erro: 18" no
+ * card não diz o que corrigir; ao lado do nome do carro, diz.
  */
-export async function publicationProblems(tenantId: string) {
+export async function portalListings(tenantId: string, portal: string) {
   const db = await getDb();
   return db
     .select({
-      portal: vehiclePublications.portal,
+      id: vehiclePublications.id,
       vehicleId: vehiclePublications.vehicleId,
-      error: vehiclePublications.lastError,
+      status: vehiclePublications.status,
+      detail: vehiclePublications.lastError,
+      url: vehiclePublications.externalUrl,
+      syncedAt: vehiclePublications.syncedAt,
       brand: vehicles.brand,
       model: vehicles.model,
+      version: vehicles.version,
       yearModel: vehicles.yearModel,
+      vehicleStatus: vehicles.status,
     })
     .from(vehiclePublications)
     .innerJoin(vehicles, eq(vehicles.id, vehiclePublications.vehicleId))
-    .where(and(eq(vehiclePublications.tenantId, tenantId), eq(vehiclePublications.status, "erro")));
+    .where(and(eq(vehiclePublications.tenantId, tenantId), eq(vehiclePublications.portal, portal)))
+    .orderBy(asc(vehicles.brand), asc(vehicles.model), asc(vehicles.yearModel));
 }
 
-/** O que está no portal, com link e a nota da situação lá (revisão, pagamento). */
-export async function publishedListings(tenantId: string) {
+/** Ajustes do portal que a revenda controla (hoje: o tipo de anúncio no ML). */
+export async function updateConnectionSettings(
+  tenantId: string,
+  portal: string,
+  changes: Record<string, unknown>,
+): Promise<void> {
+  const existing = await getConnection(tenantId, portal);
+  if (!existing || existing.status !== "conectado") throw badRequest("Portal não está conectado");
   const db = await getDb();
-  return db
-    .select({
-      portal: vehiclePublications.portal,
-      vehicleId: vehiclePublications.vehicleId,
-      url: vehiclePublications.externalUrl,
-      note: vehiclePublications.lastError,
-      brand: vehicles.brand,
-      model: vehicles.model,
-      yearModel: vehicles.yearModel,
-    })
-    .from(vehiclePublications)
-    .innerJoin(vehicles, eq(vehicles.id, vehiclePublications.vehicleId))
-    .where(
-      and(eq(vehiclePublications.tenantId, tenantId), eq(vehiclePublications.status, "publicado")),
-    );
+  await db
+    .update(portalConnections)
+    .set({ settings: { ...(existing.settings ?? {}), ...changes } })
+    .where(eq(portalConnections.id, existing.id));
 }
 
 /**

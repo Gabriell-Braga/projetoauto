@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Vehicle } from "@/db/schema";
 import {
   MercadoLivreClient,
+  describeError,
   itemAttributes,
   itemPayload,
   itemTitle,
@@ -204,6 +205,22 @@ function fetcherReturning(status: number, body: unknown) {
     mock: { calls: [string, RequestInit][] };
   };
 }
+
+describe("describeError", () => {
+  it("código conhecido vira instrução, com o código junto para o suporte", () => {
+    const text = describeError(403, { message: "seller.unable_to_list", cause: ["phone_pending"] });
+    expect(text).toContain("Minha conta > Meu perfil");
+    expect(text).toContain("(seller.unable_to_list: phone_pending)");
+  });
+
+  it("cause como lista de strings também aparece", () => {
+    expect(describeError(400, { message: "bad", cause: ["a", "b"] })).toBe("bad: a; b");
+  });
+
+  it("sem nada útil no corpo, ao menos o status", () => {
+    expect(describeError(500, {})).toBe("HTTP 500");
+  });
+});
 
 describe("MercadoLivreClient", () => {
   it("repassa as causas do ML na mensagem, que é o que a revenda precisa ler", async () => {

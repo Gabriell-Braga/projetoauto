@@ -266,22 +266,49 @@ export function updatePayload(input: ItemInput) {
 type MlError = {
   message?: string;
   error?: string;
-  cause?: { code?: string; message?: string }[] | Record<string, unknown>;
+  cause?: unknown;
+};
+
+/**
+ * Códigos que o ML devolve sem explicação e que a revenda precisa entender.
+ * O código original segue entre parênteses para quem for procurar suporte.
+ */
+const KNOWN_ERRORS: Record<string, string> = {
+  "seller.unable_to_list":
+    "A conta no Mercado Livre não está liberada para anunciar. Entre no ML com a conta conectada, vá em Minha conta > Meu perfil e complete o que estiver pendente: telefone, endereço e dados da empresa.",
+  "user.not_allowed":
+    "A conta no Mercado Livre não tem permissão para esta operação. Confira o cadastro em Minha conta > Meu perfil.",
 };
 
 /**
  * Transforma a resposta de erro do ML em uma frase que a revenda entende.
  *
- * O ML devolve `cause[]` com uma linha por problema ("Attribute DOORS is
- * required", "Invalid picture"). Sem repassar isso, "erro 400" não diz o que
- * corrigir na ficha.
+ * O ML devolve `cause` de formas diferentes: lista de objetos com
+ * `message` ("Attribute DOORS is required"), lista de strings
+ * ("phone_pending"), ou nada. Tudo que vier é repassado — sem isso, "erro
+ * 400" não diz o que corrigir, nem na ficha nem na conta.
  */
-function describeError(status: number, body: MlError): string {
-  const causes = Array.isArray(body.cause)
-    ? body.cause.map((cause) => cause.message).filter((message): message is string => !!message)
-    : [];
-  const head = body.message ?? body.error ?? `HTTP ${status}`;
-  return causes.length > 0 ? `${head}: ${causes.join("; ")}` : head;
+export function describeError(status: number, body: MlError): string {
+  const causes: string[] = [];
+  if (Array.isArray(body.cause)) {
+    for (const cause of body.cause) {
+      if (typeof cause === "string") causes.push(cause);
+      else if (cause && typeof cause === "object") {
+        const item = cause as { code?: string; message?: string };
+        causes.push(item.message ?? item.code ?? "");
+      }
+    }
+  } else if (typeof body.cause === "string") {
+    causes.push(body.cause);
+  }
+  const details = causes.filter(Boolean).join("; ");
+
+  const code = body.message ?? body.error ?? "";
+  const known = KNOWN_ERRORS[code];
+  if (known) return details ? `${known} (${code}: ${details})` : `${known} (${code})`;
+
+  const head = code || `HTTP ${status}`;
+  return details ? `${head}: ${details}` : head;
 }
 
 export class MercadoLivreClient {

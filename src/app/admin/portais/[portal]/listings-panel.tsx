@@ -220,6 +220,17 @@ export function ListingsPanel({
   );
 }
 
+/** Nomes dos tipos do ML, para quando ele não devolve o rótulo. */
+const LISTING_TYPE_NAMES: Record<string, string> = {
+  free: "Gratuito",
+  bronze: "Bronze",
+  silver: "Prata",
+  gold: "Ouro",
+  gold_special: "Clássico",
+  gold_premium: "Diamante",
+  gold_pro: "Premium",
+};
+
 const CHIP_ACTIVE: Record<BadgeTone, string> = {
   neutral: "border-border bg-surface-2 text-text",
   success: "border-positive/40 bg-positive-soft text-positive",
@@ -273,8 +284,9 @@ function ListingTypeCard({
   const [saving, setSaving] = useState(false);
 
   const options = types.available.map((type) => ({ value: type.id, label: type.name }));
+  // o tipo em uso pode ter sumido da lista (cota esgotada): continua legível
   if (value && !options.some((option) => option.value === value)) {
-    options.unshift({ value, label: value });
+    options.unshift({ value, label: `${LISTING_TYPE_NAMES[value] ?? value} (indisponível agora)` });
   }
 
   async function handleSelect(next: string) {
@@ -300,8 +312,9 @@ function ListingTypeCard({
       <CardHeader>
         <CardTitle>Tipo de anúncio</CardTitle>
         <CardDescription>
-          O plano que a conta usa em cada anúncio novo. O gratuito tem uma cota pequena para
-          veículos; quando ela acaba, o portal recusa os próximos até você escolher um tipo pago.
+          O plano que a conta usa em cada anúncio novo. Cada tipo tem um limite na conta — o
+          gratuito acaba em poucos carros. Quando o portal recusar por limite, escolha outro tipo
+          aqui e sincronize de novo.
         </CardDescription>
       </CardHeader>
       <CardContent>

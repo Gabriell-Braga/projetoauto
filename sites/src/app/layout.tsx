@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, Barlow_Condensed, DM_Sans, Manrope } from "next/font/google";
-import { themeToCssVariables } from "@projetoauto/site-kit/contract";
-import { GoogleTagManager } from "@projetoauto/site-kit/shared/gtm";
+import { themeToCssVariables } from "@carbud/site-kit/contract";
+import { GoogleTagManager } from "@carbud/site-kit/shared/gtm";
 import { fetchSite } from "~/lib/panel";
 import { currentSlug } from "~/lib/site";
 import "./globals.css";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * O titulo e a descricao sao da REVENDA, nunca da plataforma.
  *
  * Quem chega neste dominio esta no site de uma loja de carros; qualquer
- * mencao a "ProjetoAuto" aqui apareceria na aba do navegador e no resultado
+ * mencao a "Carbud" aqui apareceria na aba do navegador e no resultado
  * do Google do cliente.
  */
 export async function generateMetadata(): Promise<Metadata> {

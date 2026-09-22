@@ -3,6 +3,11 @@
  *
  *   node scripts/migrate-remote.mjs [url-do-painel]
  *
+ * O endereco do painel (COM o mount path, ex.: https://vendas.carbud.com.br/app)
+ * vem do argumento ou de OPS_BASE_URL no `.dev.vars`. Nao ha padrao fixo de
+ * proposito: o dominio do painel vai mudar, e um endereco escrito aqui
+ * apontaria para o lugar errado sem avisar.
+ *
  * Le o OPS_SECRET do `.dev.vars` e manda no cabecalho. O segredo nunca vira
  * argumento de linha de comando — argumento aparece no historico do shell e na
  * lista de processos da maquina.
@@ -13,9 +18,7 @@
  */
 import { readFileSync } from "node:fs";
 
-const PADRAO = "https://projetoauto.webflow.io/app";
-
-function lerDevVars(nome) {
+function lerDevVars(nome, { opcional = false } = {}) {
   let conteudo;
   try {
     conteudo = readFileSync(".dev.vars", "utf8");
@@ -42,10 +45,18 @@ function lerDevVars(nome) {
       .replace(/^(["'])(.*)\1$/, "$2");
   }
 
+  if (opcional) return undefined;
   throw new Error(`${nome} nao esta no .dev.vars.`);
 }
 
-const base = (process.argv[2] ?? PADRAO).replace(/\/+$/, "");
+const informado = process.argv[2] ?? lerDevVars("OPS_BASE_URL", { opcional: true });
+if (!informado) {
+  throw new Error(
+    "Informe o endereco do painel: node scripts/migrate-remote.mjs https://<dominio>/<mount>\n" +
+      "ou defina OPS_BASE_URL no .dev.vars.",
+  );
+}
+const base = informado.replace(/\/+$/, "");
 const segredo = lerDevVars("OPS_SECRET");
 
 const resposta = await fetch(`${base}/api/ops/migrate`, {

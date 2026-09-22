@@ -1,7 +1,7 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { createdAt, idColumn, updatedAt } from "./_shared";
 import { tenants } from "./tenants";
-import type { BodyType, Fuel, Transmission, VehicleStatus } from "@projetoauto/site-kit/catalog";
+import type { BodyType, Fuel, Transmission, VehicleStatus } from "@carbud/site-kit/catalog";
 
 /*
  * Os valores de cambio, combustivel, carroceria e status moram no pacote
@@ -22,7 +22,7 @@ export {
   type Transmission,
   type Fuel,
   type BodyType,
-} from "@projetoauto/site-kit/catalog";
+} from "@carbud/site-kit/catalog";
 
 export const vehicles = sqliteTable(
   "vehicles",

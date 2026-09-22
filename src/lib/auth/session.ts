@@ -22,7 +22,7 @@ export type SessionClaims = {
 
 export type SessionInput = Omit<SessionClaims, "jti" | "iat" | "exp"> & { jti?: string };
 
-const DEV_SECRET = "dev-secret-projetoauto-nao-usar-em-producao";
+const DEV_SECRET = "dev-secret-carbud-nao-usar-em-producao";
 
 /** Assina a sessão e também o estado do OAuth dos portais — um segredo, uma rotação. */
 export function sessionSecretKey(): Uint8Array {

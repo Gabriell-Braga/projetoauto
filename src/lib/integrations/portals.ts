@@ -77,7 +77,7 @@ export const PORTALS: PortalDefinition[] = [
       },
     ],
     howToConnect:
-      "Entre no Webmotors com o login da loja, abra o chat de atendimento e peça para liberar a integração de anúncios pelo ProjetoAuto. Depois informe aqui o código da loja e não precisa voltar lá.",
+      "Entre no Webmotors com o login da loja, abra o chat de atendimento e peça para liberar a integração de anúncios pelo Carbud. Depois informe aqui o código da loja e não precisa voltar lá.",
   },
   {
     key: "icarros",

@@ -1,4 +1,4 @@
-# Plataforma SaaS para Revendas de Veículos
+# Carbud — plataforma para revendas de veículos
 
 Plataforma multi-tenant onde cada revenda de veículos ganha um painel de gestão e um
 site público de estoque, tudo administrado por um painel geral (super-admin).
@@ -14,7 +14,7 @@ Deploy 100% em **Webflow Cloud** (Next.js + adapter OpenNext → Cloudflare Work
 | Site público | `/r/[slug]` | Clientes finais da revenda |
 | Rotas operacionais | `/api/ops/*` | Migrations e bootstrap (protegidas por segredo) |
 
-O app é montado num **mount path** do site Webflow (ex.: `projetoauto.com.br/app`). O `basePath`
+O app é montado num **mount path** do site Webflow (ex.: `vendas.carbud.com.br/app`). O `basePath`
 vem de `BASE_URL`/`NEXT_PUBLIC_BASE_PATH` — nunca hardcode caminho absoluto.
 
 ### Restrições do runtime respeitadas
@@ -82,11 +82,43 @@ no banco do ambiente (local ou Webflow Cloud), controlando o que já rodou em `_
 | `AUTH_SECRET` | Secret | sim | Chave HS256 que assina os JWT de sessão |
 | `OPS_SECRET` | Secret | sim | Protege `/api/ops/*` |
 | `RESEND_API_KEY` | Secret | não | Ativa o envio de e-mail (redefinição de senha) |
-| `EMAIL_FROM` | Variable | não | Remetente verificado, ex.: `ProjetoAuto <nao-responda@seudominio.com.br>` |
+| `EMAIL_FROM` | Variable | não | Remetente verificado, ex.: `Carbud <nao-responda@carbud.com.br>` |
+| `APP_ORIGIN` | Variable | em produção | Origem pública do painel, sem o mount path (hoje `https://projetoauto.webflow.io`). É a variável da troca de domínio — ver abaixo |
 
 `NEXT_PUBLIC_BASE_PATH` **não precisa ser cadastrada**: o [next.config.ts](next.config.ts)
 deriva o valor do `BASE_URL` que o Webflow Cloud injeta no build. Como é inlinada no bundle
 do cliente, mudar o mount path exige um novo deploy — não basta trocar a variável.
+
+## Nome e domínio
+
+O produto se chama **Carbud**. O nome vive em [src/lib/brand.ts](src/lib/brand.ts) e
+tudo que o exibe (aba, login, e-mail, user-agent, cabeçalhos `x-carbud-*` dos webhooks)
+lê de lá. Os identificadores de infraestrutura (`wrangler.json`, banco `projetoauto-db`,
+bucket `projetoauto-media`, repositório) mantêm o nome antigo de propósito: são recursos
+já criados no Webflow Cloud e ninguém de fora os vê.
+
+Plano de domínios: o painel (home, página de vendas e sistema) vai para
+**vendas.carbud.com.br** ou **crm.carbud.com.br**; o domínio raiz **carbud.com.br** fica
+com o portal proprietário. O código não fixa domínio nenhum — a origem vem de
+`APP_ORIGIN` e o mount path de `BASE_URL`.
+
+### Checklist da troca de domínio
+
+1. Apontar o domínio novo para o site Webflow e montar o app nele (o Webflow Cloud
+   injeta o `BASE_URL` novo no build — se o mount path mudar, é um deploy novo).
+2. `APP_ORIGIN` = a origem nova (sem o mount path) nas Secret Variables → publicar.
+3. Abrir **Super-admin → Configurações → Endereços públicos** e recadastrar cada linha
+   onde ela diz: redirect URI do OAuth nos apps da OLX e do Mercado Livre, URL de
+   notificações do Mercado Livre, webhook do Asaas (a saúde do webhook acusa
+   "aponta para outro endereço" enquanto estiver no domínio antigo), webhooks do
+   WhatsApp das revendas.
+4. `PANEL_URL` na Vercel (com o mount path) → novo deploy do app dos sites.
+5. Variável `OPS_BASE_URL` no GitHub (Settings → Variables) para a rotina diária, e
+   `OPS_BASE_URL` no `.dev.vars` de quem roda `scripts/migrate-remote.mjs`.
+6. Domínio do remetente no Resend e `EMAIL_FROM`.
+
+A sessão não migra: o cookie é do host, então quem estava logado no domínio
+antigo entra de novo no novo — sem migração de nada.
 
 ## Rotas operacionais
 

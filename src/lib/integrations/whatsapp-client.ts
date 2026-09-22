@@ -1,3 +1,4 @@
+import { USER_AGENT } from "@/lib/brand";
 import { ApiError } from "@/lib/http";
 import { toE164Digits } from "./whatsapp-rules";
 
@@ -28,7 +29,7 @@ async function request<T>(
     headers: {
       authorization: `Bearer ${token}`,
       "content-type": "application/json",
-      "user-agent": "ProjetoAuto",
+      "user-agent": USER_AGENT,
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(15_000),

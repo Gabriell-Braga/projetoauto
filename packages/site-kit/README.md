@@ -1,4 +1,4 @@
-# @projetoauto/site-kit
+# @carbud/site-kit
 
 Os templates dos sites das revendas e o pouco de codigo que eles precisam.
 
@@ -16,11 +16,11 @@ leads do lado de dentro. O pacote nao sabe que existe um painel.
 
 | Entrada | Serve para |
 |---|---|
-| `@projetoauto/site-kit` | templates, contrato, registro de temas |
-| `@projetoauto/site-kit/catalog` | cambio/combustivel/carroceria: valores e rotulos |
-| `@projetoauto/site-kit/format` | `cn`, moeda e numero em pt-BR |
-| `@projetoauto/site-kit/paths` | basePath (o painel roda sob um mount path) |
-| `@projetoauto/site-kit/client-api` | `fetch` dos formularios |
+| `@carbud/site-kit` | templates, contrato, registro de temas |
+| `@carbud/site-kit/catalog` | cambio/combustivel/carroceria: valores e rotulos |
+| `@carbud/site-kit/format` | `cn`, moeda e numero em pt-BR |
+| `@carbud/site-kit/paths` | basePath (o painel roda sob um mount path) |
+| `@carbud/site-kit/client-api` | `fetch` dos formularios |
 
 `catalog` e separado de proposito: o schema do banco importa os valores dele, e
 puxar a barra principal traria componente React para dentro do Worker.

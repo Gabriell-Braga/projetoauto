@@ -12,14 +12,43 @@ import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
  * plano B para dev local e outros hosts.
  */
 export async function getOrigin(): Promise<string> {
+  return (await describeOrigin()).origin;
+}
+
+export type OriginInfo = {
+  origin: string;
+  /** De onde veio: da variável ou dos cabeçalhos do request. */
+  source: "env" | "headers";
+  /**
+   * Verdadeiro quando a origem veio dos cabeçalhos e o host é o do worker
+   * interno do Webflow Cloud — ou seja, APP_ORIGIN falta e toda URL absoluta
+   * está saindo com um endereço que ninguém de fora alcança.
+   */
+  internalHost: boolean;
+};
+
+/**
+ * A origem e a confiança que dá para ter nela.
+ *
+ * Existe separada de `getOrigin` para a tela de configurações do super-admin
+ * mostrar SE a origem está fixada — é o que decide se os endereços listados
+ * ali podem ser copiados para o Mercado Livre, o Asaas e o resto. É também o
+ * que muda na troca de domínio: `APP_ORIGIN` passa a ser o novo, e tudo que
+ * monta URL absoluta segue junto.
+ */
+export async function describeOrigin(): Promise<OriginInfo> {
   const fixed = process.env.APP_ORIGIN?.replace(/\/+$/, "");
-  if (fixed) return fixed;
+  if (fixed) return { origin: fixed, source: "env", internalHost: false };
 
   const headerList = await headers();
   const host =
     headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "localhost:8787";
   const proto = headerList.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
+  return {
+    origin: `${proto}://${host}`,
+    source: "headers",
+    internalHost: host.endsWith(".webflow.services"),
+  };
 }
 
 /** URL absoluta de uma página do site da revenda, já com o mount path. */

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { JsonLd, breadcrumbJsonLd, vehicleJsonLd } from "@projetoauto/site-kit/jsonld";
-import { LeadForm } from "@projetoauto/site-kit/shared/lead-form";
-import { FinancingEstimator } from "@projetoauto/site-kit/shared/financing-form";
-import { SellCarTeaser } from "@projetoauto/site-kit/shared/sell-car-form";
+import { JsonLd, breadcrumbJsonLd, vehicleJsonLd } from "@carbud/site-kit/jsonld";
+import { LeadForm } from "@carbud/site-kit/shared/lead-form";
+import { FinancingEstimator } from "@carbud/site-kit/shared/financing-form";
+import { SellCarTeaser } from "@carbud/site-kit/shared/sell-car-form";
 import { fetchVehicle } from "~/lib/panel";
 import { loadSite } from "~/lib/site";
 import { absoluteUrl } from "~/lib/urls";

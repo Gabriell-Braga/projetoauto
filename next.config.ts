@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
    * proprio. Um build so, no app que o consome, evita ter que lembrar de
    * recompilar o pacote antes de rodar qualquer coisa.
    */
-  transpilePackages: ["@projetoauto/site-kit"],
+  transpilePackages: ["@carbud/site-kit"],
   ...(basePath && {
     basePath,
     assetPrefix: process.env.ASSETS_PREFIX || basePath,

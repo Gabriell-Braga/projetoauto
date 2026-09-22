@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { JsonLd, autoDealerJsonLd } from "@projetoauto/site-kit/jsonld";
+import { JsonLd, autoDealerJsonLd } from "@carbud/site-kit/jsonld";
 import { fetchHome } from "~/lib/panel";
 import { loadSite } from "~/lib/site";
 import { absoluteUrl } from "~/lib/urls";

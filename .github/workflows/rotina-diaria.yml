@@ -25,6 +25,10 @@ jobs:
       - name: Chamar a rotina
         env:
           OPS_SECRET: ${{ secrets.OPS_SECRET }}
+          # Endereço do painel COM o mount path. Quando o domínio mudar
+          # (vendas.carbud.com.br / crm.carbud.com.br), defina a variável
+          # OPS_BASE_URL em Settings → Secrets and variables → Variables;
+          # o valor abaixo é só o endereço atual, enquanto ela não existe.
           BASE_URL: ${{ vars.OPS_BASE_URL || 'https://projetoauto.webflow.io/app' }}
         run: |
           if [ -z "$OPS_SECRET" ]; then

@@ -5,7 +5,7 @@ import { jsonOk, notFound, withApi } from "@/lib/http";
 import { assertSitesKey } from "@/lib/services/public-api";
 import { getSiteData } from "@/lib/services/site";
 import { getTenantCoreBySlug, isPublicSiteAvailable } from "@/lib/tenant/service";
-import { getTemplate } from "@projetoauto/site-kit/registry";
+import { getTemplate } from "@carbud/site-kit/registry";
 
 export const dynamic = "force-dynamic";
 

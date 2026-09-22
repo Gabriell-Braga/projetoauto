@@ -16,12 +16,12 @@ import {
   VEHICLE_STATUS_LABELS,
 } from "@/lib/catalog/labels";
 import { OPTION_LABELS, VEHICLE_OPTIONS } from "@/lib/catalog/options";
-import { formatPhoneBR } from "@projetoauto/site-kit/format";
+import { formatPhoneBR } from "@carbud/site-kit/format";
 import { plateEnd } from "@/lib/format/plate";
 import { mediaUrl } from "@/lib/paths";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
-import { buildSiteLinks as kitBuildSiteLinks } from "@projetoauto/site-kit/links";
-import { findTemplateManifest } from "@projetoauto/site-kit/manifests";
+import { buildSiteLinks as kitBuildSiteLinks } from "@carbud/site-kit/links";
+import { findTemplateManifest } from "@carbud/site-kit/manifests";
 import { formatCurrency, formatNumber, onlyDigits } from "@/lib/utils";
 import {
   composeTheme,
@@ -29,7 +29,7 @@ import {
   type SiteLinks,
   type ThemeTokens,
   type VehicleView,
-} from "@projetoauto/site-kit/contract";
+} from "@carbud/site-kit/contract";
 import type { VehicleListItem } from "./vehicles";
 
 /** Estrutura serializável guardada no KV (datas/URLs já resolvidas). */

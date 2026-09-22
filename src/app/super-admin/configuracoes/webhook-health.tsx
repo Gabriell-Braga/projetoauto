@@ -24,6 +24,8 @@ type Health = {
     interrupted: boolean;
     events: string[];
   } | null;
+  expectedUrl?: string;
+  staleUrl?: boolean;
   missingEvents?: string[];
   connectionError?: string | null;
   lastAccepted?: Mark;
@@ -42,6 +44,7 @@ type Health = {
 /** Recusa por token é a única falha que trava a fila inteira do gateway. */
 function toneFor(health: Health): "info" | "warning" | "danger" | "success" {
   if (!health.configured || !health.webhook) return "warning";
+  if (health.staleUrl) return "danger";
   if (!health.webhook.enabled || health.webhook.interrupted) return "danger";
   if (health.missingEvents?.length) return "danger";
   if (health.lastRejected && (!health.lastAccepted || health.lastRejected.at > health.lastAccepted.at)) {

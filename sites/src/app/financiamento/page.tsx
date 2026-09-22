@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { FinancingEstimator, FinancingLeadForm } from "@projetoauto/site-kit/shared/financing-form";
+import { FinancingEstimator, FinancingLeadForm } from "@carbud/site-kit/shared/financing-form";
 import { fetchFinancingOptions } from "~/lib/panel";
 import { loadSite } from "~/lib/site";
 

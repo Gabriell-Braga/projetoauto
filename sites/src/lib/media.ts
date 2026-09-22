@@ -1,4 +1,4 @@
-import type { SiteData, VehicleView } from "@projetoauto/site-kit/contract";
+import type { SiteData, VehicleView } from "@carbud/site-kit/contract";
 
 /**
  * Traz as imagens para o dominio da revenda.

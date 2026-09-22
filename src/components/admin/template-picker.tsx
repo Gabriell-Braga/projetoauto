@@ -1,6 +1,6 @@
 "use client";
 
-import { TEMPLATE_MANIFESTS } from "@projetoauto/site-kit/manifests";
+import { TEMPLATE_MANIFESTS } from "@carbud/site-kit/manifests";
 import { cn } from "@/lib/utils";
 
 /** Cada opção é uma miniatura do template, não um card decorado. */

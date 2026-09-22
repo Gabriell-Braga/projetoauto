@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
+import { USER_AGENT, WEBHOOK_HEADER_EVENT, WEBHOOK_HEADER_SIGNATURE } from "@/lib/brand";
 import { apiKeys, tenantWebhooks, type ApiKey, type TenantWebhook } from "@/db/schema";
 
 const KEY_PREFIX = "pa_";
@@ -192,9 +193,9 @@ export async function dispatchTenantEvent(
             method: "POST",
             headers: {
               "content-type": "application/json",
-              "user-agent": "ProjetoAuto-Webhook",
-              "x-projetoauto-event": event,
-              "x-projetoauto-signature": await signPayload(hook.secret, body),
+              "user-agent": `${USER_AGENT}-Webhook`,
+              [WEBHOOK_HEADER_EVENT]: event,
+              [WEBHOOK_HEADER_SIGNATURE]: await signPayload(hook.secret, body),
             },
             body,
             signal: AbortSignal.timeout(8000),

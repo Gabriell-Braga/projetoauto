@@ -9,13 +9,12 @@
  *  - valores vão em reais decimais, não em centavos.
  */
 
+import { USER_AGENT } from "@/lib/brand";
 import { ApiError } from "@/lib/http";
 import { brazilIsoDate } from "./brazil-date";
 
 const SANDBOX_URL = "https://api-sandbox.asaas.com/v3";
 const PRODUCTION_URL = "https://api.asaas.com/v3";
-
-const USER_AGENT = "ProjetoAuto";
 
 export type AsaasEnvironment = "sandbox" | "production";
 

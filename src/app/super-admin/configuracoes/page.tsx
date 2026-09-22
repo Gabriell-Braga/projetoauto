@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/shell";
 import { requireSuperAdminPage } from "@/lib/auth/guards";
 import { asaasEnvironment } from "@/lib/gateway/asaas";
 import { getPlatformSettings } from "@/lib/plans/service";
+import { PublicEndpoints } from "./public-endpoints";
 import { SettingsForm } from "./settings-form";
 import { WebhookHealth } from "./webhook-health";
 
@@ -23,6 +24,7 @@ export default async function PlatformSettingsPage() {
         description="Multa, juros e período de teste sem depender de deploy."
       />
       <WebhookHealth />
+      <PublicEndpoints />
       <SettingsForm settings={settings} gatewayEnvironment={environment} />
     </>
   );

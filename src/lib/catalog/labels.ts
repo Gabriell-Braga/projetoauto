@@ -18,7 +18,7 @@ export {
   TRANSMISSION_LABELS,
   FUEL_LABELS,
   BODY_TYPE_LABELS,
-} from "@projetoauto/site-kit/catalog";
+} from "@carbud/site-kit/catalog";
 
 export const VEHICLE_STATUS_LABELS: Record<VehicleStatus, string> = {
   draft: "Rascunho",

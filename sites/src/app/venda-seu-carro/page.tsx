@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { SellCarForm } from "@projetoauto/site-kit/shared/sell-car-form";
+import { SellCarForm } from "@carbud/site-kit/shared/sell-car-form";
 import { loadSite } from "~/lib/site";
 
 export const dynamic = "force-dynamic";

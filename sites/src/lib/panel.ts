@@ -6,7 +6,7 @@ import type {
   SiteData,
   StockFacets,
   VehicleView,
-} from "@projetoauto/site-kit/contract";
+} from "@carbud/site-kit/contract";
 
 /**
  * Cliente da API publica do painel.

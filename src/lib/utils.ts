@@ -3,7 +3,7 @@
  * e duas implementacoes de moeda acabariam mostrando precos diferentes na
  * mesma tela. O resto daqui e so do painel e fica.
  */
-export { cn, formatCurrency, formatNumber } from "@projetoauto/site-kit/format";
+export { cn, formatCurrency, formatNumber } from "@carbud/site-kit/format";
 
 export function formatDate(value: Date | number | null | undefined): string {
   if (!value) return "—";

@@ -9,6 +9,7 @@ import {
   isThemePreference,
   type ThemePreference,
 } from "@/lib/theme";
+import { APP_NAME } from "@/lib/brand";
 import { InstrumentPanel } from "./instrument-panel";
 import { LoginForm } from "./login-form";
 
@@ -25,7 +26,7 @@ function Wordmark({ className }: { className?: string }) {
     <span
       className={`font-display font-bold uppercase leading-none tracking-[0.18em] text-text ${className ?? ""}`}
     >
-      ProjetoAuto
+      {APP_NAME}
     </span>
   );
 }

@@ -13,6 +13,7 @@ import { Checkbox, FormField, Input } from "@/components/ui/field";
 import { EmptyState, Table, Td, Th, Thead, Tr } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { TENANT_WEBHOOK_EVENTS } from "@/db/schema";
+import { WEBHOOK_HEADER_SIGNATURE } from "@/lib/brand";
 import { apiDelete, apiPatch, apiPost } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/utils";
 
@@ -249,7 +250,7 @@ export function IntegrationsPanel({
             <CardDescription>
               Avisamos seu sistema quando algo acontece aqui. Cada chamada leva a assinatura
               HMAC-SHA256 do corpo no cabeçalho{" "}
-              <code className="text-xs">x-projetoauto-signature</code>.
+              <code className="text-xs">{WEBHOOK_HEADER_SIGNATURE}</code>.
             </CardDescription>
           </div>
           <Button

@@ -4,6 +4,7 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { ConfirmProvider } from "@/components/ui/confirm";
 import { ToastProvider } from "@/components/ui/toast";
+import { APP_DESCRIPTION, APP_NAME, APP_TITLE_TEMPLATE } from "@/lib/brand";
 import { THEME_COOKIE, isThemePreference, themeClassName } from "@/lib/theme";
 
 /**
@@ -21,10 +22,10 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: {
-    default: "Plataforma de Revendas",
-    template: "%s · Plataforma de Revendas",
+    default: APP_NAME,
+    template: APP_TITLE_TEMPLATE,
   },
-  description: "Painel de gestão de estoque e sites para revendas de veículos.",
+  description: APP_DESCRIPTION,
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

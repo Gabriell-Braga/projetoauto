@@ -8,7 +8,7 @@ import { StatCard, StatGrid } from "@/components/admin/stat-card";
 import { formatNumber } from "@/lib/utils";
 import { getTenantDetail, listBillingEvents } from "@/lib/services/tenants";
 import { listTenantUsers } from "@/lib/services/users";
-import { getTemplateManifest } from "@projetoauto/site-kit/manifests";
+import { getTemplateManifest } from "@carbud/site-kit/manifests";
 import { tenantPublicPath } from "@/lib/tenant/resolveTenant";
 import { effectiveBillingStatus, getTenantCoreById, graceDaysLeft } from "@/lib/tenant/service";
 import { getTenantSubscription, listActivePlanOptions } from "@/lib/services/subscriptions";

@@ -11,7 +11,7 @@ const panelUrl = normalizePanelUrl(process.env.PANEL_URL);
 
 const nextConfig: NextConfig = {
   // o pacote dos templates é TypeScript cru, sem passo de build próprio
-  transpilePackages: ["@projetoauto/site-kit"],
+  transpilePackages: ["@carbud/site-kit"],
 
   /**
    * As fotos continuam no domínio da revenda.

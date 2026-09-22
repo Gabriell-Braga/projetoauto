@@ -11,7 +11,7 @@ OPS_SECRET="troque-por-outro-segredo-longo"
 # Sem isso o fluxo continua funcionando — o pedido aparece em /super-admin/usuarios
 # para o super-admin destravar a pessoa manualmente.
 # RESEND_API_KEY="re_..."
-# EMAIL_FROM="ProjetoAuto <nao-responda@seudominio.com.br>"
+# EMAIL_FROM="Carbud <nao-responda@carbud.com.br>"
 
 # O mount path NÃO precisa ser cadastrado: o next.config.ts deriva
 # NEXT_PUBLIC_BASE_PATH do BASE_URL que o Webflow Cloud injeta no build.
@@ -28,16 +28,21 @@ OPS_SECRET="troque-por-outro-segredo-longo"
 # Origem publica do painel, sem o mount path. Atras do proxy do Webflow Cloud o
 # host do request e o do worker (*.wf-app-prod.cosmic.webflow.services), e toda
 # URL absoluta (e-mail, OAuth dos portais, feed) sairia com ele.
+# E A variavel da troca de dominio: hoje https://projetoauto.webflow.io, depois
+# https://vendas.carbud.com.br (ou crm.carbud.com.br). O painel mostra em
+# Super-admin > Configuracoes > Enderecos publicos tudo que precisa ser
+# recadastrado fora quando ela muda.
 # APP_ORIGIN="https://projetoauto.webflow.io"
 
 # --- Portais de classificados ------------------------------------------
 # Credenciais do NOSSO app em cada portal (do integrador, valem para todas as
 # revendas). Sem o par, o portal fica "Aguardando acesso" na tela de portais.
 # A URL de retorno (callback) a cadastrar no app do portal e:
-#   https://projetoauto.webflow.io/app/api/portals/<portal>/callback
+#   <APP_ORIGIN><mount path>/api/portals/<portal>/callback
 # com <portal> = olx | mercadolivre
 # O Mercado Livre tambem pede a URL de notificacoes (webhook) do app:
-#   https://projetoauto.webflow.io/app/api/webhooks/mercadolivre
+#   <APP_ORIGIN><mount path>/api/webhooks/mercadolivre
+# Os enderecos prontos para copiar estao em Super-admin > Configuracoes.
 # WEBMOTORS_CLIENT_ID="..."
 # WEBMOTORS_CLIENT_SECRET="..."
 # OLX_CLIENT_ID="..."

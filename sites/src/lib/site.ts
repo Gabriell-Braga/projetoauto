@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { buildSiteLinks } from "@projetoauto/site-kit/links";
-import { getTemplate } from "@projetoauto/site-kit/registry";
-import type { SiteData, SiteLinks, TemplateModule } from "@projetoauto/site-kit/contract";
+import { buildSiteLinks } from "@carbud/site-kit/links";
+import { getTemplate } from "@carbud/site-kit/registry";
+import type { SiteData, SiteLinks, TemplateModule } from "@carbud/site-kit/contract";
 import { fetchSite, slugForHost } from "./panel";
 
 export type SiteContext = {

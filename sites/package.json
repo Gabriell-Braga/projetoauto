@@ -1,5 +1,5 @@
 {
-  "name": "@projetoauto/sites",
+  "name": "@carbud/sites",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@projetoauto/site-kit": "*",
+    "@carbud/site-kit": "*",
     "lucide-react": "^1.33.0",
     "next": "^15.2.8",
     "react": "^19.0.1",

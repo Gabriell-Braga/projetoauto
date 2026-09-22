@@ -7,7 +7,7 @@ Ele **nao tem banco**. O D1 e um binding do Cloudflare e vive no painel; aqui
 tudo vem da API publica (`/api/public/...`). Se algum dia aparecer um import de
 Drizzle nesta pasta, o desenho saiu do lugar.
 
-Os templates sao os mesmos do painel, vindos de `@projetoauto/site-kit`. Nao
+Os templates sao os mesmos do painel, vindos de `@carbud/site-kit`. Nao
 existe copia — uma correcao de template chega aos dois lugares no mesmo commit.
 
 ## Rodar localmente

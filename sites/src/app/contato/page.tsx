@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { JsonLd, autoDealerJsonLd } from "@projetoauto/site-kit/jsonld";
-import { ContactForm } from "@projetoauto/site-kit/shared/contact-form";
+import { JsonLd, autoDealerJsonLd } from "@carbud/site-kit/jsonld";
+import { ContactForm } from "@carbud/site-kit/shared/contact-form";
 import { loadSite } from "~/lib/site";
 import { absoluteUrl } from "~/lib/urls";
 

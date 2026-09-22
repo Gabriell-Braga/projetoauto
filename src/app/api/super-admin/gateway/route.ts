@@ -13,6 +13,8 @@ import { lastDeliveries } from "@/lib/gateway/delivery-log";
 import { isKnownEvent } from "@/lib/gateway/event-map";
 import { logAuditFor } from "@/lib/audit";
 import { badRequest, jsonOk, notFound, withApi } from "@/lib/http";
+import { withBasePath } from "@/lib/paths";
+import { getOrigin } from "@/lib/seo/urls";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +60,12 @@ export const GET = withApi(async () => {
   const registered = "error" in webhooks ? [] : webhooks.data;
   const ours = registered.find((hook) => hook.url?.includes("/api/webhooks/asaas"));
 
+  // O caminho bate, mas e o domínio? Depois de uma troca de domínio o webhook
+  // continua cadastrado no endereço antigo e passaria por "saudável" aqui,
+  // enquanto o Asaas entrega num lugar que já não responde.
+  const expectedUrl = `${await getOrigin()}${withBasePath("/api/webhooks/asaas")}`;
+  const staleUrl = Boolean(ours && ours.url && ours.url.replace(/\/+$/, "") !== expectedUrl);
+
   // eventos que precisamos e o webhook não entrega: causa silenciosa de
   // "nada chegou" com o webhook aparentemente saudável
   const subscribed = ours?.events ?? [];
@@ -77,6 +85,8 @@ export const GET = withApi(async () => {
           events: subscribed,
         }
       : null,
+    expectedUrl,
+    staleUrl,
     missingEvents,
     connectionError: "error" in webhooks ? webhooks.error : null,
     lastAccepted: deliveries.accepted,
@@ -92,6 +102,8 @@ export const GET = withApi(async () => {
     })),
     diagnostico: diagnose({
       hasWebhook: Boolean(ours),
+      staleUrl,
+      expectedUrl,
       enabled: ours?.enabled ?? false,
       interrupted: Boolean(ours?.interrupted),
       missingEvents,
@@ -110,6 +122,8 @@ function isRejectionMoreRecent(deliveries: Awaited<ReturnType<typeof lastDeliver
 
 function diagnose(state: {
   hasWebhook: boolean;
+  staleUrl: boolean;
+  expectedUrl: string;
   enabled: boolean;
   interrupted: boolean;
   missingEvents: readonly string[];
@@ -119,6 +133,9 @@ function diagnose(state: {
 }): string {
   if (!state.hasWebhook) {
     return "Nenhum webhook do Asaas aponta para cá. Cadastre a URL no painel do gateway.";
+  }
+  if (state.staleUrl) {
+    return `O webhook do Asaas aponta para outro endereço — provavelmente o domínio antigo. Troque no painel do gateway para ${state.expectedUrl}.`;
   }
   if (!state.enabled) {
     return "O webhook existe mas está desligado no Asaas. Uma resposta diferente de 200 interrompe a fila até religarem na mão.";

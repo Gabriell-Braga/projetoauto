@@ -6,6 +6,13 @@ conversa.
 
 ---
 
+> **22/09/2026 — o produto agora se chama Carbud.** O nome vive em
+> `src/lib/brand.ts`; os pacotes viraram `@carbud/site-kit` e `@carbud/sites`.
+> Os nomes de infraestrutura (`projetoauto-db`, `projetoauto-media`, o
+> repositório, `projetoauto.webflow.io`) ficam até a troca de domínio, cujo
+> checklist está no README ("Nome e domínio"). Onde este documento diz
+> "ProjetoAuto", leia Carbud; onde cita `@projetoauto/...`, leia `@carbud/...`.
+
 ## 1. O que é o produto
 
 SaaS multi-inquilino para revendas de carros no Brasil. Três frentes:
@@ -92,13 +99,13 @@ desenho saiu do lugar.**
 
 | Entrada | Serve para |
 |---|---|
-| `@projetoauto/site-kit/contract` | tipos e `composeTheme`/`themeToCssVariables` |
-| `@projetoauto/site-kit/manifests` | lista de templates |
-| `@projetoauto/site-kit/registry` | `getTemplate(id)` |
-| `@projetoauto/site-kit/links` | `buildSiteLinks(prefixo, whatsapp)` |
-| `@projetoauto/site-kit/catalog` | câmbio/combustível/carroceria + rótulos |
-| `@projetoauto/site-kit/shared/*` | formulários e GTM |
-| `@projetoauto/site-kit/jsonld` | dados estruturados schema.org |
+| `@carbud/site-kit/contract` | tipos e `composeTheme`/`themeToCssVariables` |
+| `@carbud/site-kit/manifests` | lista de templates |
+| `@carbud/site-kit/registry` | `getTemplate(id)` |
+| `@carbud/site-kit/links` | `buildSiteLinks(prefixo, whatsapp)` |
+| `@carbud/site-kit/catalog` | câmbio/combustível/carroceria + rótulos |
+| `@carbud/site-kit/shared/*` | formulários e GTM |
+| `@carbud/site-kit/jsonld` | dados estruturados schema.org |
 
 `catalog` é separado de propósito: **o schema do banco importa dele**, e puxar
 a entrada principal traria componente React para dentro do Worker.

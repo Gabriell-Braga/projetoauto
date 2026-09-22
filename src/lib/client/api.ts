@@ -13,4 +13,4 @@ export {
   unmappedErrors,
   type ApiResponse,
   type FieldErrors,
-} from "@projetoauto/site-kit/client-api";
+} from "@carbud/site-kit/client-api";

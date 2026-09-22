@@ -4,6 +4,7 @@ import type { ListingProps, StockFacets } from "../contract";
 import type { BodyType, Fuel, Transmission } from "../../lib/catalog";
 import { BODY_TYPE_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from "../../lib/catalog";
 import { AutoSubmitSelect } from "../shared/auto-submit-select";
+import { FilterDrawer } from "../shared/filter-drawer";
 import { CategoryChips, SHELL, Shell, WhatsappBand, WhatsappButton, categoryShortcuts } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
@@ -46,9 +47,10 @@ function Filters({
       action={action}
       className="rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] p-5"
     >
-      <div className="mb-4 flex items-center justify-between">
+      {/* no celular o painel já tem o título "Filtros"; aqui fica só o Limpar */}
+      <div className="mb-4 flex items-center justify-end lg:justify-between">
         <p
-          className="text-lg font-semibold text-[var(--site-text)]"
+          className="hidden text-lg font-semibold text-[var(--site-text)] lg:block"
           style={{ fontFamily: "var(--site-font-heading)" }}
         >
           Filtros
@@ -330,6 +332,44 @@ export function Listing({
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const chips = activeChips(filters, links);
 
+  /*
+    Trocar a ordem preserva os filtros: o form reenvia todos eles.
+    O select aplica sozinho — o botao "Ordenar" que existia ao lado
+    fazia a pessoa escolher, olhar a lista igual, e achar que quebrou.
+
+    E uma funcao porque o mesmo form aparece em dois lugares, um por
+    tamanho de tela: na barra presa do celular e na linha do total no
+    desktop. Cada um so existe no seu tamanho, entao nunca ha dois na tela.
+  */
+  const sortForm = (
+    <form action={links.stock} method="get" className="flex items-center gap-2">
+      {Object.entries({
+        q: filters.search,
+        marca: filters.brand,
+        modelo: filters.model,
+        carroceria: filters.bodyType,
+        cambio: filters.transmission,
+        combustivel: filters.fuel,
+        precoMin: filters.priceMin ? Math.round(filters.priceMin / 100) : undefined,
+        precoMax: filters.priceMax ? Math.round(filters.priceMax / 100) : undefined,
+        anoMin: filters.yearMin,
+        kmMax: filters.kmMax,
+      })
+        .filter(([, value]) => value !== undefined && value !== "")
+        .map(([name, value]) => (
+          <input key={name} type="hidden" name={name} value={String(value)} />
+        ))}
+      <AutoSubmitSelect
+        name="ordem"
+        label="Ordenar"
+        value={filters.sort}
+        options={SORTS}
+        submitLabel="Ordenar"
+        className="h-11 rounded-lg border border-[var(--site-border)] bg-[var(--site-surface)] px-3 text-sm text-[var(--site-text)] outline-none transition-colors focus:border-[var(--site-primary)]"
+      />
+    </form>
+  );
+
   const withPage = (target: number) =>
     links.stockWith({
       q: filters.search,
@@ -390,10 +430,23 @@ export function Listing({
         </div>
       </section>
 
-      <div className={`${SHELL} grid grid-cols-1 gap-8 py-12 lg:grid-cols-[280px_minmax(0,1fr)]`}>
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+      {/*
+        No celular a coluna de filtros vira a barra presa + painel (ver
+        FilterDrawer). O grid é o pai da barra de propósito: é ele que se
+        estende pela lista inteira, e é dentro do pai que o sticky funciona.
+        O topo da barra é a altura do cabeçalho do Vitrine no celular (68px
+        de barra + 41px do menu que rola), e a sangria desfaz o padding do
+        SHELL para a barra ir de borda a borda.
+      */}
+      <div className={`${SHELL} grid grid-cols-1 gap-6 py-8 lg:gap-8 lg:py-12 lg:grid-cols-[280px_minmax(0,1fr)]`}>
+        <FilterDrawer
+          filters={filters}
+          sort={sortForm}
+          barClassName="top-[110px] -mx-4 sm:-mx-6 sm:px-6"
+          panelClassName="lg:sticky lg:top-24 lg:self-start"
+        >
           <Filters facets={facets} filters={filters} action={links.stock} />
-        </aside>
+        </FilterDrawer>
 
         <div>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
@@ -404,35 +457,7 @@ export function Listing({
               {total} {total === 1 ? "veículo encontrado" : "veículos encontrados"}
             </p>
 
-            {/*
-              Trocar a ordem preserva os filtros: o form reenvia todos eles.
-              O select aplica sozinho — o botao "Ordenar" que existia ao lado
-              fazia a pessoa escolher, olhar a lista igual, e achar que quebrou.
-            */}
-            <form action={links.stock} method="get" className="flex items-center gap-2">
-              {Object.entries({
-                q: filters.search,
-                marca: filters.brand,
-                modelo: filters.model,
-                carroceria: filters.bodyType,
-                cambio: filters.transmission,
-                combustivel: filters.fuel,
-                anoMin: filters.yearMin,
-                kmMax: filters.kmMax,
-              })
-                .filter(([, value]) => value !== undefined && value !== "")
-                .map(([name, value]) => (
-                  <input key={name} type="hidden" name={name} value={String(value)} />
-                ))}
-              <AutoSubmitSelect
-                name="ordem"
-                label="Ordenar"
-                value={filters.sort}
-                options={SORTS}
-                submitLabel="Ordenar"
-                className="h-11 rounded-lg border border-[var(--site-border)] bg-[var(--site-surface)] px-3 text-sm text-[var(--site-text)] outline-none transition-colors focus:border-[var(--site-primary)]"
-              />
-            </form>
+            <div className="hidden lg:block">{sortForm}</div>
           </div>
 
           {chips.length > 0 ? (

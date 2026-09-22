@@ -60,8 +60,11 @@ export default async function LeadsPage({
       </StatGrid>
 
       <Card className="mb-3">
-        <form className="flex flex-wrap items-end gap-3 px-4 py-3.5" action="/admin/leads">
-          <div className="min-w-56 flex-1">
+        <form
+          className="grid grid-cols-2 items-end gap-3 px-4 py-3.5 sm:flex sm:flex-wrap"
+          action="/admin/leads"
+        >
+          <div className="col-span-2 sm:min-w-56 sm:flex-1">
             <Label htmlFor="q">Buscar</Label>
             <Input
               id="q"
@@ -70,9 +73,9 @@ export default async function LeadsPage({
               placeholder="Nome, telefone, e-mail ou veículo"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="status">Situação</Label>
-            <Select id="status" name="status" defaultValue={status ?? ""} className="w-44">
+            <Select id="status" name="status" defaultValue={status ?? ""} className="w-full sm:w-44">
               <option value="">Todas</option>
               {LEAD_STATUS.map((value) => (
                 <option key={value} value={value}>

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { ScrollEdges } from "@/components/ui/scroll-edges";
 import { cn } from "@/lib/utils";
 
 /**
@@ -6,13 +7,16 @@ import { cn } from "@/lib/utils";
  * discretas e números tabulares nas colunas de valor.
  *
  * Rola na horizontal no celular em vez de quebrar — converter linha em card
- * exigiria decidir o que cabe, e isso muda por tabela.
+ * exigiria decidir o que cabe, e isso muda por tabela. Quem precisa caber
+ * sem rolar esconde colunas com `hidden md:table-cell` e traz o essencial
+ * para a primeira célula (ver o estoque). A rolagem vem com o esmaecido nas
+ * bordas, porque sem ele ninguém percebia que havia mais colunas.
  */
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-x-auto">
+    <ScrollEdges>
       <table className={cn("w-full border-collapse text-sm", className)} {...props} />
-    </div>
+    </ScrollEdges>
   );
 }
 

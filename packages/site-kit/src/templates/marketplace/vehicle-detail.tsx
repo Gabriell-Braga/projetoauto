@@ -5,6 +5,7 @@ import { mapsEmbedUrl } from "../../lib/maps";
 import { PhotoGallery } from "../shared/gallery";
 import { headlineHours, summarizeHours } from "../shared/hours";
 import { Tabs } from "../shared/tabs";
+import { StickyCta } from "../shared/sticky-cta";
 import { HelpBand, SHELL, SectionHeading, Shell } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
@@ -380,6 +381,8 @@ export function VehicleDetail({ site, links, vehicle, related }: VehicleDetailPr
         title="Quer tirar uma dúvida sobre este carro?"
         description="Fale diretamente com a equipe da loja pelo WhatsApp."
       />
+
+      <StickyCta vehicle={vehicle} links={links} storeName={site.name} />
     </Shell>
   );
 }

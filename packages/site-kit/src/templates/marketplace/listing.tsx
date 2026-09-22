@@ -3,6 +3,7 @@ import type { AppliedFilters, ListingProps, SiteLinks, StockFacets } from "../co
 import { BODY_TYPE_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from "../../lib/catalog";
 import type { BodyType, Fuel, Transmission } from "../../lib/catalog";
 import { AutoSubmitSelect } from "../shared/auto-submit-select";
+import { FilterDrawer } from "../shared/filter-drawer";
 import { HelpBand, SHELL, Shell } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
@@ -44,6 +45,30 @@ export function Listing({
 }: ListingProps) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
+  // O mesmo form de ordenação em dois lugares, um por tamanho de tela: na
+  // barra presa do celular e na linha do total no desktop.
+  //
+  // A `ordem` fica de fora dos campos escondidos: o servidor lê o PRIMEIRO
+  // valor de cada parâmetro, e um hidden antes do select fazia a escolha
+  // nova chegar em segundo — a lista não mudava nunca.
+  const sortForm = (
+    <form action={links.stock} method="get" className="flex items-center gap-2">
+      {Object.entries(paramsDe(filters)).map(([nome, valor]) =>
+        nome === "ordem" || valor === undefined || valor === "" ? null : (
+          <input key={nome} type="hidden" name={nome} value={String(valor)} />
+        ),
+      )}
+      <AutoSubmitSelect
+        name="ordem"
+        label="Ordenar"
+        value={filters.sort}
+        options={SORTS}
+        submitLabel="Ordenar"
+        className="h-10 rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-3 text-[13px] outline-none transition-colors focus:border-[var(--site-primary)]"
+      />
+    </form>
+  );
+
   return (
     <Shell site={site} links={links}>
       <div className={`${SHELL} pt-8`}>
@@ -66,8 +91,20 @@ export function Listing({
         </p>
       </div>
 
-      <div className={`${SHELL} grid grid-cols-1 gap-8 py-8 lg:grid-cols-[280px_minmax(0,1fr)]`}>
-        <FilterSidebar links={links} facets={facets} filters={filters} />
+      {/*
+        No celular a coluna de filtros vira a barra presa + painel (ver
+        FilterDrawer). O cabeçalho deste template não é preso, então a barra
+        gruda no topo da janela; a sangria desfaz o padding do SHELL.
+      */}
+      <div className={`${SHELL} grid grid-cols-1 gap-6 py-6 lg:gap-8 lg:py-8 lg:grid-cols-[280px_minmax(0,1fr)]`}>
+        <FilterDrawer
+          filters={filters}
+          sort={sortForm}
+          barClassName="top-0 -mx-6 px-6"
+          panelClassName="lg:sticky lg:top-6 lg:self-start"
+        >
+          <FilterSidebar links={links} facets={facets} filters={filters} />
+        </FilterDrawer>
 
         <div>
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -75,21 +112,7 @@ export function Listing({
               {total} {total === 1 ? "veículo encontrado" : "veículos encontrados"}
             </h2>
 
-            <form action={links.stock} method="get" className="flex items-center gap-2">
-              {Object.entries(paramsDe(filters)).map(([nome, valor]) =>
-                valor === undefined || valor === "" ? null : (
-                  <input key={nome} type="hidden" name={nome} value={String(valor)} />
-                ),
-              )}
-              <AutoSubmitSelect
-                name="ordem"
-                label="Ordenar"
-                value={filters.sort}
-                options={SORTS}
-                submitLabel="Ordenar"
-                className="h-10 rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-3 text-[13px] outline-none transition-colors focus:border-[var(--site-primary)]"
-              />
-            </form>
+            <div className="hidden lg:block">{sortForm}</div>
           </div>
 
           <ActiveChips filters={filters} links={links} />
@@ -172,9 +195,10 @@ function FilterSidebar({
     "h-10 w-full rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-3 text-[13px] outline-none transition-colors focus:border-[var(--site-primary)]";
 
   return (
-    <form action={links.stock} method="get" className="lg:sticky lg:top-6 lg:self-start">
-      <div className="flex items-center justify-between">
-        <p className="text-[16px] font-semibold" style={{ fontFamily: "var(--site-font-heading)" }}>
+    <form action={links.stock} method="get">
+      {/* no celular o painel já tem o título "Filtros"; aqui fica só o Limpar */}
+      <div className="flex items-center justify-end lg:justify-between">
+        <p className="hidden text-[16px] font-semibold lg:block" style={{ fontFamily: "var(--site-font-heading)" }}>
           Filtros
         </p>
         <Link href={links.stock} className="text-[12px] text-[var(--site-primary)] hover:underline">

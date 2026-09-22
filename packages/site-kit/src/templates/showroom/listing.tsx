@@ -3,6 +3,7 @@ import type { AppliedFilters, ListingProps, SiteLinks, StockFacets } from "../co
 import { BODY_TYPE_LABELS, FUEL_LABELS, TRANSMISSION_LABELS } from "../../lib/catalog";
 import type { BodyType, Fuel, Transmission } from "../../lib/catalog";
 import { AutoSubmitSelect } from "../shared/auto-submit-select";
+import { FilterDrawer } from "../shared/filter-drawer";
 import { HERO_GRADIENT, HERO_VARS, SHELL, Shell, TalkBand } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
@@ -38,6 +39,29 @@ export function Listing({
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const banner = site.banners[0]?.imageUrl ?? null;
 
+  const sortClass =
+    "h-10 rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-3 text-[13px] outline-none transition-colors focus:border-[var(--site-primary)]";
+
+  // a ordenação da barra presa do celular: um form só dela, que reenvia os
+  // filtros aplicados — no desktop o select mora dentro do form da faixa
+  const sortForm = (
+    <form action={links.stock} method="get">
+      {Object.entries(paramsDe(filters)).map(([nome, valor]) =>
+        valor === undefined || valor === "" ? null : (
+          <input key={nome} type="hidden" name={nome} value={String(valor)} />
+        ),
+      )}
+      <AutoSubmitSelect
+        name="ordem"
+        label="Ordenar"
+        value={filters.sort}
+        options={SORTS}
+        submitLabel="Ordenar"
+        className={sortClass}
+      />
+    </form>
+  );
+
   return (
     <Shell site={site} links={links} overlay>
       {/* ----------------------------------------------------------- herói */}
@@ -66,9 +90,17 @@ export function Listing({
         </div>
       </section>
 
-      {/* ------------------------------------------------- faixa de filtros */}
-      <section className="border-b border-[var(--site-border)] bg-[var(--site-surface)] py-6">
-        <div className={SHELL}>
+      {/*
+        ------------------------------------------------- faixa de filtros
+        No celular a faixa vira a barra presa + painel (ver FilterDrawer);
+        no desktop continua a faixa de sempre. O div em volta existe para
+        ser o pai da barra E do resultado: sticky só acompanha enquanto o
+        pai está na tela. O topo é a altura do cabeçalho fixo (64px).
+      */}
+      <div>
+      <FilterDrawer filters={filters} sort={sortForm} barClassName="top-16 px-6">
+      <section className="lg:border-b lg:border-[var(--site-border)] lg:bg-[var(--site-surface)] lg:py-6">
+        <div className="lg:mx-auto lg:w-full lg:max-w-[1280px] lg:px-6">
           <form action={links.stock} method="get">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex gap-6">
@@ -92,15 +124,18 @@ export function Listing({
               </div>
 
               {/* a ordem aplica sozinha; os filtros abaixo esperam o botão,
-                  porque mexer num deles quase sempre implica mexer em outro */}
-              <AutoSubmitSelect
-                name="ordem"
-                label="Ordenar"
-                value={filters.sort}
-                options={SORTS}
-                submitLabel="Ordenar"
-                className="h-10 rounded-[var(--site-radius)] border border-[var(--site-border)] bg-[var(--site-surface)] px-3 text-[13px] outline-none transition-colors focus:border-[var(--site-primary)]"
-              />
+                  porque mexer num deles quase sempre implica mexer em outro.
+                  No celular ela já está na barra presa, então some daqui. */}
+              <div className="hidden lg:block">
+                <AutoSubmitSelect
+                  name="ordem"
+                  label="Ordenar"
+                  value={filters.sort}
+                  options={SORTS}
+                  submitLabel="Ordenar"
+                  className={sortClass}
+                />
+              </div>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(6,minmax(0,1fr))_auto]">
@@ -190,6 +225,7 @@ export function Listing({
           </form>
         </div>
       </section>
+      </FilterDrawer>
 
       {/* --------------------------------------------------------- resultado */}
       <section className="bg-[var(--site-background)] py-10">
@@ -261,6 +297,7 @@ export function Listing({
           )}
         </div>
       </section>
+      </div>
 
       <TalkBand
         site={site}
@@ -373,8 +410,9 @@ function PageLink({
   );
 }
 
-function pageHref(links: SiteLinks, filters: AppliedFilters, page: number): string {
-  return links.stockWith({
+/** Os filtros aplicados no formato da URL, para reenviar num link ou num form. */
+function paramsDe(filters: AppliedFilters): Record<string, string | number | undefined> {
+  return {
     q: filters.search,
     marca: filters.brand,
     modelo: filters.model,
@@ -383,6 +421,12 @@ function pageHref(links: SiteLinks, filters: AppliedFilters, page: number): stri
     combustivel: filters.fuel,
     anoMin: filters.yearMin,
     precoMax: filters.priceMax ? Math.round(filters.priceMax / 100) : undefined,
+  };
+}
+
+function pageHref(links: SiteLinks, filters: AppliedFilters, page: number): string {
+  return links.stockWith({
+    ...paramsDe(filters),
     ordem: filters.sort,
     pagina: page > 1 ? page : undefined,
   });

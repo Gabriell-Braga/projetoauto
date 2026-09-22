@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import type { VehicleDetailProps, VehicleView } from "../contract";
 import { PhotoGallery } from "../shared/gallery";
 import { summarizeHours } from "../shared/hours";
+import { StickyCta } from "../shared/sticky-cta";
 import { mapsEmbedUrl } from "../../lib/maps";
 import { SHELL, SectionHeading, Shell, WhatsappButton } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
@@ -339,6 +340,8 @@ export function VehicleDetail({
           </div>
         </section>
       ) : null}
+
+      <StickyCta vehicle={vehicle} links={links} storeName={site.name} />
     </Shell>
   );
 }

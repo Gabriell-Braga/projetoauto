@@ -137,10 +137,13 @@ export function ShowroomHeader({
         </button>
 
         {/* a marca fica no centro ótico, e não no fluxo: assim ela não desloca
-            quando o texto do botão muda de "Menu" para "Fechar" */}
+            quando o texto do botão muda de "Menu" para "Fechar". No celular
+            não cabe: o botão de WhatsApp é bem mais largo que o "Menu", e o
+            centro exato passa por cima dele. Ali a marca fica no fluxo,
+            entre os dois, e trunca. */}
         <Link
           href={homeHref}
-          className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold uppercase tracking-[0.18em]"
+          className="min-w-0 flex-1 truncate text-center text-sm font-semibold uppercase tracking-[0.18em] sm:absolute sm:left-1/2 sm:max-w-[calc(100%-400px)] sm:flex-none sm:-translate-x-1/2"
           style={{ fontFamily: "var(--site-font-heading)" }}
         >
           {logoUrl ? (
@@ -170,7 +173,8 @@ export function ShowroomHeader({
               className="inline-flex items-center gap-2 rounded-[var(--site-radius)] bg-[var(--site-whatsapp)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" />
-              Falar no WhatsApp
+              <span className="sm:hidden">WhatsApp</span>
+              <span className="hidden sm:inline">Falar no WhatsApp</span>
             </a>
           ) : null}
         </div>

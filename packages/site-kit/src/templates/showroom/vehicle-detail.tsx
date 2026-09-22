@@ -7,6 +7,7 @@ import { PhotoGallery } from "../shared/gallery";
 import { summarizeHours } from "../shared/hours";
 import { SHELL, SectionHeading, Shell, TalkBand } from "./chrome";
 import { Tabs } from "../shared/tabs";
+import { StickyCta } from "../shared/sticky-cta";
 import { VehicleGrid } from "./vehicle-card";
 
 function specBoxes(vehicle: VehicleView) {
@@ -375,6 +376,8 @@ export function VehicleDetail({
         title="Ainda ficou alguma dúvida?"
         description="Fale com a equipe sobre este veículo, financiamento ou troca."
       />
+
+      <StickyCta vehicle={vehicle} links={links} storeName={site.name} />
     </Shell>
   );
 }

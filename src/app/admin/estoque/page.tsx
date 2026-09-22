@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/layout/shell";
 import { Pagination } from "@/components/admin/pagination";
 import { StatCard, StatGrid } from "@/components/admin/stat-card";
@@ -16,7 +17,7 @@ import { requireTenantPage } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/rbac";
 import { VEHICLE_STATUS_LABELS } from "@/lib/catalog/labels";
 import { getVehicleStats, listVehicles } from "@/lib/services/vehicles";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { cn, formatCurrency, formatNumber } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Estoque" };
 export const dynamic = "force-dynamic";
@@ -69,8 +70,16 @@ export default async function StockPage({
       </StatGrid>
 
       <Card className="mb-3">
-        <form className="flex flex-wrap items-end gap-3 px-4 py-3.5" action="/admin/estoque">
-          <div className="min-w-56 flex-1">
+        {/*
+          No celular os campos formam uma grade de duas colunas, com a busca
+          e o botão atravessando as duas. Empilhados um por linha, os filtros
+          ocupavam uma tela inteira antes do primeiro carro aparecer.
+        */}
+        <form
+          className="grid grid-cols-2 items-end gap-3 px-4 py-3.5 sm:flex sm:flex-wrap"
+          action="/admin/estoque"
+        >
+          <div className="col-span-2 sm:min-w-56 sm:flex-1">
             <Label htmlFor="q">Buscar</Label>
             <Input
               id="q"
@@ -79,9 +88,9 @@ export default async function StockPage({
               placeholder="Marca, modelo ou versão"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="status">Situação</Label>
-            <Select id="status" name="status" defaultValue={status ?? ""} className="w-40">
+            <Select id="status" name="status" defaultValue={status ?? ""} className="w-full sm:w-40">
               <option value="">Todas</option>
               {VEHICLE_STATUS.map((value) => (
                 <option key={value} value={value}>
@@ -90,9 +99,14 @@ export default async function StockPage({
               ))}
             </Select>
           </div>
-          <div>
+          <div className="min-w-0">
             <Label htmlFor="sort">Ordenar por</Label>
-            <Select id="sort" name="sort" defaultValue={params.sort ?? "recentes"} className="w-44">
+            <Select
+              id="sort"
+              name="sort"
+              defaultValue={params.sort ?? "recentes"}
+              className="w-full sm:w-44"
+            >
               <option value="recentes">Mais recentes</option>
               <option value="preco-asc">Menor preço</option>
               <option value="preco-desc">Maior preço</option>
@@ -100,12 +114,19 @@ export default async function StockPage({
               <option value="ano-desc">Ano mais novo</option>
             </Select>
           </div>
-          <Button type="submit" variant="secondary">
+          <Button type="submit" variant="secondary" className="col-span-2 sm:col-span-1">
             Filtrar
           </Button>
         </form>
       </Card>
 
+      {/*
+        No celular a tabela cabe na tela sem rolar: só ficam a coluna do
+        veículo e a ação, e o que estava nas outras colunas (ano, km, preço,
+        situação) entra numa linha embaixo do nome. O `md:` das colunas e do
+        resumo é o mesmo ponto de corte, de propósito — ou a informação está
+        numa coluna, ou está no resumo, nunca nos dois.
+      */}
       <Card>
         {result.items.length === 0 ? (
           <EmptyState
@@ -124,78 +145,118 @@ export default async function StockPage({
             <Thead>
               <Tr>
                 <Th>Veículo</Th>
-                <Th numeric>Ano</Th>
-                <Th numeric>KM</Th>
-                <Th numeric>Preço</Th>
-                <Th>Situação</Th>
-                <Th numeric>Fotos</Th>
+                <Th numeric className="hidden md:table-cell">
+                  Ano
+                </Th>
+                <Th numeric className="hidden md:table-cell">
+                  KM
+                </Th>
+                <Th numeric className="hidden md:table-cell">
+                  Preço
+                </Th>
+                <Th className="hidden md:table-cell">Situação</Th>
+                <Th numeric className="hidden md:table-cell">
+                  Fotos
+                </Th>
                 <Th />
               </Tr>
             </Thead>
             <tbody>
-              {result.items.map((vehicle) => (
-                <Tr key={vehicle.id}>
-                  <Td>
-                    <div className="flex items-center gap-2.5">
-                      <VehicleThumb
-                        photoKey={vehicle.coverPhotoKey}
-                        alt={`${vehicle.brand} ${vehicle.model}`}
-                      />
-                      <div className="min-w-0">
-                        <Link
-                          href={`/admin/estoque/${vehicle.id}`}
-                          className="font-medium text-text transition-colors hover:text-accent-text"
-                        >
-                          {vehicle.brand} {vehicle.model}
-                        </Link>
-                        <div className="flex items-center gap-2">
-                          {vehicle.version ? (
-                            <p className="truncate text-xs text-faint">{vehicle.version}</p>
-                          ) : null}
-                          {/*
-                            A placa entra aqui porque e o que separa dois
-                            carros iguais no patio — mesmo modelo, mesmo ano,
-                            mesma cor. Em fonte de codigo, para nao competir
-                            com o nome do veiculo.
-                          */}
-                          {vehicle.licensePlate ? (
-                            <p className="whitespace-nowrap font-mono text-xs text-faint">
-                              {formatPlate(vehicle.licensePlate)}
-                            </p>
-                          ) : null}
-                          {vehicle.featured ? <Badge tone="info">Destaque</Badge> : null}
+              {result.items.map((vehicle) => {
+                const price = vehicle.priceOnRequest ? (
+                  <span className="text-muted">Sob consulta</span>
+                ) : (
+                  formatCurrency(vehicle.priceCents)
+                );
+
+                return (
+                  <Tr key={vehicle.id}>
+                    <Td className="w-full md:w-auto">
+                      <div className="flex items-center gap-2.5">
+                        <VehicleThumb
+                          photoKey={vehicle.coverPhotoKey}
+                          alt={`${vehicle.brand} ${vehicle.model}`}
+                        />
+                        <div className="min-w-0">
+                          <Link
+                            href={`/admin/estoque/${vehicle.id}`}
+                            className="font-medium text-text transition-colors hover:text-accent-text"
+                          >
+                            {vehicle.brand} {vehicle.model}
+                          </Link>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            {vehicle.version ? (
+                              <p className="truncate text-xs text-faint">{vehicle.version}</p>
+                            ) : null}
+                            {/*
+                              A placa entra aqui porque e o que separa dois
+                              carros iguais no patio — mesmo modelo, mesmo ano,
+                              mesma cor. Em fonte de codigo, para nao competir
+                              com o nome do veiculo.
+                            */}
+                            {vehicle.licensePlate ? (
+                              <p className="whitespace-nowrap font-mono text-xs text-faint">
+                                {formatPlate(vehicle.licensePlate)}
+                              </p>
+                            ) : null}
+                            {vehicle.featured ? <Badge tone="info">Destaque</Badge> : null}
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs md:hidden">
+                            <span className="tnum font-medium text-text">{price}</span>
+                            <span className="tnum text-muted">
+                              {vehicle.yearManufacture}/{vehicle.yearModel}
+                            </span>
+                            <span className="tnum text-muted">
+                              {formatNumber(vehicle.mileageKm)} km
+                            </span>
+                            <VehicleStatusBadge status={vehicle.status} />
+                            {vehicle.photosCount === 0 ? (
+                              <span className="text-danger">Sem fotos</span>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Td>
-                  <Td numeric className="whitespace-nowrap text-muted">
-                    {vehicle.yearManufacture}/{vehicle.yearModel}
-                  </Td>
-                  <Td numeric className="text-muted">
-                    {formatNumber(vehicle.mileageKm)}
-                  </Td>
-                  <Td numeric className="whitespace-nowrap font-medium">
-                    {vehicle.priceOnRequest ? (
-                      <span className="text-muted">Sob consulta</span>
-                    ) : (
-                      formatCurrency(vehicle.priceCents)
-                    )}
-                  </Td>
-                  <Td>
-                    <VehicleStatusBadge status={vehicle.status} />
-                  </Td>
-                  <Td numeric className={vehicle.photosCount === 0 ? "text-danger" : "text-muted"}>
-                    {vehicle.photosCount}
-                  </Td>
-                  <Td className="text-right">
-                    <Link href={`/admin/estoque/${vehicle.id}`}>
-                      <Button size="sm" variant="secondary">
-                        {canWrite ? "Editar" : "Ver"}
-                      </Button>
-                    </Link>
-                  </Td>
-                </Tr>
-              ))}
+                    </Td>
+                    <Td numeric className="hidden whitespace-nowrap text-muted md:table-cell">
+                      {vehicle.yearManufacture}/{vehicle.yearModel}
+                    </Td>
+                    <Td numeric className="hidden text-muted md:table-cell">
+                      {formatNumber(vehicle.mileageKm)}
+                    </Td>
+                    <Td numeric className="hidden whitespace-nowrap font-medium md:table-cell">
+                      {price}
+                    </Td>
+                    <Td className="hidden md:table-cell">
+                      <VehicleStatusBadge status={vehicle.status} />
+                    </Td>
+                    <Td
+                      numeric
+                      className={cn(
+                        "hidden md:table-cell",
+                        vehicle.photosCount === 0 ? "text-danger" : "text-muted",
+                      )}
+                    >
+                      {vehicle.photosCount}
+                    </Td>
+                    <Td className="pl-0 text-right md:pl-4">
+                      {/* no celular a ação vira só a seta: o botão com texto
+                          roubava a largura que o resumo precisa */}
+                      <Link
+                        href={`/admin/estoque/${vehicle.id}`}
+                        aria-label={canWrite ? "Editar veículo" : "Ver veículo"}
+                        className="grid h-8 w-8 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-text md:hidden"
+                      >
+                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                      </Link>
+                      <Link href={`/admin/estoque/${vehicle.id}`} className="hidden md:inline-flex">
+                        <Button size="sm" variant="secondary">
+                          {canWrite ? "Editar" : "Ver"}
+                        </Button>
+                      </Link>
+                    </Td>
+                  </Tr>
+                );
+              })}
             </tbody>
           </Table>
         )}

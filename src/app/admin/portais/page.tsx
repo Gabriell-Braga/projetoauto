@@ -5,6 +5,9 @@ import { requireTenantPage } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/rbac";
 import { tenantHasFeature } from "@/lib/api/feature-guard";
 import { portalCards } from "@/lib/integrations/portal-apps";
+import { leadInboxToken } from "@/lib/integrations/portal-lead-inbox";
+import { withBasePath } from "@/lib/paths";
+import { getOrigin } from "@/lib/seo/urls";
 import { isVaultConfigured } from "@/lib/security/vault";
 import { listConnections, publicationSummary } from "@/lib/services/portals";
 import { PortalsPanel } from "./portals-panel";
@@ -32,10 +35,29 @@ export default async function PortalsPage({
     );
   }
 
-  const [connections, summary] = await Promise.all([
+  const [connections, summary, origin] = await Promise.all([
     listConnections(context.tenant.id),
     publicationSummary(context.tenant.id),
+    getOrigin(),
   ]);
+
+  /*
+   * O endereço que a loja cadastra em cada portal como "URL de leads".
+   * Um por portal, derivado do segredo do app — não há nada guardado, e por
+   * isso ele pode ser mostrado de novo a qualquer momento.
+   */
+  const cards = portalCards();
+  const leadInboxes = Object.fromEntries(
+    await Promise.all(
+      cards.map(async (portal) => [
+        portal.key,
+        `${origin}${withBasePath(`/api/portals/${portal.key}/leads`)}?token=${await leadInboxToken(
+          context.tenant.id,
+          portal.key,
+        )}`,
+      ]),
+    ),
+  ) as Record<string, string>;
 
   return (
     <>
@@ -44,7 +66,8 @@ export default async function PortalsPage({
         description="Conecte a conta da loja uma vez. Depois o estoque sobe e sai daqui, e quem pergunta no anúncio chega como lead."
       />
       <PortalsPanel
-        portals={portalCards()}
+        portals={cards}
+        leadInboxes={leadInboxes}
         notice={portal && (conectado || erro) ? { portal, error: erro ?? null } : null}
         vaultReady={isVaultConfigured()}
         canWrite={can(context.role, "tenant:settings")}

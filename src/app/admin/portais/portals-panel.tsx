@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Link2, Link2Off, ListChecks, Rss } from "lucide-react";
+import { Inbox, Link2, Link2Off, ListChecks, Rss } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CopyButton } from "@/components/ui/copy-button";
 import { useConfirm } from "@/components/ui/confirm";
 import { Dialog } from "@/components/ui/dialog";
 import { FormField, Input } from "@/components/ui/field";
@@ -36,6 +37,7 @@ type Summary = {
 
 export function PortalsPanel({
   portals,
+  leadInboxes,
   connections,
   summary,
   vaultReady,
@@ -44,6 +46,8 @@ export function PortalsPanel({
   notice,
 }: {
   portals: PortalCard[];
+  /** Endereço de entrada de leads por portal, já com o token da revenda. */
+  leadInboxes: Record<string, string>;
   connections: Connection[];
   summary: Summary[];
   vaultReady: boolean;
@@ -207,6 +211,8 @@ export function PortalsPanel({
                   </div>
                 ) : null}
 
+                <LeadInbox url={leadInboxes[portal.key]} portalName={portal.name} />
+
                 {portal.availability === "aguardando_acesso" ? (
                   <p className="mt-2 text-xs text-faint">
                     Liberamos assim que o acesso de integração deste portal estiver disponível.
@@ -229,6 +235,44 @@ export function PortalsPanel({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * O endereço para onde o portal manda os leads dele.
+ *
+ * Aparece em TODO portal, inclusive nos que ainda não têm publicação por API
+ * e nos que só recebem o feed: receber lead não depende de conexão nossa com
+ * o portal, depende de a loja cadastrar esta URL lá dentro. É o que faz o
+ * contato da OLX e do Webmotors entrar no CRM em vez de ficar no e-mail do
+ * vendedor.
+ *
+ * Fica recolhido porque é configuração de uma vez só — quem já cadastrou não
+ * precisa ver o endereço todo dia.
+ */
+function LeadInbox({ url, portalName }: { url?: string; portalName: string }) {
+  if (!url) return null;
+
+  return (
+    <details className="mt-3 rounded-inner border border-border bg-surface-2/40 px-3 py-2">
+      <summary className="flex cursor-pointer items-center gap-2 text-[13px] text-text">
+        <Inbox className="h-3.5 w-3.5 text-faint" />
+        Receber leads deste portal
+      </summary>
+      <p className="mt-2 text-xs text-muted">
+        Cadastre este endereço no {portalName} como URL de leads. Quem chamar por ele entra no
+        CRM como lead, com o carro do anúncio quando o código vier junto.
+      </p>
+      <div className="mt-2 flex items-center gap-2">
+        <code className="min-w-0 flex-1 break-all rounded-sm bg-surface px-2 py-1 text-[11px] text-muted">
+          {url}
+        </code>
+        <CopyButton value={url} />
+      </div>
+      <p className="mt-2 text-xs text-faint">
+        Trate como senha: quem tiver o endereço consegue criar lead nesta revenda.
+      </p>
+    </details>
   );
 }
 

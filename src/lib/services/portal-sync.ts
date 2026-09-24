@@ -30,7 +30,7 @@ import type { OauthTokens } from "@/lib/integrations/portal-oauth";
 import { getPortal, shouldBePublished } from "@/lib/integrations/portals";
 import { mediaUrl } from "@/lib/paths";
 import { seal } from "@/lib/security/vault";
-import { ingestMercadoLivreLeads } from "./portal-leads";
+import { pullPortalLeads } from "./portal-leads";
 import { getConnection, readCredentials } from "./portals";
 
 /**
@@ -178,7 +178,9 @@ async function syncMercadoLivre(connection: PortalConnection, origin: string): P
    * propósito — se a conta estiver sem acesso, já saímos lá em cima, e o
    * token renovado aqui é o mesmo que busca as perguntas.
    */
-  const ingest = await ingestMercadoLivreLeads(connection.tenantId, session.client);
+  const ingest = await pullPortalLeads(connection.tenantId, "mercadolivre", {
+    mercadoLivre: session.client,
+  });
   report.leads = ingest.created;
   report.failed += ingest.failed;
 

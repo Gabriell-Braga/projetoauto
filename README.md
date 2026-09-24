@@ -120,6 +120,32 @@ com o portal proprietário. O código não fixa domínio nenhum — a origem vem
 A sessão não migra: o cookie é do host, então quem estava logado no domínio
 antigo entra de novo no novo — sem migração de nada.
 
+## Leads dos portais
+
+A integração com classificados vale nos dois sentidos. A ida é o
+[portal-sync](src/lib/services/portal-sync.ts): o carro cadastrado vira anúncio. A volta é
+o [portal-leads](src/lib/services/portal-leads.ts): quem procura o carro no anúncio entra
+como lead no CRM, com etapa do funil, rodízio de vendedor, linha do tempo e webhook — igual
+a um lead do site.
+
+O contato chega por dois caminhos, e os dois terminam em `registerPortalLead`:
+
+| Caminho | Como funciona | Onde vale |
+|---|---|---|
+| O portal avisa, nós buscamos | O portal manda a notificação, a sincronização lê o recurso pela API dele | Mercado Livre (perguntas). Outros portais entram quando tivermos acesso de integrador à API de leads de cada um |
+| O portal entrega no nosso endereço | A loja cadastra a URL de leads do Carbud dentro do portal; o contato entra na hora | **Todos**, inclusive os que só recebem o feed |
+
+A URL de entrada é uma por revenda e por portal, aparece em **Portais → card do portal →
+"Receber leads deste portal"** e é autenticada por um token derivado do `AUTH_SECRET` —
+nada é guardado no banco, e por isso ela pode ser mostrada de novo quando a loja precisar.
+O corpo aceita os nomes de campo mais comuns (`nome`/`name`, `telefone`/`phone`,
+`mensagem`/`message`, `anuncio_id`/`listing_id`…), em JSON ou formulário, inclusive
+embrulhado em `{ "lead": { … } }`. Sem telefone **e** sem e-mail o lead é recusado — com
+HTTP 200 e o motivo no corpo, porque portal que leva erro desliga a integração.
+
+Um lead por pessoa por anúncio: a segunda mensagem da mesma pessoa entra como evento no
+lead que já existe, e reenvio do mesmo aviso não duplica nada.
+
 ## Rotas operacionais
 
 Todas exigem o header `x-ops-secret`.

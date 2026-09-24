@@ -36,6 +36,12 @@ export function publicEndpoints(origin: string): PublicEndpoint[] {
       url: at("/api/webhooks/mercadolivre"),
     },
     {
+      label: "Leads dos portais (uma URL por revenda)",
+      where:
+        "Cada revenda cadastra a URL dela no portal como \"URL de leads\" — o endereço completo, com o token, está em Portais, no card de cada portal. O token não muda com o domínio, mas o começo do endereço sim: depois da troca, as revendas precisam recadastrar",
+      url: at("/api/portals/<portal>/leads?token=..."),
+    },
+    {
       label: "Webhook do Asaas",
       where: "Asaas → Integrações → Webhooks",
       url: at("/api/webhooks/asaas"),

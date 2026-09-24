@@ -17,8 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, Select, Textarea } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
-import { LEAD_STATUS, type LeadStatus } from "@/db/schema";
-import { LEAD_STATUS_LABELS } from "@/lib/catalog/labels";
+import { LEAD_STATUS, type LeadSource, type LeadStatus } from "@/db/schema";
+import { LEAD_SOURCE_LABELS, LEAD_STATUS_LABELS } from "@/lib/catalog/labels";
 import { apiPatch, apiPost } from "@/lib/client/api";
 import { formatDateTime, formatPhone, onlyDigits } from "@/lib/utils";
 import { WhatsappSender, type Template } from "./whatsapp-sender";
@@ -135,7 +135,7 @@ export function LeadDetail({
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex flex-col gap-4">
-        {canWrite ? (
+        {canWrite && onlyDigits(lead.phone) ? (
           <WhatsappSender
             leadId={lead.id}
             phone={lead.phone}
@@ -298,9 +298,17 @@ export function LeadDetail({
           <CardContent className="space-y-3 text-[13px]">
             <div>
               <p className="label-instrument mb-1 text-muted">Telefone</p>
-              <a href={`tel:${onlyDigits(lead.phone)}`} className="text-text hover:text-accent-text">
-                {formatPhone(lead.phone)}
-              </a>
+              {onlyDigits(lead.phone) ? (
+                <a href={`tel:${onlyDigits(lead.phone)}`} className="text-text hover:text-accent-text">
+                  {formatPhone(lead.phone)}
+                </a>
+              ) : (
+                /* lead de portal: a conversa continua lá até a pessoa passar o
+                   contato, e um "tel:" vazio só daria um clique morto */
+                <p className="text-muted">
+                  Não informado — responda pelo portal, o link está na mensagem.
+                </p>
+              )}
             </div>
             {lead.email ? (
               <div>
@@ -414,7 +422,7 @@ export function LeadDetail({
               <CardTitle>Veículo</CardTitle>
             </CardHeader>
             <CardContent>
-              <Badge tone="info">{lead.source}</Badge>
+              <Badge tone="info">{LEAD_SOURCE_LABELS[lead.source as LeadSource] ?? lead.source}</Badge>
               <p className="mt-2 text-[13px] text-text">{lead.vehicleLabel}</p>
             </CardContent>
           </Card>

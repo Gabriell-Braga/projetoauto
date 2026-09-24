@@ -31,7 +31,8 @@ export function publicEndpoints(origin: string): PublicEndpoint[] {
     ...oauth,
     {
       label: "Notificações do Mercado Livre",
-      where: "App do integrador no Mercado Livre (URL de callback de notificações)",
+      where:
+        "App do integrador no Mercado Livre (URL de callback de notificações). Marque o tópico \"questions\": é ele que traz as perguntas dos anúncios, que viram lead no CRM",
       url: at("/api/webhooks/mercadolivre"),
     },
     {

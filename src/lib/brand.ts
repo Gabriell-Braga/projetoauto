@@ -11,8 +11,8 @@
  * bindings sem ganhar nada — ninguém de fora os vê.
  *
  * Domínios: o painel (home, página de vendas e sistema) vai para
- * `vendas.carbud.com.br` ou `crm.carbud.com.br`; o domínio raiz
- * `carbud.com.br` fica com o portal proprietário. O código não fixa nenhum
+ * `crm.carbud.com.br`; o domínio raiz `carbud.com.br` fica com o portal
+ * proprietário. O código não fixa nenhum
  * deles: a origem pública vem de `APP_ORIGIN` (ver `lib/seo/urls.ts`), e o
  * mount path de `BASE_URL`, que o Webflow Cloud injeta. Trocar de domínio é
  * trocar variáveis e recadastrar os endereços listados em

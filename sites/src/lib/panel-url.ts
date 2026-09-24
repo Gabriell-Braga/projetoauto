@@ -18,7 +18,7 @@ export function normalizePanelUrl(raw: string | undefined): string {
   if (!valor) {
     throw new Error(
       "PANEL_URL não está definida. É o endereço do painel " +
-        "(ex.: https://vendas.carbud.com.br/app), de onde este app lê os dados dos sites.",
+        "(ex.: https://crm.carbud.com.br/app), de onde este app lê os dados dos sites.",
     );
   }
 
@@ -31,7 +31,7 @@ export function normalizePanelUrl(raw: string | undefined): string {
   } catch {
     throw new Error(
       `PANEL_URL não parece um endereço válido: ${valor}. ` +
-        "Use algo como https://vendas.carbud.com.br/app.",
+        "Use algo como https://crm.carbud.com.br/app.",
     );
   }
 

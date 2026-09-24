@@ -14,7 +14,7 @@ Deploy 100% em **Webflow Cloud** (Next.js + adapter OpenNext → Cloudflare Work
 | Site público | `/r/[slug]` | Clientes finais da revenda |
 | Rotas operacionais | `/api/ops/*` | Migrations e bootstrap (protegidas por segredo) |
 
-O app é montado num **mount path** do site Webflow (ex.: `vendas.carbud.com.br/app`). O `basePath`
+O app é montado num **mount path** do site Webflow (ex.: `crm.carbud.com.br/app`). O `basePath`
 vem de `BASE_URL`/`NEXT_PUBLIC_BASE_PATH` — nunca hardcode caminho absoluto.
 
 ### Restrições do runtime respeitadas
@@ -98,7 +98,7 @@ bucket `projetoauto-media`, repositório) mantêm o nome antigo de propósito: s
 já criados no Webflow Cloud e ninguém de fora os vê.
 
 Plano de domínios: o painel (home, página de vendas e sistema) vai para
-**vendas.carbud.com.br** ou **crm.carbud.com.br**; o domínio raiz **carbud.com.br** fica
+**crm.carbud.com.br**; o domínio raiz **carbud.com.br** fica
 com o portal proprietário. O código não fixa domínio nenhum — a origem vem de
 `APP_ORIGIN` e o mount path de `BASE_URL`.
 

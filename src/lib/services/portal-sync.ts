@@ -30,6 +30,7 @@ import type { OauthTokens } from "@/lib/integrations/portal-oauth";
 import { getPortal, shouldBePublished } from "@/lib/integrations/portals";
 import { mediaUrl } from "@/lib/paths";
 import { seal } from "@/lib/security/vault";
+import { ingestMercadoLivreLeads } from "./portal-leads";
 import { getConnection, readCredentials } from "./portals";
 
 /**
@@ -58,6 +59,8 @@ export type SyncReport = {
   updated: number;
   removed: number;
   failed: number;
+  /** Leads que vieram do portal nesta passada (perguntas viram lead no CRM). */
+  leads: number;
   /** Erro que parou a conexão inteira (token, plano), não de um carro só. */
   error?: string;
 };
@@ -99,6 +102,7 @@ async function syncMercadoLivre(connection: PortalConnection, origin: string): P
     updated: 0,
     removed: 0,
     failed: 0,
+    leads: 0,
   };
   const db = await getDb();
 
@@ -168,6 +172,15 @@ async function syncMercadoLivre(connection: PortalConnection, origin: string): P
         .where(eq(vehiclePublications.id, publication.id));
     }
   }
+
+  /*
+   * A volta: perguntas no anúncio viram lead no CRM. Depois da fila de
+   * propósito — se a conta estiver sem acesso, já saímos lá em cima, e o
+   * token renovado aqui é o mesmo que busca as perguntas.
+   */
+  const ingest = await ingestMercadoLivreLeads(connection.tenantId, session.client);
+  report.leads = ingest.created;
+  report.failed += ingest.failed;
 
   await db
     .update(portalConnections)

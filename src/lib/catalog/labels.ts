@@ -50,6 +50,7 @@ export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
   whatsapp: "WhatsApp",
   phone: "Telefone",
   manual: "Cadastro manual",
+  portal: "Portal de classificados",
 };
 
 export const STAGE_KIND_LABELS: Record<StageKind, string> = {

@@ -11,7 +11,7 @@ import { getPortal, oauthCallbackPath } from "./portals";
 
 const olx = getPortal("olx")!;
 const app = { clientId: "id-123", clientSecret: "segredo" };
-const redirect = "https://vendas.carbud.com.br/app/api/portals/olx/callback";
+const redirect = "https://crm.carbud.com.br/app/api/portals/olx/callback";
 
 afterEach(() => {
   vi.unstubAllEnvs();

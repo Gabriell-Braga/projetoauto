@@ -26,7 +26,7 @@ export default async function PortalsPage({
         <PageHeader title="Portais" description="Publique seu estoque nos classificados." />
         <FeatureLocked
           title="Integração com classificados não está no plano desta revenda"
-          description="Ela mantém o estoque publicado nos portais a partir daqui: o carro cadastrado sobe sozinho e o vendido sai sozinho."
+          description="Ela liga o estoque aos classificados nos dois sentidos: o carro cadastrado sobe sozinho, o vendido sai sozinho, e quem pergunta no anúncio entra no CRM como lead."
         />
       </>
     );
@@ -41,7 +41,7 @@ export default async function PortalsPage({
     <>
       <PageHeader
         title="Portais"
-        description="Conecte a conta da loja uma vez. Depois, publicar e remover acontece por aqui."
+        description="Conecte a conta da loja uma vez. Depois o estoque sobe e sai daqui, e quem pergunta no anúncio chega como lead."
       />
       <PortalsPanel
         portals={portalCards()}

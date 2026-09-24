@@ -44,7 +44,10 @@ export default async function LeadsPage({
 
   return (
     <>
-      <PageHeader title="Leads" description="Contatos recebidos pelo site da revenda." />
+      <PageHeader
+        title="Leads"
+        description="Contatos recebidos pelo site da revenda e pelos portais de classificados."
+      />
 
       <StatGrid>
         <StatCard

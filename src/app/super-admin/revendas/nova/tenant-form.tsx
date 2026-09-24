@@ -88,7 +88,7 @@ export function NewTenantForm() {
           <CardTitle>Dados da revenda</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-x-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
             <FormField label="Nome da revenda" htmlFor="name" error={fieldErrors.name}>
               <Input
                 id="name"
@@ -171,7 +171,7 @@ export function NewTenantForm() {
           <CardTitle>Assinatura</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-x-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
             <FormField label="Mensalidade (R$)" htmlFor="amount">
               <CurrencyInput
                 id="amount"
@@ -216,7 +216,7 @@ export function NewTenantForm() {
           </label>
 
           {withAdmin ? (
-            <div className="grid gap-x-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
               <FormField label="Nome do responsável" htmlFor="adminName">
                 <Input id="adminName" name="adminName" required={withAdmin} />
               </FormField>
@@ -241,10 +241,16 @@ export function NewTenantForm() {
                   aria-invalid={fieldErrors.adminPassword ? true : undefined}
                   onChange={(event) => setAdminPassword(event.target.value)}
                 />
+                {/*
+                  Os requisitos ficam DENTRO do campo da senha, não embaixo da
+                  linha: fora daqui eles começavam na primeira coluna do grid,
+                  debaixo do nome do responsável, e pareciam falar do e-mail.
+                  Uma por linha, porque a coluna é um terço da largura.
+                */}
+                <PasswordRequirements value={adminPassword} className="sm:grid-cols-1" />
               </FormField>
             </div>
           ) : null}
-          {withAdmin ? <PasswordRequirements value={adminPassword} /> : null}
         </CardContent>
       </Card>
 

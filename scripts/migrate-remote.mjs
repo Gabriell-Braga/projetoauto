@@ -3,7 +3,7 @@
  *
  *   node scripts/migrate-remote.mjs [url-do-painel]
  *
- * O endereco do painel (COM o mount path, ex.: https://vendas.carbud.com.br/app)
+ * O endereco do painel (COM o mount path, ex.: https://crm.carbud.com.br/app)
  * vem do argumento ou de OPS_BASE_URL no `.dev.vars`. Nao ha padrao fixo de
  * proposito: o dominio do painel vai mudar, e um endereco escrito aqui
  * apontaria para o lugar errado sem avisar.

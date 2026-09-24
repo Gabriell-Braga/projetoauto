@@ -208,5 +208,12 @@ export const MIGRATIONS: BundledMigration[] = [
       "-- O card do estoque le `cover_photo_key`; alinha com a foto que ficou na\n-- frente, senao a lista continua mostrando a imagem antiga.\nUPDATE `vehicles`\nSET `cover_photo_key` = (\n  SELECT json_extract(`foto`.`variants`, '$.card')\n  FROM `vehicle_photos` AS `foto`\n  WHERE `foto`.`vehicle_id` = `vehicles`.`id`\n    AND `foto`.`position` = 0\n)\nWHERE EXISTS (\n  SELECT 1 FROM `vehicle_photos` AS `foto` WHERE `foto`.`vehicle_id` = `vehicles`.`id`\n);",
       "DROP TABLE `__ordem_fotos`;"
     ]
+  },
+  {
+    "tag": "0017_lead_external_id",
+    "statements": [
+      "ALTER TABLE `leads` ADD `external_id` text;",
+      "CREATE INDEX `leads_external_idx` ON `leads` (`tenant_id`,`external_id`);"
+    ]
   }
 ];

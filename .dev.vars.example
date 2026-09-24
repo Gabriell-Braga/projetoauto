@@ -29,7 +29,7 @@ OPS_SECRET="troque-por-outro-segredo-longo"
 # host do request e o do worker (*.wf-app-prod.cosmic.webflow.services), e toda
 # URL absoluta (e-mail, OAuth dos portais, feed) sairia com ele.
 # E A variavel da troca de dominio: hoje https://projetoauto.webflow.io, depois
-# https://vendas.carbud.com.br (ou crm.carbud.com.br). O painel mostra em
+# https://crm.carbud.com.br. O painel mostra em
 # Super-admin > Configuracoes > Enderecos publicos tudo que precisa ser
 # recadastrado fora quando ela muda.
 # APP_ORIGIN="https://projetoauto.webflow.io"

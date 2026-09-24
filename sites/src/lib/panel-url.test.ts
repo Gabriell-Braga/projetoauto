@@ -3,8 +3,8 @@ import { normalizePanelUrl } from "./panel-url";
 
 describe("normalizePanelUrl", () => {
   it("aceita o endereco completo sem mexer", () => {
-    expect(normalizePanelUrl("https://vendas.carbud.com.br")).toBe(
-      "https://vendas.carbud.com.br",
+    expect(normalizePanelUrl("https://crm.carbud.com.br")).toBe(
+      "https://crm.carbud.com.br",
     );
   });
 
@@ -14,17 +14,17 @@ describe("normalizePanelUrl", () => {
    * causou. Custa uma publicacao para descobrir.
    */
   it("completa o esquema quando falta", () => {
-    expect(normalizePanelUrl("vendas.carbud.com.br")).toBe(
-      "https://vendas.carbud.com.br",
+    expect(normalizePanelUrl("crm.carbud.com.br")).toBe(
+      "https://crm.carbud.com.br",
     );
   });
 
   it("tira a barra do fim, que dobraria com a do caminho", () => {
-    expect(normalizePanelUrl("https://vendas.carbud.com.br/")).toBe(
-      "https://vendas.carbud.com.br",
+    expect(normalizePanelUrl("https://crm.carbud.com.br/")).toBe(
+      "https://crm.carbud.com.br",
     );
-    expect(normalizePanelUrl("vendas.carbud.com.br///")).toBe(
-      "https://vendas.carbud.com.br",
+    expect(normalizePanelUrl("crm.carbud.com.br///")).toBe(
+      "https://crm.carbud.com.br",
     );
   });
 
@@ -33,8 +33,8 @@ describe("normalizePanelUrl", () => {
   });
 
   it("ignora espaco em volta, que colar num campo costuma trazer", () => {
-    expect(normalizePanelUrl("  https://vendas.carbud.com.br  ")).toBe(
-      "https://vendas.carbud.com.br",
+    expect(normalizePanelUrl("  https://crm.carbud.com.br  ")).toBe(
+      "https://crm.carbud.com.br",
     );
   });
 

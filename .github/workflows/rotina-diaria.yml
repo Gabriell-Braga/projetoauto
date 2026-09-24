@@ -19,14 +19,14 @@ concurrency:
 
 jobs:
   executar:
-    name: Régua de cobrança e faxina de rascunhos
+    name: Régua de cobrança, faxina e portais
     runs-on: ubuntu-latest
     steps:
       - name: Chamar a rotina
         env:
           OPS_SECRET: ${{ secrets.OPS_SECRET }}
           # Endereço do painel COM o mount path. Quando o domínio mudar
-          # (vendas.carbud.com.br / crm.carbud.com.br), defina a variável
+          # (crm.carbud.com.br), defina a variável
           # OPS_BASE_URL em Settings → Secrets and variables → Variables;
           # o valor abaixo é só o endereço atual, enquanto ela não existe.
           BASE_URL: ${{ vars.OPS_BASE_URL || 'https://projetoauto.webflow.io/app' }}
@@ -51,6 +51,28 @@ jobs:
             exit 1
           fi
 
+      # Os portais nos dois sentidos: o que falta publicar sai, e as perguntas
+      # que viraram aviso entram como lead no CRM. Passo separado e tolerante:
+      # portal fora do ar não pode derrubar a cobrança, que já rodou acima.
+      - name: Sincronizar os portais
+        continue-on-error: true
+        env:
+          OPS_SECRET: ${{ secrets.OPS_SECRET }}
+          BASE_URL: ${{ vars.OPS_BASE_URL || 'https://projetoauto.webflow.io/app' }}
+        run: |
+          STATUS=$(curl -sS -o portais.json -w "%{http_code}" \
+            -X POST \
+            -H "x-ops-secret: $OPS_SECRET" \
+            "$BASE_URL/api/ops/sync-portals")
+
+          echo "HTTP $STATUS"
+          cat portais.json
+
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::A sincronização dos portais falhou com HTTP $STATUS."
+            exit 1
+          fi
+
       - name: Resumo
         if: always()
         run: |
@@ -62,5 +84,11 @@ jobs:
               echo '```'
             else
               echo "Sem resposta — a chamada não completou."
+            fi
+            if [ -f portais.json ]; then
+              echo "### Portais"
+              echo '```json'
+              cat portais.json
+              echo '```'
             fi
           } >> "$GITHUB_STEP_SUMMARY"

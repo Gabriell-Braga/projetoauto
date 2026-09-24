@@ -351,6 +351,78 @@ export function itemStatusNote(item: MlItem): string | null {
   }
 }
 
+/* ------------------------------------------------------------------------ */
+/* Perguntas (a via de volta: quem pergunta no anúncio vira lead)            */
+/* ------------------------------------------------------------------------ */
+
+export type MlQuestion = {
+  id: string;
+  /** Anúncio a que a pergunta se refere, ex.: "MLB123456789". */
+  itemId: string;
+  text: string;
+  /** Conta de quem perguntou. É o que o ML dá — não há telefone nem e-mail. */
+  fromUserId: string;
+  createdAt: string | null;
+  answered: boolean;
+};
+
+type RawQuestion = {
+  id?: unknown;
+  item_id?: unknown;
+  text?: unknown;
+  status?: unknown;
+  date_created?: unknown;
+  from?: { id?: unknown } | null;
+  answer?: { text?: unknown } | null;
+};
+
+/**
+ * Lê `/questions/{id}` do jeito que o ML responde.
+ *
+ * Pergunta sem `item_id` ou sem autor não vira lead: sem o anúncio não dá
+ * para dizer de que carro se trata, e sem o autor não há como reconhecer a
+ * mesma pessoa na pergunta seguinte.
+ */
+export function parseQuestion(body: unknown): MlQuestion | null {
+  if (!body || typeof body !== "object") return null;
+  const raw = body as RawQuestion;
+
+  const id = raw.id === undefined || raw.id === null ? null : String(raw.id);
+  const itemId = typeof raw.item_id === "string" ? raw.item_id : null;
+  const fromId =
+    raw.from && raw.from.id !== undefined && raw.from.id !== null ? String(raw.from.id) : null;
+  if (!id || !itemId || !fromId) return null;
+
+  return {
+    id,
+    itemId,
+    text: typeof raw.text === "string" ? raw.text.trim() : "",
+    fromUserId: fromId,
+    createdAt: typeof raw.date_created === "string" ? raw.date_created : null,
+    answered: raw.status === "ANSWERED" || Boolean(raw.answer && raw.answer.text),
+  };
+}
+
+type RawUser = { nickname?: unknown; first_name?: unknown; last_name?: unknown };
+
+/**
+ * O nome de quem perguntou, com o que o ML deixa ver.
+ *
+ * Em pergunta o ML expõe só o apelido da conta — nome e sobrenome vêm
+ * vazios até existir uma venda. Apelido é melhor que "Comprador": é por ele
+ * que a revenda acha a conversa lá dentro.
+ */
+export function buyerName(body: unknown, fallbackUserId: string): string {
+  const raw = (body ?? {}) as RawUser;
+  const first = typeof raw.first_name === "string" ? raw.first_name.trim() : "";
+  const last = typeof raw.last_name === "string" ? raw.last_name.trim() : "";
+  const full = [first, last].filter(Boolean).join(" ");
+  if (full) return full;
+
+  const nickname = typeof raw.nickname === "string" ? raw.nickname.trim() : "";
+  return nickname || `Comprador ${fallbackUserId} (Mercado Livre)`;
+}
+
 export class MercadoLivreClient {
   constructor(
     private readonly accessToken: string,
@@ -409,6 +481,22 @@ export class MercadoLivreClient {
 
   setDescription(itemId: string, plainText: string) {
     return this.call("PUT", `/items/${itemId}/description`, { plain_text: plainText });
+  }
+
+  /**
+   * O recurso que a notificação apontou, pelo caminho que ela mandou.
+   *
+   * O ML recomenda chamar o `resource` como veio, em vez de remontar a URL:
+   * é o que mantém o handler funcionando quando eles mudam o formato de um
+   * tópico. O caminho é validado antes de chegar aqui.
+   */
+  getResource<T>(resource: string) {
+    return this.call<T>("GET", resource);
+  }
+
+  /** Dados públicos de uma conta — em pergunta, só o apelido vem preenchido. */
+  getUser(userId: string) {
+    return this.call<unknown>("GET", `/users/${userId}`);
   }
 
   /** Encerrado não volta: é o que se quer para carro vendido. */

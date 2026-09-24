@@ -13,6 +13,7 @@ type SyncReport = {
   updated: number;
   removed: number;
   failed: number;
+  leads: number;
   error?: string;
 };
 
@@ -52,6 +53,7 @@ export function SyncButton({
         report.published ? `${report.published} publicado(s)` : null,
         report.updated ? `${report.updated} atualizado(s)` : null,
         report.removed ? `${report.removed} removido(s)` : null,
+        report.leads ? `${report.leads} lead(s) recebido(s)` : null,
         report.failed ? `${report.failed} com erro` : null,
       ].filter(Boolean);
       const text = parts.length > 0 ? parts.join(", ") : "Tudo já estava em dia.";

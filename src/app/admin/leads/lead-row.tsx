@@ -59,6 +59,7 @@ export function LeadRow({
     router.refresh();
   }
 
+  // lead de portal chega sem telefone: sem dígitos não há WhatsApp para abrir
   const whatsappDigits = onlyDigits(lead.phone);
   const whatsappHref = `https://wa.me/${
     whatsappDigits.length > 11 ? whatsappDigits : `55${whatsappDigits}`
@@ -92,7 +93,9 @@ export function LeadRow({
               >
                 {lead.name}
               </Link>
-              <span className="block text-xs text-faint">{formatPhone(lead.phone)}</span>
+              <span className="block text-xs text-faint">
+                {whatsappDigits ? formatPhone(lead.phone) : "sem telefone"}
+              </span>
             </span>
           </button>
         </Td>
@@ -164,12 +167,14 @@ export function LeadRow({
         </Td>
 
         <Td className="text-right">
-          <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-            <Button type="button" size="sm" variant="secondary">
-              <MessageCircle className="h-3.5 w-3.5" />
-              WhatsApp
-            </Button>
-          </a>
+          {whatsappDigits ? (
+            <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+              <Button type="button" size="sm" variant="secondary">
+                <MessageCircle className="h-3.5 w-3.5" />
+                WhatsApp
+              </Button>
+            </a>
+          ) : null}
         </Td>
       </Tr>
 

@@ -2,11 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import type { Vehicle } from "@/db/schema";
 import {
   MercadoLivreClient,
+  buyerName,
   describeError,
   itemAttributes,
   itemPayload,
   itemTitle,
   parseNotification,
+  parseQuestion,
   refreshTokens,
   sellerContact,
   stateName,
@@ -275,5 +277,57 @@ describe("refreshTokens", () => {
     await expect(
       refreshTokens({ clientId: "id", clientSecret: "s" }, "antigo", fetcher),
     ).rejects.toMatchObject({ status: 401 });
+  });
+});
+
+describe("parseQuestion", () => {
+  const pergunta = {
+    id: 12345678,
+    seller_id: 987,
+    text: "  Aceita troca?  ",
+    status: "UNANSWERED",
+    item_id: "MLB123",
+    date_created: "2026-09-24T10:00:00.000Z",
+    from: { id: 4242 },
+    answer: null,
+  };
+
+  it("normaliza os ids para string e limpa o texto", () => {
+    expect(parseQuestion(pergunta)).toEqual({
+      id: "12345678",
+      itemId: "MLB123",
+      text: "Aceita troca?",
+      fromUserId: "4242",
+      createdAt: "2026-09-24T10:00:00.000Z",
+      answered: false,
+    });
+  });
+
+  it("reconhece a pergunta ja respondida, pelo status ou pela resposta", () => {
+    expect(parseQuestion({ ...pergunta, status: "ANSWERED" })?.answered).toBe(true);
+    expect(parseQuestion({ ...pergunta, answer: { text: "Aceitamos!" } })?.answered).toBe(true);
+  });
+
+  it("recusa o que nao identifica anuncio ou autor: sem os dois nao ha lead", () => {
+    expect(parseQuestion(null)).toBeNull();
+    expect(parseQuestion({ ...pergunta, item_id: undefined })).toBeNull();
+    expect(parseQuestion({ ...pergunta, from: null })).toBeNull();
+  });
+});
+
+describe("buyerName", () => {
+  it("prefere nome e sobrenome quando o ML os entrega", () => {
+    expect(buyerName({ first_name: "Ana", last_name: "Souza", nickname: "ANA123" }, "42")).toBe(
+      "Ana Souza",
+    );
+  });
+
+  it("cai no apelido, que e por onde a revenda acha a conversa la dentro", () => {
+    expect(buyerName({ nickname: "ANA123" }, "42")).toBe("ANA123");
+  });
+
+  it("sem nada, identifica pela conta em vez de gravar um lead sem nome", () => {
+    expect(buyerName(null, "42")).toBe("Comprador 42 (Mercado Livre)");
+    expect(buyerName({}, "42")).toBe("Comprador 42 (Mercado Livre)");
   });
 });

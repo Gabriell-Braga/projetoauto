@@ -7,9 +7,9 @@ import { describeOrigin } from "@/lib/seo/urls";
 /**
  * Os endereços deste app que estão cadastrados em serviços de fora.
  *
- * É a tela da troca de domínio. O plano é sair de `projetoauto.webflow.io`
- * para `crm.carbud.com.br`; quando isso acontecer, `APP_ORIGIN` muda e esta lista muda junto — e cada linha
- * precisa ser recadastrada onde a coluna "onde" diz. Sem a lista, a pessoa
+ * É a tela da troca de domínio. O painel vive em `crm.carbud.com.br/app`;
+ * quando o domínio muda, `APP_ORIGIN` muda e esta lista muda junto — e cada
+ * linha precisa ser recadastrada onde a coluna "onde" diz. Sem a lista, a pessoa
  * descobriria o esquecido pelo sintoma: OAuth voltando para o domínio antigo,
  * cobrança sem webhook, rotina diária em 404.
  */
@@ -32,8 +32,7 @@ export async function PublicEndpoints() {
           <Alert tone="danger">
             APP_ORIGIN não está definida e o request chega pelo host interno do Webflow Cloud.
             Os endereços abaixo estão ERRADOS — defina APP_ORIGIN nas Secret Variables com o
-            domínio público (hoje <code>https://projetoauto.webflow.io</code>; depois
-            <code> https://crm.carbud.com.br</code>).
+            domínio público: <code>https://crm.carbud.com.br</code>.
           </Alert>
         ) : info.source === "headers" ? (
           <Alert tone="warning">

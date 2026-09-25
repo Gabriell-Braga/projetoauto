@@ -32,8 +32,21 @@ import {
 } from "@carbud/site-kit/contract";
 import type { VehicleListItem } from "./vehicles";
 
+/** Só os ids públicos de rastreamento — o que já vai para o HTML do site. */
+export type PublicTrackingIds = {
+  metaPixelId: string | null;
+  ga4MeasurementId: string | null;
+  googleAdsId: string | null;
+  googleAdsLeadLabel: string | null;
+  googleAdsSaleLabel: string | null;
+};
+
 /** Estrutura serializável guardada no KV (datas/URLs já resolvidas). */
-type CachedSite = SiteData & { gtmCode: string | null; templateId: string };
+type CachedSite = SiteData & {
+  gtmCode: string | null;
+  templateId: string;
+  tracking: PublicTrackingIds;
+};
 
 const SITE_TTL = 120;
 
@@ -95,6 +108,18 @@ async function loadSiteData(slug: string): Promise<CachedSite | null> {
     templateId: row.tenant.templateId,
     // a revenda sobrescreve o GTM da plataforma quando informa o próprio código
     gtmCode: site?.gtmCode ?? row.tenant.gtmCode ?? null,
+    /*
+     * Só os ids PÚBLICOS: eles vão para o HTML de qualquer jeito, porque é o
+     * navegador que dispara o pixel. Token da API de conversões e api_secret
+     * do GA4 ficam no servidor e não passam por aqui nem por engano.
+     */
+    tracking: {
+      metaPixelId: site?.tracking?.metaPixelId ?? null,
+      ga4MeasurementId: site?.tracking?.ga4MeasurementId ?? null,
+      googleAdsId: site?.tracking?.googleAdsId ?? null,
+      googleAdsLeadLabel: site?.tracking?.googleAdsLeadLabel ?? null,
+      googleAdsSaleLabel: site?.tracking?.googleAdsSaleLabel ?? null,
+    },
     name: row.tenant.name,
     slug: row.tenant.slug,
     logoUrl: mediaUrl(site?.logoKey),

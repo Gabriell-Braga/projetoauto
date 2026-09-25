@@ -12,12 +12,14 @@ import { Tabs } from "@/components/ui/tabs";
 import { DEFAULT_THEME } from "@carbud/site-kit/contract";
 import { listDomains } from "@/lib/services/domains";
 import { hostingReady } from "@/lib/integrations/vercel";
+import { isVaultConfigured } from "@/lib/security/vault";
 import { getTemplate } from "@carbud/site-kit/registry";
 import { ContactPanel } from "./contact-panel";
 import { ContentPanel } from "./content-panel";
 import { IdentityPanel } from "./identity-panel";
 import { DomainsPanel } from "./domains-panel";
 import { PagesPanel } from "./pages-panel";
+import { TrackingPanel } from "./tracking-panel";
 
 export const metadata: Metadata = { title: "Site" };
 export const dynamic = "force-dynamic";
@@ -28,6 +30,7 @@ const TABS = [
   { key: "conteudo", label: "Conteúdo" },
   { key: "paginas", label: "Páginas" },
   { key: "dominio", label: "Domínio" },
+  { key: "rastreamento", label: "Rastreamento" },
 ] as const;
 
 export default async function SitePage({
@@ -156,6 +159,31 @@ export default async function SitePage({
             lastError: row.lastError,
             lastCheckedAt: row.lastCheckedAt ? row.lastCheckedAt.toISOString() : null,
           }))}
+        />
+      ) : null}
+
+      {tab === "rastreamento" ? (
+        <TrackingPanel
+          readOnly={readOnly}
+          vaultReady={isVaultConfigured()}
+          initial={{
+            metaPixelId: site?.tracking?.metaPixelId ?? "",
+            ga4MeasurementId: site?.tracking?.ga4MeasurementId ?? "",
+            googleAdsId: site?.tracking?.googleAdsId ?? "",
+            googleAdsLeadLabel: site?.tracking?.googleAdsLeadLabel ?? "",
+            googleAdsSaleLabel: site?.tracking?.googleAdsSaleLabel ?? "",
+            serverSide: site?.tracking?.serverSide ?? false,
+          }}
+          /*
+           * Só a existência do segredo chega à tela — o valor fica no cofre.
+           * Ler o blob para dizer QUAL deles existe custaria uma abertura do
+           * cofre a cada carregamento da página; o marcador de que há algo
+           * guardado basta para a tela decidir o que escrever no campo.
+           */
+          secrets={{
+            metaAccessToken: Boolean(site?.trackingSecrets),
+            ga4ApiSecret: Boolean(site?.trackingSecrets),
+          }}
         />
       ) : null}
 

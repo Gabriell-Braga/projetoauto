@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Archivo, Barlow_Condensed, DM_Sans, Manrope } from "next/font/google";
 import { themeToCssVariables } from "@carbud/site-kit/contract";
 import { GoogleTagManager } from "@carbud/site-kit/shared/gtm";
+import { TrackingScripts } from "@carbud/site-kit/shared/tracking";
 import { fetchSite } from "~/lib/panel";
 import { currentSlug } from "~/lib/site";
 import "./globals.css";
@@ -92,13 +93,18 @@ const FONTES = [dmSans, manrope, archivo, barlowCondensed]
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const slug = await currentSlug();
-  const { site, gtmCode, available } = await fetchSite(slug);
+  const { site, gtmCode, tracking, available } = await fetchSite(slug);
 
   return (
     <html lang="pt-BR" className={FONTES}>
       <body style={themeToCssVariables(site.theme) as React.CSSProperties}>
         {/* GTM so carrega em site no ar — pagina de indisponibilidade nao dispara tag */}
-        {available ? <GoogleTagManager containerId={gtmCode} /> : null}
+        {available ? (
+          <>
+            <GoogleTagManager containerId={gtmCode} />
+            <TrackingScripts ids={tracking ?? {}} />
+          </>
+        ) : null}
         {children}
       </body>
     </html>

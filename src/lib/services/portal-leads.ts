@@ -18,6 +18,8 @@ import {
 import { getPortal } from "@/lib/integrations/portals";
 import { dispatchTenantEvent } from "@/lib/services/api-access";
 import { listStages, pickAssignee, recordLeadEvent } from "@/lib/services/crm";
+import { trackInBackground } from "@/lib/tracking/dispatch";
+import { newEventId } from "@/lib/tracking/event";
 
 /**
  * A volta da integração com os portais: quem procura o carro no anúncio vira
@@ -200,6 +202,24 @@ export async function registerPortalLead(
       externalId: incoming.externalId,
       ...(url ? { url } : {}),
     },
+  });
+
+  /*
+   * Lead de portal também é conversão: ele veio do anúncio, que muitas vezes
+   * é anúncio pago. Sem navegador do outro lado não há pixel para deduplicar,
+   * então o id é novo — o que o servidor manda aqui é o único registro.
+   */
+  await trackInBackground(tenantId, {
+    name: "lead",
+    eventId: newEventId("portal-lead"),
+    value: null,
+    user: {
+      email: incoming.email,
+      phone: incoming.phone,
+      name,
+    },
+    content: vehicle ? { id: vehicle.id, name: vehicleLabel } : undefined,
+    sourceUrl: url,
   });
 
   await dispatchTenantEvent(tenantId, "lead.created", {

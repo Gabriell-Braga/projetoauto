@@ -8,6 +8,7 @@ import { summarizeHours } from "../shared/hours";
 import { SHELL, SectionHeading, Shell, TalkBand } from "./chrome";
 import { Tabs } from "../shared/tabs";
 import { StickyCta } from "../shared/sticky-cta";
+import { ViewItem } from "../shared/tracking";
 import { VehicleGrid } from "./vehicle-card";
 
 function specBoxes(vehicle: VehicleView) {
@@ -377,6 +378,12 @@ export function VehicleDetail({
         description="Fale com a equipe sobre este veículo, financiamento ou troca."
       />
 
+      {/* a visita a ficha e o evento que a midia usa para remarketing */}
+      <ViewItem
+        vehicleId={vehicle.id}
+        vehicleName={vehicle.title}
+        value={vehicle.priceOnRequest ? null : vehicle.priceCents / 100}
+      />
       <StickyCta vehicle={vehicle} links={links} storeName={site.name} />
     </Shell>
   );

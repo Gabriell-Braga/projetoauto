@@ -6,6 +6,7 @@ import { PhotoGallery } from "../shared/gallery";
 import { headlineHours, summarizeHours } from "../shared/hours";
 import { Tabs } from "../shared/tabs";
 import { StickyCta } from "../shared/sticky-cta";
+import { ViewItem } from "../shared/tracking";
 import { HelpBand, SHELL, SectionHeading, Shell } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
 
@@ -382,6 +383,12 @@ export function VehicleDetail({ site, links, vehicle, related }: VehicleDetailPr
         description="Fale diretamente com a equipe da loja pelo WhatsApp."
       />
 
+      {/* a visita a ficha e o evento que a midia usa para remarketing */}
+      <ViewItem
+        vehicleId={vehicle.id}
+        vehicleName={vehicle.title}
+        value={vehicle.priceOnRequest ? null : vehicle.priceCents / 100}
+      />
       <StickyCta vehicle={vehicle} links={links} storeName={site.name} />
     </Shell>
   );

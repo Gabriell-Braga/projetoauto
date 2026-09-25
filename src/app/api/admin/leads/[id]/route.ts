@@ -7,6 +7,7 @@ import { badRequest, jsonOk, notFound, withApi } from "@/lib/http";
 import { getLead } from "@/lib/services/leads";
 import { listStages, recordLeadEvent } from "@/lib/services/crm";
 import { dispatchTenantEvent } from "@/lib/services/api-access";
+import { trackLeadWon } from "@/lib/tracking/sale";
 import { leadUpdateSchema } from "@/lib/validation/leads";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +56,15 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
     { action: "lead.update", entity: "lead", entityId: id, metadata: input },
     request,
   );
+
+  /*
+    * Lead que vira "ganho" é venda: é o sinal que a mídia espera, e o único
+    * que carrega quem comprou. Só na PASSAGEM para ganho — salvar de novo um
+    * lead que já estava ganho não é uma venda nova.
+    */
+  if (input.status === "won" && existing.status !== "won") {
+    await trackLeadWon(context.tenant.id, { ...existing, ...input });
+  }
 
   await dispatchTenantEvent(context.tenant.id, "lead.updated", { id, ...input });
 

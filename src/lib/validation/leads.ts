@@ -30,6 +30,25 @@ export const publicLeadSchema = z.object({
     .optional(),
 
   /**
+   * O que o navegador já sabe sobre esta conversão, para o envio pelo
+   * servidor casar com o do pixel.
+   *
+   * `eventId` é o mesmo que o pixel mandou: é ele que impede a Meta de
+   * contar o lead duas vezes. `fbp`/`fbc` são os cookies do pixel e
+   * `gaClientId` o do GA — sem eles o evento até entra, mas desligado da
+   * campanha que trouxe a visita, que é justamente o que se quer medir.
+   */
+  tracking: z
+    .object({
+      eventId: z.string().max(80).optional(),
+      fbp: z.string().max(200).optional(),
+      fbc: z.string().max(400).optional(),
+      gaClientId: z.string().max(80).optional(),
+      pageUrl: z.string().max(500).optional(),
+    })
+    .optional(),
+
+  /**
    * De qual formulário o lead veio.
    *
    * Não é o canal — canal é `source`, e os três chegam por formulário. É a

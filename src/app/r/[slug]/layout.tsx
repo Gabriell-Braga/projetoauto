@@ -6,6 +6,7 @@ import { getTenantCoreBySlug, isPublicSiteAvailable } from "@/lib/tenant/service
 import { getOrigin, tenantAbsoluteUrl } from "@/lib/seo/urls";
 import { themeToCssVariables } from "@carbud/site-kit/contract";
 import { GoogleTagManager } from "@carbud/site-kit/shared/gtm";
+import { TrackingScripts } from "@carbud/site-kit/shared/tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -108,7 +109,12 @@ export default async function PublicSiteLayout({ children, params }: Props) {
   return (
     <div className={FONTES} style={cssVariables as React.CSSProperties}>
       {/* GTM só carrega em site no ar — página de indisponibilidade não dispara tag */}
-      {available ? <GoogleTagManager containerId={site?.gtmCode ?? null} /> : null}
+      {available ? (
+        <>
+          <GoogleTagManager containerId={site?.gtmCode ?? null} />
+          <TrackingScripts ids={site?.tracking ?? {}} />
+        </>
+      ) : null}
       {children}
     </div>
   );

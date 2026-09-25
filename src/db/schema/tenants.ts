@@ -61,6 +61,42 @@ export type SocialLinks = {
   tiktok?: string;
 };
 
+/**
+ * Conectores de mídia da revenda: o que identifica as contas de anúncio.
+ *
+ * Só o que é PÚBLICO mora aqui — id de pixel, id de medição, id da conta de
+ * anúncios, rótulo de conversão. Tudo isso já vai para o navegador de quem
+ * visita o site, então guardar em claro não revela nada que a página não
+ * revele. Os segredos (token da API de conversões, api_secret do GA4) ficam
+ * cifrados em `trackingSecrets`.
+ */
+export type TrackingSettings = {
+  /** Meta (Facebook/Instagram): id do pixel. */
+  metaPixelId?: string;
+  /** Google Analytics 4: "G-XXXXXXX". */
+  ga4MeasurementId?: string;
+  /** Google Ads: "AW-123456789". */
+  googleAdsId?: string;
+  /** Rótulo da conversão de lead no Google Ads ("AbC-D_efGh"). */
+  googleAdsLeadLabel?: string;
+  /** Rótulo da conversão de venda no Google Ads. */
+  googleAdsSaleLabel?: string;
+  /** Liga o envio pelo servidor (API de Conversões e Measurement Protocol). */
+  serverSide?: boolean;
+};
+
+/**
+ * Os segredos dos conectores, cifrados no cofre.
+ *
+ * Token de API de conversões dá poder de gravar eventos na conta de anúncios
+ * da revenda; api_secret do GA4, na propriedade dela. Nenhum dos dois pode
+ * chegar ao navegador nem voltar para a tela depois de salvo.
+ */
+export type TrackingSecrets = {
+  metaAccessToken?: string;
+  ga4ApiSecret?: string;
+};
+
 export type SeoSettings = {
   titleTemplate?: string;
   defaultDescription?: string;
@@ -117,6 +153,9 @@ export const tenantSites = sqliteTable("tenant_sites", {
   aboutTitle: text("about_title"),
   aboutText: text("about_text"),
   seo: text("seo", { mode: "json" }).$type<SeoSettings>(),
+  tracking: text("tracking", { mode: "json" }).$type<TrackingSettings>(),
+  /** Blob do cofre com os segredos dos conectores; nunca volta para a tela. */
+  trackingSecrets: text("tracking_secrets"),
   stats: text("stats", { mode: "json" }).$type<SiteStats>(),
   financing: text("financing", { mode: "json" }).$type<FinancingDefaults>(),
   reviews: text("reviews", { mode: "json" }).$type<SiteReviews>(),

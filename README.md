@@ -83,7 +83,7 @@ no banco do ambiente (local ou Webflow Cloud), controlando o que já rodou em `_
 | `OPS_SECRET` | Secret | sim | Protege `/api/ops/*` |
 | `RESEND_API_KEY` | Secret | não | Ativa o envio de e-mail (redefinição de senha) |
 | `EMAIL_FROM` | Variable | não | Remetente verificado, ex.: `Carbud <nao-responda@carbud.com.br>` |
-| `APP_ORIGIN` | Variable | em produção | Origem pública do painel, sem o mount path (hoje `https://projetoauto.webflow.io`). É a variável da troca de domínio — ver abaixo |
+| `APP_ORIGIN` | Variable | em produção | Origem pública do painel, sem o mount path (`https://crm.carbud.com.br`). É a variável da troca de domínio — ver abaixo |
 
 `NEXT_PUBLIC_BASE_PATH` **não precisa ser cadastrada**: o [next.config.ts](next.config.ts)
 deriva o valor do `BASE_URL` que o Webflow Cloud injeta no build. Como é inlinada no bundle
@@ -97,10 +97,10 @@ lê de lá. Os identificadores de infraestrutura (`wrangler.json`, banco `projet
 bucket `projetoauto-media`, repositório) mantêm o nome antigo de propósito: são recursos
 já criados no Webflow Cloud e ninguém de fora os vê.
 
-Plano de domínios: o painel (home, página de vendas e sistema) vai para
-**crm.carbud.com.br**; o domínio raiz **carbud.com.br** fica
-com o portal proprietário. O código não fixa domínio nenhum — a origem vem de
-`APP_ORIGIN` e o mount path de `BASE_URL`.
+Domínios: o painel (home, página de vendas e sistema) está em
+**https://crm.carbud.com.br/app**; o domínio raiz **carbud.com.br** fica com o portal
+proprietário. O código não fixa domínio nenhum — a origem vem de `APP_ORIGIN` e o mount
+path de `BASE_URL`, que o Webflow Cloud injeta.
 
 ### Checklist da troca de domínio
 
@@ -145,6 +145,43 @@ HTTP 200 e o motivo no corpo, porque portal que leva erro desliga a integração
 
 Um lead por pessoa por anúncio: a segunda mensagem da mesma pessoa entra como evento no
 lead que já existe, e reenvio do mesmo aviso não duplica nada.
+
+## Conectores de mídia (pixel, server-side e sinal de venda)
+
+Cada revenda liga os próprios conectores em **Site → Rastreamento**: id do pixel da Meta,
+id de medição do GA4, conta e rótulos do Google Ads, e — para o envio pelo servidor — o
+token da API de Conversões e o `api_secret` do Measurement Protocol. Os ids são públicos
+e ficam em claro; os dois segredos vão para o cofre e nunca voltam para a tela.
+
+O GTM continua existindo em paralelo, para quem prefere montar o próprio contêiner.
+
+**No navegador** ([tracking.tsx](packages/site-kit/src/templates/shared/tracking.tsx)): o
+site carrega pixel, gtag e a tag do Ads, e dispara `view_item` na ficha do veículo e
+`generate_lead` no envio de qualquer um dos quatro formulários. Quem usa GTM recebe os
+mesmos eventos no `dataLayer` como `carbud_*`.
+
+**No servidor** ([src/lib/tracking](src/lib/tracking)): as mesmas conversões saem de novo
+pela API de Conversões da Meta e pelo Measurement Protocol do GA4. É o que continua
+contando quando o navegador bloqueia o pixel — e o único caminho possível para o que não
+acontece em página nenhuma:
+
+| Momento | Evento | De onde |
+|---|---|---|
+| Formulário do site | `Lead` / `generate_lead` | navegador **e** servidor, com o mesmo `event_id` |
+| Lead de portal (ML, OLX, Webmotors…) | `Lead` / `generate_lead` | só servidor — não há navegador do outro lado |
+| Lead marcado como **ganho** | `Purchase` / `purchase` | servidor, com e-mail e telefone de quem comprou |
+| Carro marcado como **vendido** | `Purchase` / `purchase` | servidor, só quando nenhum lead daquele carro foi ganho |
+
+O `event_id` é o mesmo nos dois lados (o navegador gera, o servidor repete), então a
+conversão conta **uma vez**. O da venda é derivado (`sale-lead-<id>`,
+`sale-vehicle-<id>`): remarcar não conta de novo.
+
+Dado pessoal sai sempre com SHA-256 e normalizado antes — e-mail em minúsculas, telefone
+com o 55 na frente. Sem isso o hash não bate com o que a plataforma tem e a conversão não
+é atribuída a ninguém.
+
+O botão **"Enviar evento de teste"** manda um lead de mentira pelo servidor e mostra o que
+cada plataforma respondeu, para conferir o token sem esperar um lead de verdade.
 
 ## Rotas operacionais
 

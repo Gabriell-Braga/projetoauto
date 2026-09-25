@@ -4,6 +4,7 @@ import type { VehicleDetailProps, VehicleView } from "../contract";
 import { PhotoGallery } from "../shared/gallery";
 import { summarizeHours } from "../shared/hours";
 import { StickyCta } from "../shared/sticky-cta";
+import { ViewItem } from "../shared/tracking";
 import { mapsEmbedUrl } from "../../lib/maps";
 import { SHELL, SectionHeading, Shell, WhatsappButton } from "./chrome";
 import { VehicleGrid } from "./vehicle-card";
@@ -341,6 +342,12 @@ export function VehicleDetail({
         </section>
       ) : null}
 
+      {/* a visita a ficha e o evento que a midia usa para remarketing */}
+      <ViewItem
+        vehicleId={vehicle.id}
+        vehicleName={vehicle.title}
+        value={vehicle.priceOnRequest ? null : vehicle.priceCents / 100}
+      />
       <StickyCta vehicle={vehicle} links={links} storeName={site.name} />
     </Shell>
   );

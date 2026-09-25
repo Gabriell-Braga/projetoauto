@@ -215,5 +215,12 @@ export const MIGRATIONS: BundledMigration[] = [
       "ALTER TABLE `leads` ADD `external_id` text;",
       "CREATE INDEX `leads_external_idx` ON `leads` (`tenant_id`,`external_id`);"
     ]
+  },
+  {
+    "tag": "0018_tracking",
+    "statements": [
+      "ALTER TABLE `tenant_sites` ADD `tracking` text;",
+      "ALTER TABLE `tenant_sites` ADD `tracking_secrets` text;"
+    ]
   }
 ];

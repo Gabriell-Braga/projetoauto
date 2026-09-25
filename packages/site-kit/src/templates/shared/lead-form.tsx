@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { apiPost } from "../../lib/client-api";
 import { cn } from "../../lib/format";
 import { readUtm } from "./utm";
+import {
+  newBrowserEventId,
+  readTrackingContext,
+  trackBrowserEvent,
+} from "./tracking";
 import { maskPhone } from "../../lib/masks";
 
 /**
@@ -21,6 +26,13 @@ export function LeadForm({
   vehicleLabel?: string;
   tone?: "light" | "dark";
 }) {
+  /*
+   * Um id por formulário aberto, não por envio: o navegador e o servidor
+   * mandam o MESMO id, e é ele que impede a Meta de contar a conversão duas
+   * vezes. Reenviar depois de erro mantém o id, que é o certo — é a mesma
+   * conversão tentando de novo.
+   */
+  const eventId = useRef(newBrowserEventId());
   const [sent, setSent] = useState(false);
   const [phone, setPhone] = useState("");
   const [sending, setSending] = useState(false);
@@ -53,6 +65,7 @@ export function LeadForm({
       message: String(form.get("message") ?? ""),
       website: String(form.get("website") ?? ""),
       utm: readUtm(),
+      tracking: readTrackingContext(eventId.current),
     });
 
     setSending(false);
@@ -61,6 +74,11 @@ export function LeadForm({
       return;
     }
     setSent(true);
+    trackBrowserEvent("generate_lead", {
+      eventId: eventId.current,
+      itemId: vehicleId ?? null,
+      itemName: vehicleLabel ?? null,
+    });
   }
 
   if (sent) {

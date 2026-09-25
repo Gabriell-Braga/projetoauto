@@ -12,6 +12,7 @@
     "./shared/lead-form": "./src/templates/shared/lead-form.tsx",
     "./shared/sell-car-form": "./src/templates/shared/sell-car-form.tsx",
     "./shared/gtm": "./src/templates/shared/gtm.tsx",
+    "./shared/tracking": "./src/templates/shared/tracking.tsx",
     "./catalog": "./src/lib/catalog.ts",
     "./format": "./src/lib/format.ts",
     "./paths": "./src/lib/paths.ts",

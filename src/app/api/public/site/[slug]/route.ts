@@ -25,13 +25,14 @@ export const GET = withApi(async (request: Request, { params }: Params) => {
   const site = await getSiteData(slug);
   if (!site) throw notFound("Revenda não encontrada");
 
-  const { gtmCode, templateId, ...siteData } = site;
+  const { gtmCode, templateId, tracking, ...siteData } = site;
 
   return jsonOk(
     {
       site: siteData,
       templateId,
       gtmCode,
+      tracking,
       /*
        * Assinatura em atraso não é 404.
        *

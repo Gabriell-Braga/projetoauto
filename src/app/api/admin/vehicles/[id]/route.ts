@@ -9,6 +9,7 @@ import { queueVehicleSync } from "@/lib/services/portals";
 import { closePublicationsBeforeDelete, syncInBackground } from "@/lib/services/portal-sync";
 import { getOrigin } from "@/lib/seo/urls";
 import { dispatchTenantEvent } from "@/lib/services/api-access";
+import { trackVehicleSold } from "@/lib/tracking/sale";
 import { checkTenantLimit } from "@/lib/plans/service";
 import { vehicleUpdateSchema } from "@/lib/validation/vehicles";
 
@@ -76,6 +77,11 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
     input.status === "sold" ? "vehicle.sold" : "vehicle.updated",
     { id, status: input.status ?? existing.vehicle.status },
   );
+
+  // venda de balcão, sem lead: o sinal sai daqui (ver tracking/sale.ts)
+  if (input.status === "sold" && existing.vehicle.status !== "sold") {
+    await trackVehicleSold(context.tenant.id, id);
+  }
 
   await logAuditFor(
     context,

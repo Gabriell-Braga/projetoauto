@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { apiPost } from "../../lib/client-api";
 import { readUtm } from "./utm";
+import {
+  newBrowserEventId,
+  readTrackingContext,
+  trackBrowserEvent,
+} from "./tracking";
 import { maskPhone } from "../../lib/masks";
 
 const field =
@@ -27,6 +32,8 @@ const ASSUNTOS = [
 
 /** "Envie uma mensagem" — o formulário da página de contato, como no desenho. */
 export function ContactForm({ tenantSlug }: { tenantSlug: string }) {
+  // mesmo id no navegador e no servidor: a conversão conta uma vez só
+  const eventId = useRef(newBrowserEventId());
   const [sent, setSent] = useState(false);
   const [phone, setPhone] = useState("");
   const [sending, setSending] = useState(false);
@@ -50,6 +57,7 @@ export function ContactForm({ tenantSlug }: { tenantSlug: string }) {
       message: [assunto ? `Assunto: ${assunto}` : "", mensagem].filter(Boolean).join("\n"),
       website: String(form.get("website") ?? ""),
       utm: readUtm(),
+      tracking: readTrackingContext(eventId.current),
     });
 
     setSending(false);
@@ -58,6 +66,7 @@ export function ContactForm({ tenantSlug }: { tenantSlug: string }) {
       return;
     }
     setSent(true);
+    trackBrowserEvent("generate_lead", { eventId: eventId.current });
   }
 
   if (sent) {

@@ -28,11 +28,11 @@ OPS_SECRET="troque-por-outro-segredo-longo"
 # Origem publica do painel, sem o mount path. Atras do proxy do Webflow Cloud o
 # host do request e o do worker (*.wf-app-prod.cosmic.webflow.services), e toda
 # URL absoluta (e-mail, OAuth dos portais, feed) sairia com ele.
-# E A variavel da troca de dominio: hoje https://projetoauto.webflow.io, depois
-# https://crm.carbud.com.br. O painel mostra em
-# Super-admin > Configuracoes > Enderecos publicos tudo que precisa ser
-# recadastrado fora quando ela muda.
-# APP_ORIGIN="https://projetoauto.webflow.io"
+# E A variavel da troca de dominio. Em producao hoje:
+#   APP_ORIGIN="https://crm.carbud.com.br"   (o mount path /app vem do BASE_URL)
+# O painel mostra em Super-admin > Configuracoes > Enderecos publicos tudo que
+# precisa ser recadastrado fora quando ela muda.
+# APP_ORIGIN="https://crm.carbud.com.br"
 
 # --- Portais de classificados ------------------------------------------
 # Credenciais do NOSSO app em cada portal (do integrador, valem para todas as

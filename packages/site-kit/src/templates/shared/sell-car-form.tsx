@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { apiPost } from "../../lib/client-api";
 import { readUtm } from "./utm";
+import {
+  newBrowserEventId,
+  readTrackingContext,
+  trackBrowserEvent,
+} from "./tracking";
 import { maskInteger, maskPhone } from "../../lib/masks";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -35,6 +40,8 @@ export function SellCarForm({
   /** Vem do card de troca da ficha do veículo, pela URL. */
   initial?: { brandModel?: string; years?: string; mileageKm?: string };
 }) {
+  // mesmo id no navegador e no servidor: a conversão conta uma vez só
+  const eventId = useRef(newBrowserEventId());
   const [sent, setSent] = useState(false);
   const [phone, setPhone] = useState("");
   const [km, setKm] = useState(initial?.mileageKm ?? "");
@@ -74,6 +81,7 @@ export function SellCarForm({
         mileageKm: Number(String(form.get("mileageKm") ?? "").replace(/\D/g, "")) || 0,
       },
       utm: readUtm(),
+      tracking: readTrackingContext(eventId.current),
     });
 
     setSending(false);
@@ -82,6 +90,7 @@ export function SellCarForm({
       return;
     }
     setSent(true);
+    trackBrowserEvent("generate_lead", { eventId: eventId.current });
   }
 
   if (sent) {

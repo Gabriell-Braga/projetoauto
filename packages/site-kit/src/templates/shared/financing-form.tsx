@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiPost } from "../../lib/client-api";
 import { DEFAULT_MONTHLY_RATE, monthlyInstallmentCents } from "../../lib/installment";
 import { formatCurrency } from "../../lib/format";
@@ -8,6 +8,11 @@ import { centsToMoney, maskCpf, maskMoney, maskPhone, moneyToCents } from "../..
 import { setSelectedVehicleLabel, useSelectedVehicleLabel } from "./financing-selection";
 import { SearchableSelect } from "./searchable-select";
 import { readUtm } from "./utm";
+import {
+  newBrowserEventId,
+  readTrackingContext,
+  trackBrowserEvent,
+} from "./tracking";
 
 export type FinancingVehicleOption = { id: string; label: string; priceCents: number };
 
@@ -247,6 +252,8 @@ export function FinancingLeadForm({
 
   const [phone, setPhone] = useState("");
   const [cpf, setCpf] = useState("");
+  // mesmo id no navegador e no servidor: a conversão conta uma vez só
+  const eventId = useRef(newBrowserEventId());
 
   /*
    * O veiculo acompanha o simulador ate a pessoa escrever o proprio texto.
@@ -283,6 +290,7 @@ export function FinancingLeadForm({
       website: String(form.get("website") ?? ""),
       financing: { downPaymentCents, installments },
       utm: readUtm(),
+      tracking: readTrackingContext(eventId.current),
     });
 
     setSending(false);
@@ -291,6 +299,7 @@ export function FinancingLeadForm({
       return;
     }
     setSent(true);
+    trackBrowserEvent("generate_lead", { eventId: eventId.current });
   }
 
   if (sent) {

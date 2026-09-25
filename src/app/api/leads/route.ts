@@ -9,6 +9,8 @@ import { publicLeadSchema } from "@/lib/validation/leads";
 
 import { listStages, pickAssignee, recordLeadEvent } from "@/lib/services/crm";
 import { dispatchTenantEvent } from "@/lib/services/api-access";
+import { newEventId } from "@/lib/tracking/event";
+import { trackInBackground } from "@/lib/tracking/dispatch";
 import { composeLeadMessage, createIntentRecord } from "@/lib/services/public-lead";
 
 export const dynamic = "force-dynamic";
@@ -123,6 +125,34 @@ export const POST = withApi(async (request: Request) => {
       metadata: { [intent.kind]: intent.id },
     });
   }
+
+  /*
+   * Conversão para as plataformas de mídia, pelo servidor.
+   *
+   * Vai com o `eventId` que o navegador usou no pixel: é o que faz a Meta
+   * entender que o evento do site e o daqui são o mesmo. Se o navegador não
+   * mandou (JavaScript bloqueado, formulário sem o script), um id novo entra
+   * no lugar — melhor uma conversão contada uma vez do que nenhuma.
+   */
+  await trackInBackground(tenant.id, {
+    name: "lead",
+    eventId: input.tracking?.eventId || newEventId("lead"),
+    value: vehiclePriceCents > 0 ? vehiclePriceCents / 100 : null,
+    user: {
+      email: input.email || null,
+      phone: input.phone,
+      name: input.name,
+      ip: clientIp(request),
+      userAgent: request.headers.get("user-agent"),
+      fbp: input.tracking?.fbp ?? null,
+      fbc: input.tracking?.fbc ?? null,
+      ga4ClientId: input.tracking?.gaClientId ?? null,
+    },
+    content: vehicleId
+      ? { id: vehicleId, name: vehicleLabel }
+      : undefined,
+    sourceUrl: input.tracking?.pageUrl ?? input.utm?.page ?? null,
+  });
 
   // avisa quem integrou, sem poder derrubar a captação do lead
   await dispatchTenantEvent(tenant.id, "lead.created", {

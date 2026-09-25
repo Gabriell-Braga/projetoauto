@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { TrackingIds } from "@carbud/site-kit/shared/tracking";
 import { siteWithLocalMedia, vehicleWithLocalMedia } from "./media";
 import { panelUrl } from "./panel-url";
 import type {
@@ -83,6 +84,8 @@ export type SitePayload = {
   site: SiteData;
   templateId: string;
   gtmCode: string | null;
+  /** Ids publicos de pixel/medicao; os segredos ficam no painel. */
+  tracking: TrackingIds | null;
   available: boolean;
 };
 
